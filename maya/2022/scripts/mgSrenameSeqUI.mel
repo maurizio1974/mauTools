@@ -1,0 +1,100 @@
+//------------------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------//
+//	SCRIPT:	refEditReplaceUI.mel
+//	VERSION: 1.0
+//	AUTHOR:	Maurizio Giglioli
+//		    maurizio1974@gmail.com
+//	DATE:         10 02 2010
+//  Last Updated: 
+//
+//
+//	DESCRIPTION:	UI FOR REFERENCE REPLACE TOOL
+//
+//
+//	INSTRUCTIONS:	source the Script
+//			        call the procedure refEditReplaceUI()
+//
+//------------------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------//
+
+python ("import maya.cmds as mc");
+python ("import maya.mel as mel");
+python ("import os");
+python ("import sys");
+python ("import string");
+
+python("path = '/u/mng/maya/scripts/utility/'"); // Change with the path where you put the script
+python ("if path is not (sys.path):sys.path.append(path)");
+
+python "import mgSrename";
+python("reload(mgSrename)");
+
+global proc mgRenameSeq()
+{
+    string $proj[] = `workspace -q -lfw`;
+    
+    if (`window -ex mgRenameSeqWIN`)
+        deleteUI mgRenameSeqWIN;
+        
+    window -t "Reference Replacer" -wh 320 210 mgRenameSeqWIN;
+    formLayout refEditReplaceFL;
+    
+        textField -tx ($proj[0]+"/scenes/") locTXF;
+        button -l "Sequence Directory" -c "seqFileBrowser 1" locBT;
+        textField newLocTXF;
+        button -l "Reference File Directory" -c "seqFileBrowser 2" newLocBT;
+        textField -tx "copy" newDirTXF;
+        text -l "Copy Folder" newDirTX;
+        button -l "GO" -c "refReplaceCMD" goBT;
+        
+    formLayout -e
+    
+        -af locTXF "left" 5 
+        -af locTXF "top" 20 
+        -af locTXF "right" 5
+        -af locBT "left" 5 
+        -ac locBT "top" 5 locTXF 
+        -af locBT "right" 5
+        -af newLocTXF "left" 5 
+        -ac newLocTXF "top" 5 locBT 
+        -af newLocTXF "right" 5
+        -af newLocBT "left" 5 
+        -ac newLocBT "top" 5 newLocTXF 
+        -af newLocBT "right" 5
+        -af newDirTX "left" 5 
+        -ac newDirTX "top" 5 newLocBT 
+        -ap newDirTX "right" 5 25
+        -ac newDirTXF "left" 5 newDirTX 
+        -ac newDirTXF "top" 5 newLocBT 
+        -af newDirTXF "right" 5
+        -af goBT "left" 5 
+        -ac goBT "top" 5 newDirTXF 
+        -af goBT "right" 5
+        
+    refEditReplaceFL;
+    
+    showWindow mgRenameSeqWIN;
+    window -e -wh 320 210 mgRenameSeqWIN;
+}
+mgRenameSeq();
+
+// FILE BROWSER PROCEDURE
+global proc seqFileBrowser(int $which)
+{
+    if ($which == 1) // Switch for the file browser to select a maya scene
+        fileBrowserDialog -m 0 -fc "mayaSceneLoc" -ft "mayaAscii" -an "Maya Scene";
+    if ($which == 2) // Switch for the file browser to select a directory for the new reference files 
+        fileBrowserDialog -m 4 -fc "mayaRefLoc" -ft "directory" -an "Select directory";
+}
+
+// GLOBAL PROC TO GET THE FILE BROWSER PATH FOR THE MAYA SCENE
+global proc mayaSceneLoc(string $result, string $type)
+{
+    textField -e -tx $result "locTXF";
+}
+
+// GLOBAL PROC TO GET THE FILE BROWSER PATH FOR THE REFERENCE FILE
+global proc mayaRefLoc(string $result, string $type)
+{
+    textField -e -tx $result "newLocTXF";
+}

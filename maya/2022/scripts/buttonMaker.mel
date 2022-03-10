@@ -1,0 +1,98 @@
+//Keegan
+//Button Maker
+//buttonMaker
+//none
+//buttonMaker
+//rigging
+/*
+Author: David Keegan (www.keegan3d.com)
+Copyright (C) 2005 David Keegan
+
+Version: 1.0
+
+Function: Creates a locator that rides on a face defined 
+	by two selected edges.
+
+Install 
+	1. Move buttonMaker.mel to you're Maya scripts directory.
+	2. Move KeeganMan to you're icons directory.
+	2. Type "buttonMaker" into Maya's command line.
+
+Based on rivit by Michael Bazhutkin, and added two attributes 
+to the locator to change its position on the face.
+	
+All code and icons created by David Keegan. 
+Use and/or modify at your own risk.  
+Code and/or icons may not be distributed, in part or in whole, 
+with out consent from David Keegan.
+*/
+
+global proc buttonMaker()
+{
+    string $sel[] = `ls -sl -fl`;
+    if(`size($sel)`<2)
+        error "Select two edges";
+    
+    string $nameBD1[], $nameBD2[];
+    tokenize $sel[0] ".[]" $nameBD1;
+    tokenize $sel[1] ".[]" $nameBD2;
+    if($nameBD1[1] != "e" || $nameBD2[1] != "e" )
+        error "select two edges";
+    
+    if($nameBD1[0] != $nameBD2[0])
+        error "Edges are not on the same object";
+    
+    int $i;
+    int $edge[1];
+    string $object = $nameBD1[0];
+    
+    $edge[0]= $nameBD1[2];
+    $edge[1]= $nameBD2[2];
+    
+    string $curves[1];
+    for($i=0; $i<2; $i++)
+    {
+        string $edgeCurve = `createNode -n ("rivetEdge" + $i) curveFromMeshEdge`;
+        setAttr ($edgeCurve + ".ihi") 1;
+        setAttr ($edgeCurve + ".ei[0]")  $edge[$i];
+        
+        $curves[$i] = $edgeCurve;
+    }
+    
+    string $loc[] = `spaceLocator`;
+    addAttr -ln PositionU -at double  -min 0 -max 1 -dv 0.5 $loc[0];
+    addAttr -ln PositionV -at double  -min 0 -max 1 -dv 0.5 $loc[0];
+    setAttr -e -k 1($loc[0] + ".PositionU");
+    setAttr -e -k 1($loc[0] + ".PositionV");
+    
+    
+    string $curveLoft = `createNode loft -n "rivetLoft1"`;
+    setAttr -s 2 ($curveLoft + ".ic");
+    setAttr ($curveLoft + ".u") 1;
+    setAttr ($curveLoft + ".rsn") 1;
+    
+    string $POS = `createNode pointOnSurfaceInfo -n "rivetPointOnSurfaceInfo1"`;
+    setAttr ($POS + ".top") 1;
+    
+    connectAttr -f ($curveLoft + ".os") ($POS + ".is");
+    connectAttr -f ($POS + ".p") ($loc[0] + ".t");
+    
+    connectAttr -f ($loc[0] + ".PositionU") ($POS + ".u");
+    connectAttr -f ($loc[0] + ".PositionV") ($POS + ".v");
+    
+    connectAttr -f ($curves[0] + ".oc") ($curveLoft + ".ic[0]");
+    connectAttr -f ($curves[1] + ".oc") ($curveLoft + ".ic[1]");
+    
+    connectAttr -f ($object + ".w") ($curves[0] + ".im");
+    connectAttr -f ($object + ".w") ($curves[1] + ".im");
+    
+    string $aim = `createNode aimConstraint -p $loc[0]`;
+    connectAttr -f ($POS + ".n") ($aim + ".tg[0].tt");
+    connectAttr -f ($POS + ".tv") ($aim + ".wu");
+    
+    connectAttr -f ($aim + ".cr") ($loc[0] + ".r");
+    
+    string $aimAttr[] = `listAttr -k $aim`;
+    for($each in $aimAttr)
+        setAttr -k 0 -l 1 ($aim + "." + $each);
+}

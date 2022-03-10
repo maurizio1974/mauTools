@@ -1,0 +1,1703 @@
+//------------------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------//
+//	SCRIPT:	flipper.mel
+//	VERSION: 0.97
+//	AUTHOR:	Maurizio Giglioli
+//		    maurizio1974@gmail.com
+//	DATE:         03 01 2007
+//  Last Updated: 20 03 2020
+//
+//
+//	DESCRIPTION:	a window with my most used tools for rigging
+//
+//
+//	INSTRUCTIONS:	source the script
+//			        call the procedure mauTools()
+//
+//  UPDATE:         integrated on the maya UI
+//                  Reorganized with a module in maya
+//
+//
+//
+//------------------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------//
+
+// string $gMauPath = "/home/mgiglioli/maya/2018/extra/mauTools/";
+
+// python ("import maya.cmds as mc");
+// python ("import maya.mel as mel");
+// python ("import sys");
+
+// python ("if '" + $gMauPath + "scripts/mgT/' is not (sys.path):sys.path.append('" + $gMauPath + "scripts/mgT/')");
+// python ("if '" + $gMauPath + "scripts/' is not (sys.path):sys.path.append('" + $gMauPath + "scripts')");
+
+
+python "from n_mirrorComponents import n_mirrorComponents";
+python "import renRelName";python("reload(renRelName)");
+python "import renuRel";python("reload(renuRel)");
+python "import refPlane";python("reload(refPlane)");
+python "import xrayer";python("reload(xrayer)");
+python "import shapeVis";python("reload(shapeVis)");
+python "import isolateMG";python("reload(isolateMG)");
+python "import curveMG";python("reload(curveMG)");
+python "import transAnim";python("reload(transAnim)");
+python "import transformTools";python("reload(transformTools)");
+//python "import mnmSkinLib";python("reload(mnmSkinLib)");
+python "import vertexLib";python("reload(vertexLib)");
+python "import nodeLib";python("reload(nodeLib)");
+python "import transferSelection";python("reload(transferSelection)");
+
+// eval("source \""+$gMauPath+"scripts/mgT/centroidFast.mel\"");
+// eval("source \""+$gMauPath+"scripts/mgT/mgOrientJNT.mel\"");
+// eval("source \""+$gMauPath+"scripts/readWriteAttr.mel\"");
+// eval("source \""+$gMauPath+"scripts/mg_skinLib.mel\"");
+// eval("source \""+$gMauPath+"scripts/mgRenameBox.mel\"");
+// eval("source \""+$gMauPath+"scripts/lockAttrMG.mel\"");
+// eval("source \""+$gMauPath+"scripts/mgUtility.mel\"");
+// eval("source \""+$gMauPath+"scripts/readWriteVtxData.mel\"");
+// eval("source \""+$gMauPath+"scripts/vctrUtils.mel\"");
+
+source centroidFast.mel;
+source mgOrientJNT.mel;
+source readWriteAttr.mel;
+source mg_skinLib.mel;
+source mgRenameBox.mel;
+source lockAttrMG.mel;
+source mgUtility.mel;
+source readWriteVtxData.mel;
+source vctrUtils.mel;
+
+// SHELVES
+// eval("source \"" + $gMauPath + "scripts/mgT/flipperShelfTabUI.mel\";");
+// eval("source \"" + $gMauPath + "scripts/mgT/flipperRigTabUI.mel\";");
+// eval("source \"" + $gMauPath + "scripts/mgT/flipperVertexDataTabUI.mel\";");
+// eval("source \"" + $gMauPath + "scripts/mgT/flipperPickerTabUI.mel\";");
+// eval("source \"" + $gMauPath + "scripts/mgT/flipperDisplayTabUI.mel\";");
+
+source flipperShelfTabUI.mel;
+source flipperRigTabUI.mel;
+source flipperVertexDataTabUI.mel;
+source flipperPickerTabUI.mel;
+source flipperDisplayTabUI.mel;
+
+global proc int getMauUtyIndex( string $win[] )
+{
+    string $myWin[];
+    int $i = 0 ;
+    for($e in $win)
+    {
+        if(`gmatch $e "*mauUtyWin*"`)
+        {
+            $myWin[$i] = $e ;
+            $i = $i + 1 ;
+        }
+    }
+    return (size($myWin));
+}
+
+global proc mauTools()
+{
+    int $lato = 280,
+        $index = 0 ;
+    string $windows[] = `lsUI -wnd`;
+    if(`window -ex "mauUtyWin"`)
+            deleteUI "mauUtyWin";
+
+    global string $cmdA,$cmdR,$cmd, $gMauPath;
+    string $currentPanel = `getPanel -wf`,
+           $panelType = `getPanel -to $currentPanel`,
+           $system = `python "sys.platform"`,
+           $name = ("mauUtyWin"+$index),
+           $win  = `window -t "mTools v.0.9 (20/03/20)" -rtf 1 -w $lato "mauUtyWin"`,
+           $cD;
+    float  $startTime=`playbackOptions -q -min`;
+    float  $endTime =`playbackOptions -q -max`;
+    string $presets[] = {
+            "L_","R_",
+            "_grp", "_jnt",
+            "_null", "_loc",
+            "_riv", "_clh",
+            "_crv", "_mesh",
+            "_geo"};
+
+    //----------------------------------------------------------------------------------------------------------------------------
+    // THE WINDOW HIERARCHY THAT WILL HOLD THE DIRRENT PART OF THE UI
+    //----------------------------------------------------------------------------------------------------------------------------
+
+    string $main = `formLayout -p $win`;
+
+    // MAIN TAB LAYOUT WITH THE UI STUFF
+    string $tabs         = `tabLayout -imw 5 -imh 5`;
+
+    formLayout -e -af $tabs "left" 0 -af $tabs "right" 0 -af $tabs "top" 0  -af $tabs "bottom" 0 $main ;
+
+    // THE SHELF TAB
+    string $mauUtyFLbase = flipperShelfTabUI($lato,$tabs,$presets,$currentPanel,$panelType);
+    // THE RIG TAB
+    string $mauUtyFLrig  = flipperRigTabUI($lato,$tabs,$presets,$currentPanel,$panelType);
+    // THE VTX DATA TAB
+    string $mauUtyFLskin = flipperVertexDataTabUI($lato,$tabs,$presets,$currentPanel,$panelType);
+    // THE PICK TAB
+    string $mauUtyFLpick = flipperPickerTabUI($lato,$tabs,$presets,$currentPanel,$panelType);
+    // THE VISIBILITY TAB
+    string $mauUtyFLvis  = flipperDisplayTabUI($lato,$tabs,$presets,$currentPanel,$panelType);
+
+    // TAB LAYOUT SET UP
+    tabLayout -e -tl $mauUtyFLbase "Basic" -tl $mauUtyFLrig "Rig" -tl $mauUtyFLskin "Vtx Data" -tl $mauUtyFLpick "Pick" -tl $mauUtyFLvis "Display" $tabs;
+
+    showWindow $win;
+
+    window -e -w $lato $win ;
+
+    // MAKE WINDOW DOCKABLE
+    // string $dcName = ("DC_"+$name);
+    // Just like you need to delete pre-existing windows before you make new ones,
+    // you need to delete pre-existing dockControls:
+    // if (`dockControl -q -ex $dcName` == 1)
+    //     deleteUI $dcName;
+    // Create the dockControl that will house the window:
+    // dockControl -allowedArea "all" -area "left" -floating 0 -content $win -w 320 -label "mTools" $dcName;
+
+}
+
+
+global proc string uiHelper(string $part)
+{
+    string $buf[];
+    tokenize($part,"|",$buf);
+    string $result = ($buf[size($buf)-1]);
+    return $result;
+}
+
+global proc XYZflipper(string $XYZradioGrp, string $XYZcheckGrp)
+{
+	int $xyzAxis = `radioButtonGrp -q -sl $XYZradioGrp`;
+	int $tMode = `checkBoxGrp -q -v1 $XYZcheckGrp`;
+	int $rMode = `checkBoxGrp -q -v2 $XYZcheckGrp`;
+
+	if($tMode == 1 && $rMode == 1)
+	{
+	    if($xyzAxis == 1)
+	        python("transformTools.mirrorTrans(0,1,1)");
+	    if($xyzAxis == 2)
+	        python("transformTools.mirrorTrans(1,1,1)");
+	    if($xyzAxis == 3)
+	        python("transformTools.mirrorTrans(2,1,1)");
+	}
+
+    if($tMode == 1 && $rMode == 0)
+	{
+	    if($xyzAxis == 1)
+	        python("transformTools.mirrorTrans(0,1,0)");
+	    if($xyzAxis == 2)
+	        python("transformTools.mirrorTrans(1,1,0)");
+	    if($xyzAxis == 3)
+	        python("transformTools.mirrorTrans(2,1.0)");
+	}
+
+	if($tMode == 0 && $rMode == 1)
+	{
+	    if($xyzAxis == 1)
+	        python("transformTools.mirrorTrans(0,0,1)");
+	    if($xyzAxis == 2)
+	        python("transformTools.mirrorTrans(1,0,1)");
+	    if($xyzAxis == 3)
+	        python("transformTools.mirrorTrans(2,0,1)");
+	}
+}
+
+global proc mauTSL_ActionFlipper(int $dir, string $mau_TSL, string $mauTabShelf)
+{
+    string $shelfDir = `internalVar -userShelfDir`;
+    string $activeShelf=`shelfTabLayout -q -st $mauTabShelf`;
+    string $user = `getenv USER`;
+    string $shelves[]=`getFileList -folder $shelfDir -filespec ("*_"+$activeShelf+"_mauUtyShelf.mel")`;
+    if ($dir == 0)
+    {
+        textScrollList -e -ra $mau_TSL;
+        for ($es in $shelves)
+        {
+            string $clean =`substitute ($user+"_") $es ""`;
+            $clean =`substitute ("_"+$activeShelf+"_mauUtyShelf.mel") $clean ""`;
+            textScrollList -e -a $clean $mau_TSL;
+        }
+    }
+}
+
+global proc matcher(int $mau, string $components[] )
+{
+    string $sel[] = `ls -sl`;
+    string $uno,$due,$gP,$fatherS[1], $copyS[1], $children[];
+    int $copyMatch=`radioButtonGrp -q -sl $components[0]`;
+    int $radio=`radioButtonGrp -q -sl $components[1]`;
+    int $invert=`checkBox -q -v $components[2]`;
+    int $parent = `checkBox -q -v $components[3]`;
+    float $angleV = `floatField -q -v $components[4]`;
+
+
+    int $trsX=`checkBox -q -v $components[5]`;
+    int $trsY=`checkBox -q -v $components[6]`;
+    int $trsZ=`checkBox -q -v $components[7]`;
+
+    int $rotX=`checkBox -q -v $components[8]`;
+    int $rotY=`checkBox -q -v $components[9]`;
+    int $rotZ=`checkBox -q -v $components[10]`;
+
+    int $scaX=`checkBox -q -v $components[11]`;
+    int $scaY=`checkBox -q -v $components[12]`;
+    int $scaZ=`checkBox -q -v $components[13]`;
+
+    int $turnX=`checkBox -q -v $components[14]`;
+    int $turnY=`checkBox -q -v $components[15]`;
+    int $turnZ=`checkBox -q -v $components[16]`;
+
+    int $relAbs = `radioButtonGrp -q -sl $components[17]`;
+
+    if( size( $sel ) == 2 )
+    {
+        if( $invert == 0 )
+        {
+            $uno = $sel[0];
+            $due = $sel[1];
+        }else{
+            $uno = $sel[1];
+            $due = $sel[0];
+        }
+
+        $copyS =`spaceLocator -n ($uno+"TEMP")`;
+        $fatherS = `listRelatives -p $due`;
+        $children = `listRelatives -c -type "transform" $due`;
+
+        // IF PARENT IS CHECKED GROUP ALL THE CHILDREN OF THE TRANFORM THAT NEEDS TO BE MATCH INTO A GROUP IN THE WORLD
+        if($parent == 1 )
+        {
+            if( size($children) != 0 )
+            {
+                $gP = `group -em -n "temp__ParentGrp"`;
+                for($eC in $children)
+                {
+                    if(`nodeType $eC` == "transform")
+                        parent $eC $gP;
+                }
+                select -cl;
+                select $sel;
+            }
+        }
+
+        if($fatherS[0] != "")
+            parent -a $copyS[0] $fatherS[0];
+
+        string $pC[1] =`pointConstraint $uno $copyS[0]`;
+        string $oC[1] =`orientConstraint $uno $copyS[0]`;
+        string $sC[1] =`scaleConstraint $uno $copyS[0]`;
+        delete $pC[0] $pC[0] $sC[0];
+
+        // THIS OPTION IF FOR MATCHING THE TRANSLATION VALUES
+        if( $mau == 1 )
+        {
+            float $posX=`getAttr ($copyS[0]+".tx")`;
+            float $posY=`getAttr ($copyS[0]+".ty")`;
+            float $posZ=`getAttr ($copyS[0]+".tz")`;
+            if( $trsX == 1 )
+                setAttr ($due+".tx") $posX;
+            if( $trsY == 1 )
+                setAttr ($due+".ty") $posY;
+            if( $trsZ == 1 )
+                setAttr ($due+".tz") $posZ;
+            if( $invert == 0 )
+            {
+                select $uno $due;
+                if( $radio == 1 )
+                    print ( $due+" translate values matched to "+$uno+".\n");
+            }else{
+                select $due $uno;
+                if( $radio == 1 )
+                    print ( $uno+" translate values matched to "+$due+".\n");
+            }
+        }
+
+        // THIS OPTION IF FOR MATCHING THE ROTAION VALUES
+        if( $mau == 2 )
+        {
+            float $oriX=`getAttr ($copyS[0]+".rx")`;
+            float $oriY=`getAttr ($copyS[0]+".ry")`;
+            float $oriZ=`getAttr ($copyS[0]+".rz")`;
+
+            if( $rotX == 1 )
+                setAttr ($due+".rx") $oriX;
+            if( $rotY == 1 )
+                setAttr ($due+".ry") $oriY;
+            if( $rotZ == 1 )
+                setAttr ($due+".rz") $oriZ;
+
+            if( $invert == 0 )
+            {
+                select $uno $due;
+                if( $radio == 1 )
+                    print ( $due+" rotate values matched to "+$uno+".\n");
+            }else{
+                select $due $uno;
+                if( $radio == 1 )
+                    print ( $uno+" rotate values matched to "+$due+".\n");
+            }
+        }
+
+        // THIS OPTION IF FOR MATCHING THE SCALE VALUES
+        if( $mau == 3 )
+        {
+            float $scaleC[3]=`getAttr ($copyS[0]+".s")`;
+            if( $scaX == 1 )
+                setAttr ($due+".sx") $scaleC[0];
+            if( $scaY == 1 )
+                setAttr ($due+".sy") $scaleC[1];
+            if( $scaZ == 1 )
+                setAttr ($due+".sz") $scaleC[2];
+
+            if( $invert == 0 )
+            {
+                select $uno $due;
+                if( $radio == 1 )
+                    print ( $due+" scale values matched to "+$uno+".\n");
+            }else{
+                select $due $uno;
+                if( $radio == 1 )
+                    print ( $due+" scale values matched to "+$uno+".\n");
+            }
+        }
+        delete $copyS[0];
+
+        if($parent == 1 && size($children) != 0 )
+        {
+            parent $children $due;
+            delete $gP;
+            select -cl;
+            select $sel;
+        }
+    }else{
+        if( $mau != 4 && $mau != 5)
+        {
+           warning "------->>> please select minimum two objects if you want to Align. <<<-------\n";
+        }else{
+            // THIS OPTION IF WE CALL THE ROTATION TOOL
+            if( $mau == 4 )
+                $value = - $angleV;
+            if( $mau == 5 )
+                $value = $angleV;
+
+            for( $each in $sel )
+            {
+                select -cl;
+                select $each;
+                if( $turnX == 1 )
+                {
+                    if( $relAbs == 1 )
+                        rotate -r -os -x $value;
+                    else
+                        rotate -r -ws -x $value;
+                }
+                if( $turnY == 1 )
+                {
+                    if( $relAbs == 1 )
+                        rotate -r -os -y $value;
+                    else
+                        rotate -r -ws -y $value;
+                }
+                if( $turnZ == 1 )
+                {
+                    if( $relAbs == 1 )
+                        rotate -r -os -z $value;
+                    else
+                        rotate -r -ws -z $value;
+                }
+            }
+        }
+    }
+}
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// Procedure to turn on and off the visibility mode in the current viewport
+// -------------------------------------------------------------------------------------------------------------------------------
+global proc showMode(string $mode, int $value, string $showFR, string $radioAll, string $radioNone, string $checkBoxes[])
+{
+   // GET THE VIEW WITH FOCUS AND THE TYPE OF PANEL
+   string $currentPanel[]=`getPanel -vis`;
+   string $panelType;
+   int $i = 0;
+
+   // EVERYTHING IN THE FRAMELAYOUT
+   string $childrensFL[]=`formLayout -q -ca $showFR`;
+
+   // ATTR OF THE UI
+   string $viewAttr[]={ "nurbsCurves","nurbsSurfaces","subdivSurfaces","polymeshes","planes","lights",
+                        "joints","ikHandles","deformers","dynamics","fluids","hairSystems","follicles","nCloths",
+                        "nRigids","dynamicConstraints","locators","dimensions","pivots","handles","textures",
+                        "strokes","manipulators","cameras","cv","hulls","grid","hud","sel"};
+
+    // FIND OUT WHAT IS VISIBLE AND WHAT IS NOT FROM THE MAYA UI NOT OUR TOOL
+    if ( $mode == "check" && $value == 0 )
+    {
+        for($eachPanel in $currentPanel)
+        {
+            if ( `objectType $eachPanel` == "TmodelPane" )
+            {
+                for($eachAttr in $viewAttr )
+                {
+                    $viewValue = `modelEditor -q ("-"+$eachAttr) $eachPanel`;
+                    checkBox -e -v $viewValue $checkBoxes[$i];
+                    $i++;
+                }
+            }
+        }
+    }
+
+    for($eachPanel in $currentPanel)
+    {
+      $panelType=`getPanel -to $eachPanel`;
+      if($mode=="-allObjects")
+      {
+         if($value==1)
+         {
+            if($panelType=="modelPanel")
+            {
+               modelEditor -e $mode 1 $eachPanel;
+
+               for($each in $childrensFL)
+               {
+                   if(`objectType $each` != "separator")
+                   {
+                      if(!`gmatch $each "radioNone"`)
+                         checkBox -e -v 1 $each;
+                      else
+                         checkBox -e -v 0 $each;
+                   }
+               }
+            }
+         }else{
+            if($panelType=="modelPanel")
+            {
+               modelEditor -e $mode 0 $eachPanel;
+               checkBox -e -v 0 $radioAll;
+
+               for($each in $childrensFL)
+               {
+                   if(`objectType $each` != "separator")
+                   {
+                      if(`gmatch $each "radioNone"`)
+                         checkBox -e -v 1 $each;
+                      else
+                         checkBox -e -v 0 $each;
+                   }
+               }
+            }
+         }
+      }
+
+      if($mode=="-nurbsCurves" || $mode=="-nurbsSurfaces" || $mode=="-polymeshes" || $mode=="-joints" || $mode=="-locators"
+          || $mode=="-dimensions" || $mode=="-cameras" || $mode=="-subdivSurfaces" || $mode=="-deformers" || $mode=="-dynamics"
+          || $mode=="-grid" || $mode=="-planes" || $mode=="-lights" || $mode=="-ikHandles" || $mode=="-fluids" || $mode=="-hairSystems"
+          || $mode=="-follicles" || $mode=="-nCloths" || $mode=="-nRigids" || $mode=="-dynamicConstraints" || $mode=="-pivots"
+          || $mode=="-handles" || $mode=="-textures" || $mode=="-strokes" || $mode=="-manipulators" || $mode=="-cv" || $mode=="-hulls"
+          || $mode=="-hud" || $mode=="-sel")
+      {
+         if( $panelType == "modelPanel" )
+         {
+            if( $value == 1 )
+               modelEditor -e $mode 1 $eachPanel;
+            else
+               modelEditor -e $mode 0 $eachPanel;
+            if(`checkBox -q -v $radioNone`==1)
+               checkBox -e -v 0 $radioNone;
+
+            if(`checkBox -q -v $radioAll`==1)
+               checkBox -e -v 0 $radioAll;
+         }
+      }
+   }
+}
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+global proc centroidMatch()
+{
+    global string $gMainProgressBar;
+
+    string $selobj[]=`ls -sl`;
+    int $points[];float $pos[3];int $i;
+    string $vtx[];string $tempLOC;
+    string $shape[1] = ` listRelatives -s $selobj[0] `;
+
+    if ( size ($shape) != 0 )
+    {
+        if( ` objectType $shape[0] ` == "mesh" )
+        {
+            $points=`polyEvaluate -v $selobj[0]`;
+            select -cl;
+            select ($selobj[0]+".vtx[0:"+$points[0]+"]");
+            $vtx=`ls -fl -sl`;
+
+            // LOOP TROUW ALL THE SELECTED VERTEX AND CREATE AN EMPTY GROUP AT THAT POSITION
+
+            for ( $i=0; $i < size($vtx); $i++)
+            {
+                $tempLOC=`group -em -n ($vtx[$i]+"TempLOC")`;
+                $pos = `pointPosition $vtx[$i]`;
+                setAttr ($tempLOC+".t") $pos[0] $pos[1] $pos[2];
+            }
+        }
+    }
+
+    string $centerLocs[] =`ls "centerLOC?"`;
+    string $centerLocs1[] =`ls "centerLOC??"`;
+    int $progressive = 1+(size ( $centerLocs )) + (size ( $centerLocs1 ));
+    // MAKE A LOCATOR RIGHT THERE
+    string $LOCcenter[1]=`spaceLocator -n ("centerLOC"+$progressive )`;
+
+    // LOOP TROUW ALL THE SELECTED OBJECTS AND CREATE AN EMPTY GROUP AT THAT POSITION
+    if( size($shape) == 0 )
+    {
+        for ( $i=0; $i < size($selobj); $i++)
+        {
+            $tempLOC = `group -em -n ($selobj[$i]+"TempLOC")`;
+            $pos = `xform -q -ws -t $selobj[$i]`;
+            setAttr ($tempLOC+".t") $pos[0] $pos[1] $pos[2];
+        }
+    }
+
+    // PARENT CONSTRAINT THE CENTER LOC TO ALL THE GROUPS CREATED ON THE SELECTED VERTEX oOR OBJECT POSITION
+    string $tempLocs[]=`ls "*TempLOC"`;
+    float $x = 100.0 / ( size ($tempLocs) + 0.0 ) ;
+    float $constant = 100.0 / ( size ($tempLocs) + 0.0 );
+
+    progressBar -e -bp -ii true -st "Calculating the Centroid ..." -max (size($tempLocs)) $gMainProgressBar;
+
+    for ( $i=0; $i < size($tempLocs); $i++)
+    {
+        if(`progressBar -query -isCancelled $gMainProgressBar`)
+            break;
+
+        pointConstraint $tempLocs[$i] $LOCcenter[0];
+
+        progressBar -e -s 1 -st ("Getting the Centroid ... "+$x+"%") $gMainProgressBar;
+        $x = $x + $constant;
+    }
+
+    // THIS STEP IS TO GET THE PARENT CONSTRAINT UNDER THE CENTERLOC AND DELETE IT
+    select -cl;
+    select $LOCcenter[0];
+    pickWalk -d down;
+    pickWalk -d left;
+    string $newSel[1]=`ls -sl`;
+    delete $newSel[0];
+
+    // NOW WE DELETE ALL THE TEMP LOCATORS CREATED TO FIND THE CENTROID
+    delete $tempLocs;
+
+    progressBar -e -ep $gMainProgressBar;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+global proc tabbing(string $direction)
+{
+    string $allTabs[] = `shelfTabLayout -q -childArray ShelfLayout`;
+    int $numberOfTabs = `shelfTabLayout -q -nch ShelfLayout`;
+    int $currentTabIndex;
+    // GOING BACKWORD ON THE SHELVES
+    if($direction == 1)
+    {
+        $currentTabIndex = `shelfTabLayout -q -selectTabIndex ShelfLayout`;
+        if($currentTabIndex != 1)
+            shelfTabLayout -e -selectTabIndex ($currentTabIndex-1) ShelfLayout;
+    }
+    // GOING FORWARD ON THE SHELVES
+    if($direction == 2)
+    {
+        $currentTabIndex = `shelfTabLayout -q -selectTabIndex ShelfLayout`;
+        if($currentTabIndex != $numberOfTabs)
+            shelfTabLayout -e -selectTabIndex ($currentTabIndex+1) ShelfLayout;
+    }
+    // SEND MAYA TABS TO THE FIRST ONE
+    if($direction == 3)
+    {
+        $currentTabIndex = `shelfTabLayout -q -selectTabIndex ShelfLayout`;
+        shelfTabLayout -e -selectTabIndex 1 ShelfLayout;
+    }
+    // SEND MAYA TABS TO THE LAST ONE
+    if($direction == 4)
+    {
+        $currentTabIndex = `shelfTabLayout -q -selectTabIndex ShelfLayout`;
+        shelfTabLayout -e -selectTabIndex $numberOfTabs ShelfLayout;
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+global proc shelfAction(int $value, string $mau_TSL, string $mauTabShelf)
+{
+    string $shelfDir = `internalVar -userShelfDir`;
+    string $activeShelf=`shelfTabLayout -q -st $mauTabShelf`;
+    string $user = `getenv USER`;
+    string $mayaShelf = `shelfTabLayout -q -st ShelfLayout`;
+    string $nome[1] = `textScrollList -q -si $mau_TSL`;
+    string $mauShelfLoc, $shelfFileLoc, $shelfArray[], $mauShelfCmd, $mauShelfCmdT;
+    int $file ;
+    if( $nome[0] == "")
+    {
+        if($value == 2)
+        {
+            string $nameS;
+            string $result = `promptDialog
+                -title "Input Shelf Name"
+                -message "Shelf Name:"
+                -button "OK" -button "Cancel"
+                -defaultButton "OK" -cancelButton "Cancel"
+                -dismissString "Cancel"`;
+
+            if ($result == "OK")
+            {
+                $nameS = `promptDialog -q -text`;
+                $nome[0] = $nameS;
+
+                saveShelf $activeShelf ($shelfDir + ($user+"_"+$nome[0]+"_"+$activeShelf+"_mauUtyShelf"));
+                print ($nome[0]+" shelf saved ! \n");
+                setToolTo selectSuperContext;
+                mauTSL_ActionFlipper(0, $mau_TSL, $mauTabShelf);
+            }
+        }
+        if($value == 1)
+            confirmDialog -t " Error" -m " Please select a shelf from the list on the right you want to delete !";
+    }else{
+        // CHECK IF THE FILE EXISTS ON DISK
+        $file=`filetest -f ($shelfDir+($user+"_"+$nome[0]+"_"+$activeShelf+"_mauUtyShelf.mel"))`;
+        // IF IT DOES
+        if ($file == 1)
+        {
+            //$mauShelfLoc=("mauUtyWin|mauUtyTL|mauUtyFLbase|shelfFL|shelfFormL|shelfPL|mauTabShelf|"+$activeShelf);
+            $mauShelfLoc=($mauTabShelf+"|"+$activeShelf);
+            $shelfFileLoc=$shelfDir+($user+"_"+$nome[0]+"_"+$activeShelf+"_mauUtyShelf.mel");
+            setParent $mauShelfLoc;
+
+            $mauShelfCmd = "source \""+$shelfFileLoc+"\";";
+            eval ($mauShelfCmd);
+            // IF WE USED THE LOAD BUTTON OR DOUBLE CLICK ON THE SAVED FILES
+            if( $value == 0 || $value == 1)
+            {
+                $shelfArray=`shelfLayout -q -ca $activeShelf`;
+                if(size($shelfArray)!=0)
+                {
+                    for($eachShelfBttns in $shelfArray)
+                    {
+                        deleteUI $eachShelfBttns;
+                        setToolTo selectSuperContext;
+                    }
+                }
+                setToolTo selectSuperContext;
+                eval (($user+"_"+$nome[0]+"_"+$activeShelf+"_mauUtyShelf ()"));
+            }
+
+            // HERE WE SAVE THE SHELF
+            if( $value == 2 )
+            {
+                string $resultSS = `confirmDialog
+                                 -title "Overwrite Shelf"
+                                 -message ("Hey "+$user+" are you sure you want to overwrite the "+$nome[0]+" shelf in "+$activeShelf+" ?")
+                                 -button "Continue" -button "Stop"
+                                 -defaultButton "Stop" -cancelButton "Stop"
+                                 -dismissString "Stop"`;
+
+                if ($resultSS == "Continue")
+                {
+                    saveShelf $activeShelf ($shelfDir + ($user+"_"+$nome[0]+"_"+$activeShelf+"_mauUtyShelf"));
+                    mauTSL_ActionFlipper(0, $mau_TSL, $mauTabShelf);
+                    setToolTo selectSuperContext;
+                    print ($nome[0]+" shelf saved ! \n");
+                }else{
+                    print ("nothing overwritten !\n");
+                }
+            }
+        }else{
+            setToolTo selectSuperContext;
+            // IF NO FILES EXIST ON DISK LET'S MAKE ONE
+            string $mauShelfTool = ($shelfDir+$user+"_"+$nome[0]+"_"+$activeShelf+"_mauUtyShelf.mel");
+            $fileId=`fopen $mauShelfTool`;
+            fclose $fileId;
+        }
+    }
+
+    // HERE WE JUST CLEAR THE VISIBLE SHELF
+    if( $value == 3 )
+    {
+        $shelfArray=`shelfLayout -q -ca $activeShelf`;
+        if(size($shelfArray)!=0)
+        {
+            for($eachShelfBttns in $shelfArray)
+            {
+                deleteUI $eachShelfBttns;
+                setToolTo selectSuperContext;
+            }
+            print "Current shelf Cleared ! \n";
+        }
+        setToolTo selectSuperContext;
+    }
+    if( $value == 4 )
+    {
+        string $resultS = `confirmDialog
+                         -title "Delete Shelf"
+                         -message ("Hey "+$user+" are you sure you want to delete the "+$nome[0]+" shelf in "+$activeShelf+" ?")
+                         -button "Continue" -button "Stop"
+                         -defaultButton "Stop" -cancelButton "Stop"
+                         -dismissString "Stop"`;
+
+        if ($resultS == "Continue")
+        {
+            system ( "rm "+$shelfDir+($user+"_"+$nome[0]+"_"+$activeShelf+"_mauUtyShelf.mel") );
+
+            $shelfArray=`shelfLayout -q -ca $activeShelf`;
+            if(size($shelfArray)!=0)
+            {
+                for($eachShelfBttns in $shelfArray)
+                {
+                    deleteUI $eachShelfBttns;
+                    setToolTo selectSuperContext;
+                }
+            }
+            setToolTo selectSuperContext;
+            print ($user+", this shelf "+$nome[0]+" in "+$activeShelf+" has been deleted !! \n");
+            mauTSL_ActionFlipper(0, $mau_TSL, $mauTabShelf);
+        }else{
+            print ("nothing deleted !\n");
+        }
+    }
+
+    // THIS IS TO COPY IN THE VISIBLE SHELF THE CURRENT SELECTED SHELF IN THE MAIN MAYA UI
+    if( $value == 5)
+    {
+        //$mauShelfLoc=("mauUtyWin|mauUtyTL|mauUtyFLbase|shelfFL|shelfFormL|shelfPL|mauTabShelf|"+$activeShelf);
+        $mauShelfLoc=($mauTabShelf+"|"+$activeShelf);
+        setParent $mauShelfLoc;
+
+        // FIRST WE CLEAR THE VISIBLE SHELF SO THAT WE DON'T ADD ON TOP OF WHAT IS ALREADY THERE
+        $shelfArray=`shelfLayout -q -ca $activeShelf`;
+        if(size($shelfArray)!=0)
+        {
+            for($eachShelfBttns in $shelfArray)
+            {
+                deleteUI $eachShelfBttns;
+                setToolTo selectSuperContext;
+            }
+        }
+        setToolTo selectSuperContext;
+        // CALL THE GLOBAL PROC BY GETTING THE NAME OF THE ACTIVE SHELF IN HTE MAYA UI
+        // SO THAT IT CAN BE LOADED TO OUT FRLOATING SHELF
+        eval ("shelf_"+$mayaShelf+"()");
+    }
+}
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// Make a nurb Curve from the motion of the selected object
+// -------------------------------------------------------------------------------------------------------------------------------
+
+global proc selectionInverter(int $dir, string $ui[])
+{
+    string $left;string $right;string $suffix;string $name;string $sp, $nameSpace[];
+    string $sel[]=`ls -sl`;
+    string $tF = ` textField -q -tx $ui[0] `, $tT = ` textField -q -tx $ui[1] `;
+    int $addV, $ht = `checkBox -q -v $ui[2]`, $first = ` checkBox -q -v $ui[3] `, $numP = ` intField -q -v $ui[4] `;
+
+    if( $dir == 0)
+    {
+        //$addV=`checkBox -q -v addCB`;
+        $addV=`checkBox -q -v $ui[5]`;
+    }
+    if( $dir == 1 )
+    {
+        //$addV=`checkBox -q -v addSelCB`;
+        $addV=`checkBox -q -v $ui[5]`;
+    }
+
+    if( $addV == 0 && $dir != 5 && $dir != 6 )
+        select -cl;
+
+    for($each in $sel)
+    {
+        // CHECK FOR NAMESPACES
+        tokenize ($each,":",$nameSpace);
+
+        if (size($nameSpace) == 1 )
+            $each = $nameSpace[0];
+        if (size($nameSpace) > 1 )
+            $each = $nameSpace[1];
+
+        if( $first == 1 )
+        {
+            $left = "L*";
+            $right = "R*";
+        }else{
+            $left = "*L*";
+            $right = "*R*";
+        }
+
+        if(`gmatch $each $left`)
+        {
+            if (size($nameSpace) == 1 )
+            {
+                $name=`substitute "L" $each "R"`;
+                if( `objExists $name` )
+                    select -add $name;
+            }else{
+                $name=`substitute "L" $each "R"`;
+                if( `objExists ($nameSpace[0]+":"+$name)` )
+                    select -add ($nameSpace[0]+":"+$name);
+            }
+        }
+        if(`gmatch $each $right`)
+        {
+            if (size($nameSpace) == 1 )
+            {
+                $name=`substitute "R" $each "L"`;
+                if( `objExists $name` )
+                    select -add $name;
+            }else{
+                $name=`substitute "R" $each "L"`;
+                if( `objExists ($nameSpace[0]+":"+$name)` )
+                    select -add ($nameSpace[0]+":"+$name);
+            }
+        }
+    }
+
+    // WHERE WE SWAP THE SELECTION BASED ON THE NAMES ON THE FIELDS
+    if ($dir == 2)
+    {
+        select -cl;
+        for( $eS in $sel )
+        {
+            string $swap = `substitute $tF $eS $tT`;
+            if(`objExists $swap`)
+                select -add $swap;
+        }
+    }
+
+    // WHERE WE FILL THE TEXT FIELD WITH THE SELECTED OBJECTS
+    if( $dir == 3 )
+    {
+        if( $numP != 0)
+        {
+            if ( $ht == 0 )
+                $suffix = ` endString $sel[0] $numP `;
+            if ( $ht == 1 )
+                $suffix = ` startString $sel[0] $numP `;
+            textField -e -tx $suffix $ui[0];
+            select $sel;
+        }else{
+            textField -e -tx $sel[0] $ui[0];
+            select $sel;
+        }
+    }
+
+    if( $dir == 4 )
+    {
+        if( $numP != 0)
+        {
+            if ( $ht == 0 )
+                $suffix = ` endString $sel[0] $numP `;
+            if ( $ht == 1 )
+                $suffix = ` startString $sel[0] $numP `;
+            textField -e -tx $suffix $ui[1];
+            select $sel;
+        }else{
+            textField -e -tx $sel[0] $ui[1];
+            select $sel;
+        }
+    }
+
+    // WHERE WE ADD OR REMOVE VALUE TO THE INT FIELD TO GET THE NUMBER OF LETTERS TO GET IN THE PREFIX OF THE SELECTED OBJECT
+    if ( $dir == 5 )
+        if ( $numP > 0 )
+            intField -e -v ( $numP - 1 ) $ui[4];
+    if ( $dir == 6 )
+        intField -e -v ( $numP + 1 ) $ui[4];
+}
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// Make a bone on every vertex of the mesh selected
+// -------------------------------------------------------------------------------------------------------------------------------
+
+global proc string nameStripper( string $suff , string $name )
+{
+    string $clean = ` substitute $suff $name "" `;
+    return $clean;
+}
+
+global proc string jntNUL(int $dir)
+{
+	string $sel[] = `ls -sl`;
+	string $loc[1],  $pC[1],  $oC[1],  $sC[1],  $parent[1];
+	string $n, $text, $result;
+
+    string $afterSuff[] = {"jnt", "null", "HmNull", "NULL", "JNT", "env", "ENV","FK","ctrl"};
+
+    if( $dir == 0 )
+    {
+        if ( size($sel) != 0 )
+        {
+            for( $eS in $sel )
+            {
+                $parent = `listRelatives -p $eS`;
+                for ($eB in $afterSuff)
+                {
+                    if(`gmatch $eS ("*"+$eB)`)
+                    {
+                        $n = `nameStripper $eB $eS`;
+                        $n = ($n+"Hm_null");
+                    }
+
+                }
+
+                if( `objExists $n` )
+                {
+                    $result = `promptDialog
+                        -title "Rename Object"
+                        -message "Enter Name:"
+                        -tx $n
+                        -button "OK" -button "Cancel"
+                        -defaultButton "OK" -cancelButton "Cancel"
+                        -dismissString "Cancel"`;
+                }
+
+                if ($result == "OK")
+                {
+                    $n = `promptDialog -query -text`;
+                }
+
+                if( !`objExists $n` )
+                {
+                    $loc = `spaceLocator -n $n`;
+                    $pC = `pointConstraint $eS $loc[0]`;
+                    $oC = `orientConstraint $eS $loc[0]`;
+                    $sC = `scaleConstraint $eS $loc[0]`;
+                    delete $pC[0] $oC[0] $sC[0];
+                    parent $eS $loc[0];
+
+                    // FIX POSSIBLE ORIENT JOINT ROTATIONAL VALUES
+                    setAttr ($eS+".jointOrientX") 0;
+                    setAttr ($eS+".jointOrientY") 0;
+                    setAttr ($eS+".jointOrientZ") 0;
+                    setAttr ($eS+".rotateX") 0;
+                    setAttr ($eS+".rotateY") 0;
+                    setAttr ($eS+".rotateZ") 0;
+                    if( size($parent) == 1 )
+                        parent $loc $parent[0];
+
+                    return $loc[0];
+                }else{
+                    warning ("Skipping "+$eS+" since there is already a HmNUL with that name, please rename.\n");
+                    jntNUL 0;
+                }
+            }
+        }
+    }
+}
+
+global proc jntONvtx()
+{
+    string $getSel[] = `ls -sl`;
+    float $vxtPOS[3];
+    string $bone;
+
+    if(size($getSel)!=0)
+    {
+        if(!`gmatch $getSel[0] "*.vtx*"`)
+        {
+            int $getvtX[1] =` polyEvaluate -v $getSel[0]`;
+            for ($i=0 ; $i<$getvtX[0]; $i++)
+            {
+               $bone = `joint`;
+               $vxtPOS = `pointPosition ($getSel[0]+".vtx["+$i+"]")`;
+               move $vxtPOS[0] $vxtPOS[1] $vxtPOS[2] $bone;
+               parent -w;
+            }
+        }else{
+            $getSel = `ls -fl -sl`;
+            for($eachV in $getSel)
+            {
+               $bone = `joint`;
+               $vxtPOS = `pointPosition $eachV`;
+               move $vxtPOS[0] $vxtPOS[1] $vxtPOS[2] $bone;
+               parent -w;
+            }
+        }
+    }else{
+        warning "------->>> please select at least on e object or a vertex on a mesh. <<<-------\n";
+    }
+}
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// STRETCHY IK
+// -------------------------------------------------------------------------------------------------------------------------------
+global proc stretchyStuff(int $mode)
+{
+    string $iks[] = `ls -sl`;
+	string $pC[1], $oC[1], $buffer[], $eJnt[1];
+    string $sLoc[1], $eLoc[1], $sLocS[1], $eLocS[1], $chain[], $ikParent[1], $sJparent[1];
+    string $sJnt, $endEff, $name, $DD, $DDS, $MD, $result, $text;
+    float $sPos[3];float $ePos[3];
+
+    for( $eIK in $iks )
+    {
+        if(`objectType $eIK ` == "ikHandle")
+        {
+            addAttr -k 1 -ln "stretchy" -at double -dv 1 -min 0 -max 1 $eIK;
+            addAttr -k 1 -ln "lenght" -at double -dv 0 $eIK;
+            if( ` ikHandle -q -sol $eIK ` != "ikSplineSolver")
+            {
+                // GET THE START AND JOINT AND END EFFECTOR OR THE CHAIN
+                $sJnt = `ikHandle -q -sj $eIK`;
+                $sJparent = `listRelatives -p $sJnt`;
+                $ikParent = `listRelatives -p $eIK`;
+                $endEff =`ikHandle -q -ee $eIK`;
+                // STRIP POSSIBLE SUFFIXES TO THE JOINTS
+                if(`gmatch $sJnt "*jnt"`)
+                {
+                    $name = `substitute "jnt" $sJnt ""`;
+                }else{
+                    $result = `promptDialog
+                    -title "Stretchy Name"
+                    -message "Enter Name:"
+                    -tx $sJnt
+                    -button "OK" -button "Cancel"
+                    -defaultButton "OK" -cancelButton "Cancel"
+                    -dismissString "Cancel"`;
+
+                    if ($result == "OK")
+                    {
+                        $text = `promptDialog -q -text`;
+                        $name = $text;
+                    }
+                }
+
+                // GET THE END JOINT
+                select -cl;
+                select $endEff;
+                pickWalk -d up;
+                pickWalk -d down;
+                $eJnt = `ls -sl`;
+
+                // FIND CHAIN LENGTH
+                string $j[] = `ls -dag $sJnt`;
+                float $len = 0.0;
+
+                for($eJ in $j)
+                {
+                    if(!`gmatch $eJ "*Shape*"` && `nodeType $eJ` == "joint" && $eJ != $j[0] )
+                    {
+                        $len = $len + `getAttr ($eJ+".tx")`;
+                        //print ("The bone is long: "+(`getAttr ($eJ+".tx")`)+"\n");
+                        $len = ( $len - ( ( $len * 0.1 ) / 100 ) );
+                    }
+                }
+                //print ("The chain is long: "+$len+"\n");
+
+                // GET POSITION IN WORLD SPACE OF THE START AND END JOINT
+                $sPos = `xform -q -ws -t $sJnt`;
+                $ePos = `xform -q -ws -t $eJnt[0]`;
+
+                // CREATE LOCATORS FOR THE DISATNCE UTILITY
+                $sLoc = `spaceLocator -n ($name+"SD")`;
+                $eLoc = `spaceLocator -n ($name+"ED")`;
+                setAttr ($sLoc[0]+"Shape.visibility") 0;
+                setAttr ($eLoc[0]+".localScale") 0.25 0.25 0.25;
+
+                // MOVE THEM TO THE START AND END JOINT RESPECTVILY
+                $pC=`pointConstraint $sJnt $sLoc[0]`;
+                $oC=`orientConstraint $sJnt $sLoc[0]`;
+                delete $pC[0] $oC[0];
+                $pC=`pointConstraint $eJnt $eLoc[0]`;
+                $oC=`orientConstraint $eJnt $eLoc[0]`;
+                delete $pC[0] $oC[0];
+
+                // CREATE LOCATORS FOR THE DISATNCE UTILITY USED FOR THE SCALE OF THE WHOLE RIG
+                $sLocS = `spaceLocator -n ($name+"SDS")`;
+                $eLocS = `spaceLocator -n ($name+"EDS")`;
+                setAttr ($sLocS[0]+"Shape.visibility") 0;
+                setAttr ($eLocS[0]+"Shape.visibility") 0;
+
+                // MOVE THESE TO THE START AND END JOINT RESPECTVILY
+                $pC=`pointConstraint $sJnt $sLocS[0]`;
+                $oC=`orientConstraint $sJnt $sLocS[0]`;
+                delete $pC[0] $oC[0];
+
+                string $tempLoc[1] = `spaceLocator -n "TempAimLocStretch_null"`;
+                $pC=`parentConstraint $sJnt $tempLoc[0]`;delete $pC;
+                string $tempAim[1]=`aimConstraint $eJnt[0] $tempLoc[0]`;delete $tempAim;
+                parent $eLocS[0] $tempLoc[0];
+                setAttr ($eLocS[0]+".t") $len 0 0;
+                setAttr ($eLocS[0]+".r") 0 0 0;
+                parent -w $eLocS[0];
+                delete $tempLoc;
+
+                // CREATE THE DISTANCES UTILITY NODES
+                $DD = `shadingNode -asUtility distanceBetween -n ($name+"DD")`;
+                $DDS = `shadingNode -asUtility distanceBetween -n ($name+"DDS")`;
+
+                // CONNECTED TO THE RESPECTIVE LOCATOR PREVIOUSLY CREATED
+                // CONNECTION FOR THE DISTANCE USED FOR THE STRETCH
+                connectAttr -f ($sLoc[0]+"Shape.worldPosition[0]") ($DD+".point1");
+                connectAttr -f ($eLoc[0]+"Shape.worldPosition[0]") ($DD+".point2");
+
+                //CONNECTION FOR THE DISTANCE THAT WILL TELL US THE WORD SCALE OF THE RIG
+                connectAttr -f ($sLocS[0]+"Shape.worldPosition[0]") ($DDS+".point1");
+                connectAttr -f ($eLocS[0]+"Shape.worldPosition[0]") ($DDS+".point2");
+
+                // CRETAE THE MULTIPLY DIVIDE NODE AND THE CONDITIONAL NODE
+                $MD =`createNode multiplyDivide -n ($name+"MD")`;
+                setAttr ($MD+".operation") 2;
+                $CND = `shadingNode -asUtility condition -n ($name+"CND")`;
+                setAttr ($CND+".operation") 4;
+                $CNDs = `shadingNode -asUtility condition -n ($name+"SwitchCND")`;
+                setAttr ($CNDs+".operation") 1;
+
+                connectAttr -f ($eIK+".stretchy") ($CNDs+".firstTerm");
+                connectAttr -f ($DDS+".distance") ($CND+".firstTerm");
+                connectAttr -f ($DD+".distance") ($CND+".secondTerm");
+
+                group -em -n ($eLocS[0]+"_grp") ;
+                $pC = `parentConstraint $eLocS[0] ($eLocS[0]+"_grp")` ;delete $pC ;
+                parent $eLocS[0] ($eLocS[0]+"_grp") ;
+                connectAttr -f ($eIK+".lenght") ($eLocS[0]+".tx") ;
+
+                // GET AL THE JOINT IN THE CHAIN
+                $chain = `ls -dag $sJnt`;
+
+                // if(`window -exists "mauUtyWin"`)
+                //     if(`window -q -vis "mauUtyWin"`)
+                //         $mode = `checkBox -q -v scaleStretchButt`;
+
+                int $mode = 1;
+                if( $mode == 0)
+                {
+                    // CONNECT IT TO THE DISTANCE NODES CREATED
+                    connectAttr -f ($DDS+".distance") ($CND+".colorIfFalseR");
+                    connectAttr -f ($DDS+".distance") ($CNDs+".colorIfFalseR");
+                    connectAttr -f ($DD+".distance") ($CND+".colorIfTrueR");
+
+                    connectAttr -f ($CND+".outColorR") ($CNDs+".colorIfTrueR");
+                    connectAttr -f ($CNDs+".outColorR") ($MD+".input1X");
+                    connectAttr -f ($DDS+".distance") ($MD+".input2X");
+
+                    // LOOP THROUGH AND CONNECT THEIR SCALEX TO THE MULTIPLY DIVIDE NODE
+                    for($eChain in $chain)
+                    {
+                        if(`objectType $eChain` == "joint")
+                            connectAttr -f ( $MD+".outputX" ) ( $eChain+".scaleX" );
+                    }
+                }else{
+                    // CONNECT IT TO THE DISTANCE NODES CREATED
+                    connectAttr -f ($DD+".distance") ($MD+".input1.input1X");
+                    connectAttr -f ($DDS+".distance") ($MD+".input2.input2X");
+
+                    connectAttr -f ($CND+".outColorR") ($CNDs+".colorIfTrueR");
+
+                    connectAttr -f ($MD+".outputX") ($CND+".colorIfTrueR");
+
+                    // LOOP THROUGH AND CONNECT THEIR SCALEX TO THE MULTIPLY DIVIDE NODE
+                    for($eChain in $chain)
+                    {
+                        if(`objectType $eChain` == "joint" && $eChain != $sJnt)
+                        {
+                            // CRETAE THE MULTI DOUBLE LINEAR NODE AND CONNECT IT
+                            string $MDL =`createNode multDoubleLinear -n ($name+"MDL")`;
+                            setAttr ($MDL+".input1") (`getAttr ($eChain+".tx")`);
+                            connectAttr -f ($CNDs+".outColorR") ($MDL+".input2");
+                            connectAttr -f ( $MDL+".output" ) ( $eChain+".tx" );
+                        }
+                    }
+                }
+
+                // PARENT THE IKHANDLE TO THE LOCATOR THAT IS THE END OF THE DISTANCE NODE FOR THE STRETCH
+                if( size($ikParent) != 0 )
+                    parent $eLoc[0] $ikParent[0];
+
+                if( size($sJparent) != 0 )
+                {
+                    parent ($eLocS[0]+"_grp") $sJparent[0];
+                    parent $sLocS[0] $sJparent[0];
+                    parent $sLoc $sJparent[0];
+                }
+
+                parent $eIK $eLoc[0];
+
+            }else{
+                // THIS IS IN CASE IT"S A SPLINEIK
+                string $shape[1];string $chain[];
+                string $cINFO;string $MD;string $start;
+                float $cLen;
+
+                // LET'S GET THE SPLINE CURVE USED BY THE IK
+                string $conn[] = `listConnections -s 1 -d 0 $eIK `;
+
+                for($eC in $conn )
+                {
+                    $shape = `listRelatives -s $eC`;
+                    if($shape[0] != "")
+                    {
+                        if( ` nodeType $shape[0] ` == "nurbsCurve")
+                        {
+                            // CREATE TEH CURVEINFO NODE TO GET THE LENGTH OF THE SURVE
+                            $cINFO = `createNode curveInfo -n ($eIK+"CINFO")`;
+
+                            // CREATE THE MULTIPLYDIVIDE NODE TO SCALE OF THE JOINTS BASED ON THE LENGTH OF THE CURVE
+                            $MD = `createNode multiplyDivide -n ($eIK+"MD")`;
+
+                            //  MAKE THE CONNECTION FORM THE CURVEINFO NODE AND THE SPLINE IK CURVE
+                            connectAttr -f ($shape[0]+".worldSpace[0]") ($cINFO+".inputCurve");
+                            $cLen = `getAttr ($cINFO+".arcLength")`;
+
+                            // CONNECT THE CURVE INFO NODE TO A MULTIPLY DIVIDE NODE TO CONTROL THE SCALE BASED ON THE DISTANCE
+                            connectAttr -f ($cINFO+".arcLength") ($MD+".input1X");
+
+                            setAttr ($MD+".input2X") $cLen;
+                            setAttr ($MD+".operation") 2;
+
+                            // GET THE START JOINT OF THE CHAIN AND THEN ALL OF THE JOINTS OF THE CHAIN
+                            string $start = `ikHandle -q -sj $eIK `;
+                            select -cl;
+                            select $start;
+                            select -hi;
+                            string $chain[] =`ls -sl`;
+                            select -cl;
+
+                            for($eC in $chain)
+                            {
+                                // CONNECT THE MULTIPLYDIVIDE NODE TO THE SCALE X OF THE JOINTS
+                                if (`nodeType $eC ` != "ikEffector" )
+                                    connectAttr -f ($MD+".outputX") ($eC+".scaleX");
+                            }
+                        }
+                    }
+                }
+            }
+        }else{
+            print ("please make sure you select only ikHandles.\n");
+        }
+    }
+}
+
+global proc makePoleVector(int $value)
+{
+    string $ikHandle[],
+           $poleVectorConstraint[],
+           $aimConstraint[],
+           $startJoint[],
+           $endEffector[],
+           $pv_locator[],
+           $nameIK,
+           $rotateGrp,
+           $orientGrp;
+
+    int $distance;
+    float $ikHandle_translate[],
+          $startJoint_translate[],
+          $origPVx,
+          $origPVy,
+          $origPVz;
+
+	// GET SELECTED IKHANDLE
+	$ikHandle=`ls -sl -type "ikHandle"`;
+
+	// CHECK THE SELECTION
+	if (!`size($ikHandle)`)
+	{
+		error "select an IK-Handle first\n";
+		return;
+	}
+
+	// GET WORLD TRANSLATE OF THE IKHANDLE
+	$ikHandle_translate = `xform -q -ws -t $ikHandle[0]`;
+
+	// get original PoleVector
+	$origPVx = `getAttr ($ikHandle[0]+".poleVectorX")`;
+	$origPVy = `getAttr ($ikHandle[0]+".poleVectorY")`;
+	$origPVz = `getAttr ($ikHandle[0]+".poleVectorZ")`;
+
+	// GET THE START JOINT
+	$startJoint=`listConnections -d off -s on ($ikHandle[0]+".startJoint")`;
+
+	// GET THE END EFFECTOR
+	$endEffector = `listConnections -d off -s on ($ikHandle[0]+".endEffector")`;
+
+	// CREATE THE POLEVECTOR LOCATOR AND GROUPS
+    $nameIK = `substitute "ikHandle" $ikHandle[0] ""`;
+	$pv_locator = `spaceLocator -n ($nameIK+"_upv_null")`;
+	$rotateGrp = `group -n ($nameIK+"_upv_mc_null")`;
+	$orientGrp = `group -n ($nameIK+"_upv_hm_null")`;
+
+	// GET WORLD SPACE TRANSLATION FOR STARTJOINT AND SET ORIENTGRP TO ITS POSITION
+	$startJoint_translate = `xform -q -ws -t $startJoint[0]`;
+	setAttr ($orientGrp+".tx") $startJoint_translate[0];
+	setAttr ($orientGrp+".ty") $startJoint_translate[1];
+	setAttr ($orientGrp+".tz") $startJoint_translate[2];
+
+	// OFFSET THE LOCATOR
+	$distance = `mag <<($ikHandle_translate[0]-$startJoint_translate[0]),($ikHandle_translate[1]-$startJoint_translate[1]),($ikHandle_translate[2]-$startJoint_translate[2])>>`;
+	setAttr ($pv_locator[0]+".tz") ($distance/2);
+
+	// AIM THE ORIENT GROUP TO GET THE ORIENTATION OF THE ROTATE PLANE
+	$aimConstraint = `aimConstraint -aimVector 0 -1 0 -upVector 0 0 1 -worldUpType "vector" -worldUpVector $origPVx $origPVy $origPVz $ikHandle[0] $orientGrp`;
+	delete $aimConstraint ;
+
+	// CONSTRAINT IF WANTED
+	if($value == 1)
+		$poleVectorConstraint = `poleVectorConstraint $pv_locator[0] $ikHandle[0]`;
+}
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// Procedure check the utility nodes in the scene and populate the TSL
+// -------------------------------------------------------------------------------------------------------------------------------
+global proc fillTSL(int $dir, string $utiNodes1TSL, string $nodeNameTX)
+{
+    string $nodeType1[] = `textScrollList -q -si $utiNodes1TSL`;
+
+    // PART TO CREATE THE NODE
+    if($dir==1)
+    {
+        if ($nodeType1[0] != "")
+        {
+            if (`textField -q -tx $nodeNameTX` != "")
+            {
+                createNode $nodeType1[0] -n `textField -q -tx $nodeNameTX`;
+            } else {
+                string $newNode = `createNode $nodeType1[0]`;
+            }
+
+            textField -e -tx "" $nodeNameTX;
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------
+//  PROCEDURE FOR THE PICKER
+//--------------------------------------------------------------------------------------------------------------------------------
+global proc pickerItems(int $dir, string $listAttrTSL)
+{
+    // THIS IS TO ADD A BRAND NEW SETS OF CURVES TO THE TSL
+    if( $dir == 1 )
+    {
+        string $objSel[]=`ls -sl`;
+        textScrollList -e -ra $listAttrTSL;
+        string $shape[1];
+
+        if (size($objSel) == 0)
+            textScrollList -e -ra $listAttrTSL;
+        else{
+            for($each in $objSel)
+            {
+                select -cl;
+                select $each;
+                pickWalk -d down;
+                $shape = `ls -sl`;
+
+                if((`objectType -isType "nurbsCurve" $shape[0] `) == 1)
+                    textScrollList -e -a $each $listAttrTSL;
+                else
+                    warning "Please Select only Nurb Curves !!";
+            }
+        }
+        select -cl;
+    }
+
+    // THIS PART IF FOR CLEARING THE TSL
+    if( $dir == 2 )
+    {
+        string $objSel[]=`ls -sl`;
+
+        if (size($objSel) == 0)
+        {
+            textScrollList -e -ra $listAttrTSL;
+        }else{
+            string $itemsSel[]=`textScrollList -q -si $listAttrTSL`;
+            if(size($itemsSel) == 0)
+                textScrollList -e -ra $listAttrTSL;
+            else{
+                for($eachItem in $itemsSel)
+                    textScrollList -e -ri $eachItem $listAttrTSL;
+            }
+        }
+    }
+
+    // THIS IS TO SELECT THE SELECTED OBJECT IN THE TSL
+    if( $dir == 3 )
+    {
+        select -cl;
+        string $selItems[]=`textScrollList -q -si $listAttrTSL`;
+
+        for ($each in $selItems)
+        {
+            if(`objExists $each`)
+                select -add $each;
+            else
+                warning "The object in not in the scene.\n";
+        }
+    }
+
+    // THIS IS TO ADD A CURVE TO THE ALREADY EXISTING ONE IN THE TSL
+    if( $dir == 4 )
+    {
+        string $addSel[]=`ls -sl`;
+        string $addTSL[]=`textScrollList -q -ai $listAttrTSL`;
+        string $cleanTSL[];
+
+        if(size($addSel)==0)
+            print ("Select something to add !!"+"\n");
+        else{
+
+            for ($eachSel in $addSel)
+                textScrollList -e -a $eachSel $listAttrTSL;
+
+            $addTSL=`textScrollList -q -ai $listAttrTSL`;
+            $cleanTSL = `stringArrayRemoveDuplicates ($addTSL)`;
+            textScrollList -e -ra $listAttrTSL;
+            for ($eachCTSL in $cleanTSL)
+                textScrollList -e -a $eachCTSL $listAttrTSL;
+        }
+    }
+}
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// PROCEDURE FOR ATTRIBUTE TOOLS
+// -------------------------------------------------------------------------------------------------------------------------------
+global proc attrTools(int $dir, string $uiComponent[])
+{
+
+    string $sel[] =`ls -sl`;
+    string $cmdAttr,
+           $aEnum = `textField -q -tx $uiComponent[0]`,
+           $aName = `textField -q -tx $uiComponent[1]`,
+           $eTSL[] =`textScrollList -q -ai $uiComponent[2]`;
+    int $aType01 = `radioButtonGrp -q -sl $uiComponent[3]`,
+        $aType02 = `radioButtonGrp -q -sl $uiComponent[4]`,
+        $key = `checkBox -q -v $uiComponent[5]`,
+        $keyV = `checkBox -q -v $uiComponent[7]`,
+        $keyR = `checkBox -q -v $uiComponent[8]`;
+        $keyMN = `checkBox -q -v $uiComponent[9]`;
+    float $v1 = `floatFieldGrp -q -v1 $uiComponent[6]`,
+          $v2 = `floatFieldGrp -q -v2 $uiComponent[6]`;
+
+    // PART TO ADD THE ATTRIBUTE TO THE SELECTION
+    if($dir == 0)
+    {
+        if(size($sel) != 0 )
+        {
+            for($eS in $sel)
+            {
+                if(size($aName) != 0)
+                {
+                    if(!`attributeExists $aName $eS` && $keyR == 1)
+                    {
+                        if ( $aType01 == 1 ) // FLAT
+                            addAttr -k $key -ln $aName -dt "string" $eS;
+                        if ( $aType01 == 2 ) // BOLEAN
+                            addAttr -k $key -ln $aName -at "bool" $eS;
+                        if ( $aType01 == 3 ) // ENUM
+                        {
+                            // CREATION OF THE STRING TO SEND TO THE ENUM ATTR
+                            for($eT in $eTSL)
+                            {
+                                if(size($cmdAttr) != 0)
+                                    $cmdAttr = ($cmdAttr+":"+$eT);
+                                else
+                                    $cmdAttr = $eT;
+                            }
+
+                            if( size($cmdAttr) != 0 )
+                                addAttr -k $key -ln $aName -at "enum" -en ($cmdAttr+":") $eS;
+                            else
+                                warning "Please make sure there are some values in the field below !";
+                        }
+                        if ( $aType02 == 1 ) // FLOAT
+                        {
+                            if($keyMN == 1)
+                                addAttr -k $key -ln $aName -min $v1 -max $v2 -at double $eS;
+                            else if($keyMN == 0)
+                                addAttr -k $key -ln $aName -at double $eS;
+                        }
+                        if ( $aType02 == 2 ) // VECTOR
+                        {
+                            addAttr -k $key -ln $aName -at "double3" $eS;
+                            addAttr -k $key -ln ($aName+"X") -at double -p $aName $eS;
+                            addAttr -k $key -ln ($aName+"Y") -at double -p $aName $eS;
+                            addAttr -k $key -ln ($aName+"Z") -at double -p $aName $eS;
+                        }
+                        if ( $aType02 == 3 ) // INT
+                        {
+                            if($keyMN == 1)
+                                addAttr -k $key -ln $aName -min $v1 -max $v2 -at "long" $eS;
+                            if($keyMN == 0)
+                                addAttr -k $key -ln $aName -at "long" $eS;
+                        }
+                        if(`checkBox -q -en $uiComponent[7]` == 1)
+                        {
+                            if($keyV == 1)
+                                setAttr -cb 1 ($eS+"."+$aName);
+                            else if($keyV == 0)
+                                setAttr -cb 0 ($eS+"."+$aName);
+                        }
+                    }else{
+                        if($keyR == 0)
+                            if(`attributeExists $aName $eS`)
+                                deleteAttr -at $aName $eS;
+                            else
+                                warning ("Attribute \""+$aName+"\" doesn't exists !");
+                        if($keyR == 1)
+                            warning ("Attribute \""+$aName+"\" already exists change name please !");
+                    }
+                }else{
+                    warning "Please input a name in the attribute field on top !";
+                }
+            }
+        }else{
+            warning "Pleasee select something to add an attribute to.\n";
+        }
+    }
+
+    // STUFF TO POPULATE THE ENUM TSL
+    if($dir == 1 )
+    {
+        textScrollList -e -a $aEnum $uiComponent[2];
+
+        $eTSL =`textScrollList -q -ai $uiComponent[2]`;
+        string $cleanTSL[]=`stringArrayRemoveDuplicates ($eTSL)`;
+        textScrollList -e -ra $uiComponent[2];
+        for($eN in $cleanTSL)
+            textScrollList -e -a $eN $uiComponent[2];
+    }
+}
+
+global proc templetaizer()
+{
+    int $tempValue ;
+    string $tempSel[] = ` ls -sl ` ;
+
+    if(size($tempSel) == 0)
+        $tempSel = ` ls -typ "mesh" ` ;
+    else
+        $tempSel = ` ls -sl ` ;
+
+    for ( $eachTemple in $tempSel )
+    {
+        $tempValue = ` getAttr ($eachTemple + ".template") ` ;
+        if( $tempValue == 1 )
+            setAttr ( $eachTemple + ".template" ) 0 ;
+        else if( $tempValue == 0 )
+            setAttr ( $eachTemple + ".template" ) 1 ;
+    }
+}
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// PROCEDURE TO LOCK AND HIDE ATTR BASED ON PATTERS AND SELECTIONS
+// -------------------------------------------------------------------------------------------------------------------------------
+global proc attrLH(int $lock, int $vis, string $search)
+{
+    int $i,$y,$new;
+    string $x = "";
+    global string $gMainProgressBar;
+
+    if($vis == 0 )
+        $vis = 1;
+    else
+        $vis = 0;
+
+    string $start[] =`ls -sl`;
+    for($eB in $start)
+    {
+        string $hir[] = `ls -dag -ap $eB`;
+
+        float $z = 100.0 / size ($hir);
+        float $constant = 100.0 / size ($hir);
+
+        progressBar -e -bp -ii true -st "Working ..." -max (size($hir)) $gMainProgressBar;
+
+        for($eS in $hir)
+        {
+            if(`gmatch $eS $search` && !`gmatch $eS "*Shape*"`)
+            {
+                if(`progressBar -query -isCancelled $gMainProgressBar`)
+                    break;
+
+                if (`attributeExists "translateX" $eS`)
+                    setAttr -k $vis -l $lock ($eS+".tx");
+                if (`attributeExists "translateY" $eS`)
+                    setAttr -k $vis -l $lock ($eS+".ty");
+                if (`attributeExists "translateZ" $eS`)
+                    setAttr -k $vis -l $lock ($eS+".tz");
+                if (`attributeExists "rotateX" $eS`)
+                    setAttr -k $vis -l $lock ($eS+".rx");
+                if (`attributeExists "rotateY" $eS`)
+                    setAttr -k $vis -l $lock ($eS+".ry");
+                if (`attributeExists "rotateZ" $eS`)
+                    setAttr -k $vis -l $lock ($eS+".rz");
+                if (`attributeExists "scaleX" $eS`)
+                    setAttr -k $vis -l $lock ($eS+".sx");
+                if (`attributeExists "scaleY" $eS`)
+                    setAttr -k $vis -l $lock ($eS+".sy");
+                if (`attributeExists "scaleZ" $eS`)
+                    setAttr -k $vis -l $lock ($eS+".sz");
+                if (`attributeExists "visibility" $eS`)
+                    setAttr -k $vis -l $lock ($eS+".v");
+                /*
+                // THIS PART IS JUST TO PRINT DOTS INCREASING AFTER THE WORKING WORD
+                if($i < 50)
+                {
+                    $x =$x+".";
+                }else{
+                    $x = "";
+                    $i = 0;
+                }
+                print ("Working "+$x+"\n");
+                $i++;*/
+                $new = $i;
+                $i++;
+            }
+            // GET A CLEAN INT VALUE FROM THE PERCENTAGE OF THE OPERATION TO BE PUT IN THE PROGRESS BAR
+            $y = $z;
+            progressBar -e -s 1 -st ("Working ... "+$y+"%  ") $gMainProgressBar;
+            $z = $z +$constant;
+        }
+
+        if(!`progressBar -query -isCancelled $gMainProgressBar`)
+        {
+            if( $lock == 1 && $vis == 1)
+                print ($eB+" and children have been locked and unHidden. ( "+$new+" nodes )\n");
+            if( $lock == 0 && $vis == 1)
+                print ($eB+" and children have been unLocked and unHidden. ( "+$new+" nodes )\n");
+            if( $lock == 1 && $vis == 0)
+                print ($eB+" and children have been locked and Hidden. ( "+$new+" nodes )\n");
+            if( $lock == 0 && $vis == 0)
+                print ($eB+" and children have been unlocked and Hidden. ( "+$new+" nodes )\n");
+        }else{
+            print ("Operation interrupted before being completed. (Only "+$new+" nodes done )\n");
+        }
+        $i = 0;
+        progressBar -e -ep $gMainProgressBar;
+    }
+}
+
+global proc makeJNTcon()
+{
+    string $dub[1], $p[1], $o[1], $rel[1], $c[1],
+	       $j[] =`ls -dag -sl`,
+	       $last[1] =`ls -dag -tail 2 -sl`;
+
+	for($ej in $j)
+	{
+		if($ej != $last[1] && $ej != $last[0])
+		{
+			$dup = `duplicate $last[0]`;
+			$p =` pointConstraint $ej $dup[0]  `;
+			$o =` orientConstraint $ej $dup[0] `;
+			delete $p $o;
+			$rel =`listRelatives -s $dup[0]`;
+			parent -add -s -nc $rel[0] $ej;
+			$c =`listRelatives -s $ej`;
+			rename $c[0] ($ej+"Shape");
+			delete $dup[0];
+		}
+	}
+}

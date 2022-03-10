@@ -1,0 +1,141 @@
+//------------------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------//
+//	SCRIPT:	mgAnimSmooth.mel
+//	VERSION: 0.1
+//	AUTHOR:	Maurizio Giglioli
+//		    maurizio1974@gmail.com
+//	DATE:         30 05 2011
+//
+//
+//	DESCRIPTION:	smooth animation curves with nodes
+//
+//
+//	INSTRUCTIONS:	source the script
+//			        call the procedure mgSmoothAnimUI()
+//
+//  UPDATE:         
+//                 
+//------------------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------//
+
+
+global proc mgSmoothFireMuscleUI()
+{
+    // Measures
+    int $winSide = 180,
+        $uiSide = 5;
+    
+    // UI TO SPECIFY SETTINGS
+    string $win             = `window -t "smoothCurve" -rtf 1 -w $winSide `;
+    string $flBase          =     `formLayout`;
+    string $axesTX          =         `text` ;
+    string $tfObj           =         `textField ($tfObj+"_OBJ")` ;
+    string $objBT           =         `button` ;
+    //string $tfCheck         =         `textField ($tfCheck+"_CHA")` ;
+    //string $objAT           =         `button` ;
+    string $iterTX          =         `text` ;
+    string $iterField       =         `intField` ;
+    string $btgo            =         `button` ;
+    
+    //string $uiComponent[] = { ($tfObj+"\","), ("\""+$tfCheck) };
+    //string $components = stringArrayToString($uiComponent, " ");
+    
+    text -e -l "Smooth Anim Curve " -al "center" $axesTX ;
+    textField -e -tx "object here ..." $tfObj ;
+    button -e -l "<<" -c ("mg_UIinfoSmooth \""+$tfObj+"\"") $objBT; 
+    //textField -e -tx "attribute here ..." $tfCheck ;
+    //button -e -c ("mg_UIinfoSmooth \""+$tfCheck+"\"") -l "<<" $objAT ;
+    text -e -l "Iterations" -al "center" $iterTX ;
+    intField -e -s 1 -min 1 -v 1 -w 20 $iterField ;
+    
+    button -e -l "Smooth" -c ("do_mgSmoothFireMuscle((`intField -q -v \""+$iterField+"\"`), (`textField -q -tx \""+$tfObj+"\"`))") $btgo;
+    
+    formLayout -e 
+    
+        -af $axesTX "left" $uiSide -af $axesTX "top" $uiSide -af $axesTX "right" $uiSide
+        
+        -af $tfObj "left" $uiSide -ac $tfObj "top" $uiSide $axesTX -ap $tfObj "right" 0 80
+        -ac $objBT "left" 0 $tfObj -ac $objBT "top" $uiSide $axesTX -af $objBT "right" $uiSide
+        
+        //-af $tfCheck "left" $uiSide -ac $tfCheck "top" $uiSide $tfObj -ap $tfCheck "right" 0 80
+        //-ac $objAT "left" 0 $tfCheck -ac $objAT "top" $uiSide $objBT -af $objAT "right" $uiSide
+        
+        -af $iterTX "left" $uiSide -ac $iterTX "top" 5 $tfObj -ap $iterTX "right" 0 80
+        -ac $iterField "left" 0 $iterTX -ac $iterField "top" 5 $tfObj -af $iterField "right" $uiSide
+        
+        -af $btgo "left" $uiSide -ac $btgo "top" 10 $iterTX  -af $btgo "right" $uiSide -af $btgo "bottom" $uiSide
+        
+    $flBase ;
+    
+    showWindow $win;
+    
+    window -e -w $winSide -h 140 $win ;
+}
+
+
+global proc mg_UIinfoSmooth(string $ui)
+{
+    global string $gChannelBoxName;
+    
+    string $sel[1] = `ls -sl`;
+    string $channN[1] = `channelBox -q -sma $gChannelBoxName`;
+    if(`gmatch $ui "*_OBJ"`)
+        textField -e -tx $sel[0] $ui;
+    //else if(`gmatch $ui "*_CHA"`)
+        //textField -e -tx $channN[0] $ui;
+}
+
+
+global proc do_mgSmoothFireMuscle(int $iter, string $obj)
+{
+    global string $gChannelBoxName;
+	string $fcf, $fcp, $b[], $b1[], $fut[], $pas[], $conn[], $avg ;
+	      
+    string $attr[] = `channelBox -q -sma $gChannelBoxName`;
+    int $i = 0, $index = 0;
+	
+	if(`objExists $obj`)
+	{
+	    for($a in $attr)
+        {
+            $conn =`listConnections -s 1 -d 0 -type "animCurveTU" -p 1 -c 0 ($obj+"."+$a)`;
+            print $conn;
+            $avg = `createNode plusMinusAverage -n ($a+"_AVG")`;
+            setAttr ($avg+".op")  3 ;
+            if(size($conn) != 0)
+            {
+                    
+                for($i = 0 ; $i<$iter ; $i++)
+                {
+                    $fcf = `createNode frameCache -n ($a+"_future_"+($i+1)+"_FC")`;
+                    connectAttr $conn[0] ($fcf+".stream");
+                    $fcp = `createNode frameCache -n ($a+"_past_"+($i+1)+"_FC")`;
+                    connectAttr $conn[0] ($fcp+".stream");
+                }
+        
+                $fut = `ls -typ "frameCache" ($a+"_future_*_FC") `;
+                $pas = `ls -typ "frameCache" ($a+"_past_*_FC") `;
+                for($f in $fut)
+                {
+                    tokenize($f,"_",$b);
+                    connectAttr -f ($f+".f["+$b[size($b)-2]+"]") ($avg+".input1D["+$index+"]");
+                    $index = $index + 1 ;
+                }
+            
+                for($p in $pas)
+                {
+                    tokenize($p,"_",$b1);
+                    connectAttr -f ($p+".p["+$b[size($b1)-2]+"]") ($avg+".input1D["+$index+"]");
+                    $index = $index + 1 ;
+                }
+                
+                connectAttr -f ($avg+".output1D") ($obj+"."+$a);
+            }else{
+                print ("SKIPPING "+$a+"  !!!!! No animation found on the attribute specified.\n");
+            }
+        }
+    }else{
+        warning "Make sure to specify an object.\n";
+    }
+    print "all Done.\n";
+}

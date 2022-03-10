@@ -1,0 +1,338 @@
+//Place the "geoSpheres.mel" file into the documents/maya/scripts folder.
+//
+//Use the source command "source geoSpheres.mel;" in the command line or make a shelf button to run the script.
+//
+
+if (`window -exists geoSphereWindow`) { deleteUI -window geoSphereWindow; windowPref -remove geoSphereWindow; }
+
+window -title "geoSpheres by JTW" -wh 310 390 geoSphereWindow;
+
+
+//Frame Layout
+//    
+    
+    columnLayout -adjustableColumn 1;
+        frameLayout -label "TriSphere" -collapsable true -cc "resizeWindow()" -borderStyle "etchedIn"; 
+            formLayout triSphereForm; 
+                intSliderGrp -label "Divisions" -minValue 1.0 -maxValue 20.0 -value 1 -field true triSphereSlider;
+                button -label "Create TriSphere" -w 110 -h 22 -command "createTriSphere()" triSphereButton; 
+                floatField -vis on -value 1 -w 80 triSphereRadiusField;
+                text -label "Radius" triSphereRadiusText;
+                text -label " " triSphereTextBlank;
+            setParent ..;
+        setParent ..; 
+
+        frameLayout -label "QuadSphere" -collapsable true -cc "resizeWindow()" -borderStyle "etchedIn"; 
+            formLayout quadSphereForm; 
+                intSliderGrp -label "Divisions" -minValue 1.0 -maxValue 5.0 -value 1 -field true quadSphereSlider;
+                button -label "Create QuadSphere" -w 110 -h 22 -command "createQuadSphere()" quadSphereButton; 
+                floatField -vis on -value 1 -w 80 quadSphereRadiusField;
+                text -label "Radius" quadSphereRadiusText;
+                text -label " " quadSphereTextBlank;
+            setParent ..;
+        setParent ..;
+
+        frameLayout -label "PentaSphere" -collapsable true -cc "resizeWindow()" -borderStyle "etchedIn"; 
+            formLayout pentaSphereForm; 
+                intSliderGrp -label "Divisions" -minValue 1.0 -maxValue 5.0 -value 1 -field true pentaSphereSlider;
+                button -label "Create PentaSphere" -w 110 -h 22 -command "createPentaSphere()" pentaSphereButton; 
+                floatField -vis on -value 1 -w 80 pentaSphereRadiusField;
+                text -label "Radius" pentaSphereRadiusText;
+                text -label " " pentaSphereTextBlank;
+            setParent ..;
+        setParent ..;
+
+        frameLayout -label "HexaSphere" -collapsable true -cc "resizeWindow()" -borderStyle "etchedIn"; 
+            formLayout hexaSphereForm; 
+                intSliderGrp -label "Divisions" -minValue 1.0 -maxValue 10.0 -value 1 -field true hexaSphereSlider;
+                button -label "Create HexaSphere" -w 110 -h 22 -command "createHexaSphere()" hexaSphereButton; 
+                floatField -vis on -value 1 -w 80 hexaSphereRadiusField;
+                text -label "Radius" hexaSphereRadiusText;
+                text -label " " hexaSphereTextBlank;
+            setParent ..;
+        setParent ..;
+     
+        frameLayout -label "HemiSphere" -collapsable true -cc "resizeWindow()" -borderStyle "etchedIn"; 
+            formLayout hemiSphereForm; 
+                intSliderGrp -label "Divisions" -minValue 1.0 -maxValue 20.0 -value 1 -field true hemiSphereSlider;
+                button -label "Create HemiSphere" -w 110 -h 22 -command "createHemiSphere()" hemiSphereButton; 
+                floatField -vis on -value 1 -w 80 hemiSphereRadiusField;
+                text -label "Radius" hemiSphereRadiusText;
+                text -label " " hemiSphereTextBlank;
+            setParent ..;
+        setParent ..;     
+     
+     setParent ..;  
+
+
+showWindow geoSphereWindow;
+
+//Form Layout
+//
+
+formLayout -edit
+    
+        -attachForm triSphereSlider "top" 3
+        -attachForm triSphereSlider "left" -90
+        -attachForm triSphereButton "top" 25
+        -attachForm triSphereButton "left" 165
+        -attachForm triSphereRadiusField "top" 30
+        -attachForm triSphereRadiusField "left" 52
+        -attachForm triSphereRadiusText "top" 33
+        -attachForm triSphereRadiusText "left" 13
+        -attachForm triSphereTextBlank "top" 42
+        -attachForm triSphereTextBlank "left" 30
+triSphereForm;
+
+formLayout -edit
+    
+        -attachForm quadSphereSlider "top" 3
+        -attachForm quadSphereSlider "left" -90
+        -attachForm quadSphereButton "top" 25
+        -attachForm quadSphereButton "left" 165
+        -attachForm quadSphereRadiusField "top" 30
+        -attachForm quadSphereRadiusField "left" 52
+        -attachForm quadSphereRadiusText "top" 33
+        -attachForm quadSphereRadiusText "left" 13
+        -attachForm quadSphereTextBlank "top" 42
+        -attachForm quadSphereTextBlank "left" 30
+quadSphereForm;
+
+formLayout -edit
+    
+        -attachForm pentaSphereSlider "top" 3
+        -attachForm pentaSphereSlider "left" -90
+        -attachForm pentaSphereButton "top" 25
+        -attachForm pentaSphereButton "left" 165
+        -attachForm pentaSphereRadiusField "top" 30
+        -attachForm pentaSphereRadiusField "left" 52
+        -attachForm pentaSphereRadiusText "top" 33
+        -attachForm pentaSphereRadiusText "left" 13
+        -attachForm pentaSphereTextBlank "top" 42
+        -attachForm pentaSphereTextBlank "left" 30
+pentaSphereForm;
+
+formLayout -edit
+    
+        -attachForm hexaSphereSlider "top" 3
+        -attachForm hexaSphereSlider "left" -90
+        -attachForm hexaSphereButton "top" 25
+        -attachForm hexaSphereButton "left" 165
+        -attachForm hexaSphereRadiusField "top" 30
+        -attachForm hexaSphereRadiusField "left" 52
+        -attachForm hexaSphereRadiusText "top" 33
+        -attachForm hexaSphereRadiusText "left" 13
+        -attachForm hexaSphereTextBlank "top" 42
+        -attachForm hexaSphereTextBlank "left" 30
+hexaSphereForm;
+
+formLayout -edit
+    
+        -attachForm hemiSphereSlider "top" 3
+        -attachForm hemiSphereSlider "left" -90
+        -attachForm hemiSphereButton "top" 25
+        -attachForm hemiSphereButton "left" 165
+        -attachForm hemiSphereRadiusField "top" 30
+        -attachForm hemiSphereRadiusField "left" 52
+        -attachForm hemiSphereRadiusText "top" 33
+        -attachForm hemiSphereRadiusText "left" 13
+        -attachForm hemiSphereTextBlank "top" 42
+        -attachForm hemiSphereTextBlank "left" 30
+hemiSphereForm;
+
+global proc resizeWindow()
+{
+    window -e -h 20 -w 20 geoSphereWindow;
+}
+
+
+//TriSphere Procedur
+//
+
+global proc createTriSphere() 
+{
+    int $numberDivisions = `intSliderGrp -q -value triSphereSlider`;
+    float $radiusNumber = `floatField -q -value triSphereRadiusField`;
+
+    polySphere -n polyCircleA -r 1 -sx 200 -sy 200 -ax 0 1 0 -cuv 2 -ch 1;
+    polyPlatonicSolid -n polySolidA -r 1 -l 1.051 -ax 0 1 0 -st 1  -cuv 4 -ch 1;
+    polySmooth  -mth 1 -dv 1 -c 1 -kb 1 -ksb 1 -khe 0 -kt 1 -kmb 1 -suv 1 -peh 0 -sl 1 -dpe $numberDivisions -ps 1 -ro 1.5 -ch 1 polySolidA;
+    select -cl;
+    select -r polyCircleA polySolidA;
+    transferAttributes -transferPositions 1 -transferNormals 0 -transferUVs 0 -transferColors 0 -sampleSpace 1 -sourceUvSpace "map1" -targetUvSpace "map1" -searchMethod 3-flipUVs 0 -colorBorders 1;
+    select -cl;
+    select polyCircleA;
+    delete -all -constructionHistory;
+    doDelete;
+    select -r polySolidA;
+    setAttr "polySolidA.scaleZ" $radiusNumber;
+    setAttr "polySolidA.scaleX" $radiusNumber;
+    setAttr "polySolidA.scaleY" $radiusNumber;
+    rename "polySolidA" "triSphere1";
+    FreezeTransformations;
+}
+
+
+//QuadSphere Procedure
+//
+
+global proc createQuadSphere() 
+{
+    int $numberDivisions = `intSliderGrp -q -value quadSphereSlider`;
+    float $radiusNumber = `floatField -q -value quadSphereRadiusField`;
+   
+if ($numberDivisions > 4) 
+{    
+    polySphere -n polyCircleB -r 1 -sx 200 -sy 200 -ax 0 1 0 -cuv 2 -ch 1;    
+    polyCube -n polyQuadB -w 2.3 -h 2.3 -d 2.3 -sx 1 -sy 1 -sz 1 -ax 0 1 0 -cuv 4 -ch 1; 
+    select -r polyQuadB;
+    polySmooth  -mth 0 -dv $numberDivisions -c 1 -kb 1 -ksb 1 -khe 0 -kt 1 -kmb 1 -suv 1 -peh 0 -sl 1 -dpe 1 -ps 0.1 -ro 1 -ch 1 polyQuadB;
+    select -cl;
+    select -r polyCircleB polyQuadB;
+    transferAttributes -transferPositions 1 -transferNormals 0 -transferUVs 0 -transferColors 0 -sampleSpace 1 -sourceUvSpace "map1" -targetUvSpace "map1" -searchMethod 3-flipUVs 0 -colorBorders 1;
+    select -cl;
+    select -r polyCircleB;
+    delete -all -constructionHistory;
+    doDelete;
+    select -r polyQuadB;
+    polySmooth  -mth 0 -dv 1 -c 1 -kb 1 -ksb 1 -khe 0 -kt 1 -kmb 1 -suv 1 -peh 0 -sl 1 -dpe 1 -ps 0.1 -ro 1 -ch 1 polyQuadB;
+    select -cl;
+    select -r polyQuadB;
+    delete -all -constructionHistory;    
+    setAttr "polyQuadB.scaleZ" $radiusNumber;
+    setAttr "polyQuadB.scaleX" $radiusNumber;
+    setAttr "polyQuadB.scaleY" $radiusNumber;
+    rename "polyQuadB" "quadSphere1";
+    FreezeTransformations;
+}
+    
+else 
+{    
+    polySphere -n polyCircleB -r 1 -sx 200 -sy 200 -ax 0 1 0 -cuv 2 -ch 1;    
+    polyCube -n polyQuadB -w 2.3 -h 2.3 -d 2.3 -sx 1 -sy 1 -sz 1 -ax 0 1 0 -cuv 4 -ch 1; 
+    select -r polyQuadB;
+    polySmooth  -mth 0 -dv $numberDivisions -c 1 -kb 1 -ksb 1 -khe 0 -kt 1 -kmb 1 -suv 1 -peh 0 -sl 1 -dpe 1 -ps 0.1 -ro 1 -ch 1 polyQuadB;
+    select -cl;
+    select -r polyCircleB polyQuadB;
+    transferAttributes -transferPositions 1 -transferNormals 0 -transferUVs 0 -transferColors 0 -sampleSpace 1 -sourceUvSpace "map1" -targetUvSpace "map1" -searchMethod 3-flipUVs 0 -colorBorders 1;
+    select -cl;
+    select -r polyCircleB;
+    delete -all -constructionHistory;
+    doDelete;
+    select -r polyQuadB;
+    setAttr "polyQuadB.scaleZ" $radiusNumber;
+    setAttr "polyQuadB.scaleX" $radiusNumber;
+    setAttr "polyQuadB.scaleY" $radiusNumber;
+    rename "polyQuadB" "quadSphere1";
+    FreezeTransformations;
+}
+}
+
+//PentaSphere Procedure
+//
+
+global proc createPentaSphere() 
+{
+    int $numberDivisions = `intSliderGrp -q -value pentaSphereSlider`;
+    float $radiusNumber = `floatField -q -value pentaSphereRadiusField`;
+ 
+if ($numberDivisions > 4)
+{    
+    polySphere -n polySphereC -r 1 -sx 200 -sy 200 -ax 0 1 0 -cuv 2 -ch 1;
+    polyPlatonicSolid -n polySolidC -r 1.3 -l 1.0515 -ax 0 1 0 -st 1  -cuv 4 -ch 1;
+    polySmooth  -mth 0 -dv $numberDivisions -c 1 -kb 1 -ksb 1 -khe 0 -kt 1 -kmb 1 -suv 1 -peh 0 -sl 1 -dpe 1 -ps 1 -ro 1.5 -ch 1 polySolidC;
+    select -cl;
+    select -r polySphereC polySolidC;
+    transferAttributes -transferPositions 1 -transferNormals 0 -transferUVs 0 -transferColors 0 -sampleSpace 1 -sourceUvSpace "map1" -targetUvSpace "map1" -searchMethod 3-flipUVs 0 -colorBorders 1;
+    select -cl;
+    select polySphereC;
+    delete -all -constructionHistory;
+    doDelete;
+    select -r polySolidC;
+    polySmooth  -mth 0 -dv 1 -c 1 -kb 1 -ksb 1 -khe 0 -kt 1 -kmb 1 -suv 1 -peh 0 -sl 1 -dpe 1 -ps 0.1 -ro 1 -ch 1 polySolidC;
+    select -cl;
+    select polySolidC;    
+    delete -all -constructionHistory;
+    setAttr "polySolidC.scaleZ" $radiusNumber;
+    setAttr "polySolidC.scaleX" $radiusNumber;
+    setAttr "polySolidC.scaleY" $radiusNumber;
+    rename "polySolidC" "pentaSphere1";
+    FreezeTransformations;
+}
+
+else
+{
+    polySphere -n polySphereC -r 1 -sx 200 -sy 200 -ax 0 1 0 -cuv 2 -ch 1;
+    polyPlatonicSolid -n polySolidC -r 1.3 -l 1.0515 -ax 0 1 0 -st 1  -cuv 4 -ch 1;
+    polySmooth  -mth 0 -dv $numberDivisions -c 1 -kb 1 -ksb 1 -khe 0 -kt 1 -kmb 1 -suv 1 -peh 0 -sl 1 -dpe 1 -ps 1 -ro 1.5 -ch 1 polySolidC;
+    select -cl;
+    select -r polySphereC polySolidC;
+    transferAttributes -transferPositions 1 -transferNormals 0 -transferUVs 0 -transferColors 0 -sampleSpace 1 -sourceUvSpace "map1" -targetUvSpace "map1" -searchMethod 3-flipUVs 0 -colorBorders 1;
+    select -cl;
+    select polySphereC;
+    delete -all -constructionHistory;
+    doDelete;
+    select -r polySolidC;
+    setAttr "polySolidC.scaleZ" $radiusNumber;
+    setAttr "polySolidC.scaleX" $radiusNumber;
+    setAttr "polySolidC.scaleY" $radiusNumber;
+    rename "polySolidC" "pentaSphere1";
+    FreezeTransformations;
+}
+}
+
+//HexaSphere Procedure
+//
+
+global proc createHexaSphere() 
+{
+    int $numberDivisions = `intSliderGrp -q -value hexaSphereSlider`;
+    float $radiusNumber = `floatField -q -value hexaSphereRadiusField`;
+
+	 polySphere -n polySphereD -r 1 -sx 200 -sy 200 -ax 0 1 0 -cuv 2 -ch 1;
+    polyPlatonicSolid -n polySolidD -r 1.1 -l 1.0515 -ax 0 1 0 -st 1  -cuv 4 -ch 1;
+    polySmooth  -mth 1 -dv 1 -c 1 -kb 1 -ksb 1 -khe 0 -kt 1 -kmb 1 -suv 1 -peh 0 -sl 1 -dpe ($numberDivisions - 1) -ps 1 -ro 1.5 -ch 1 polySolidD;
+    polySmooth  -mth 0 -dv 1 -c 1 -kb 1 -ksb 1 -khe 0 -kt 1 -kmb 1 -suv 1 -peh 0 -sl 1 -dpe 1 -ps 1 -ro 1.5 -ch 1 polySolidD;
+    select -cl;
+    select -r polySphereD polySolidD;
+    transferAttributes -transferPositions 1 -transferNormals 0 -transferUVs 0 -transferColors 0 -sampleSpace 1 -sourceUvSpace "map1" -targetUvSpace "map1" -searchMethod 3-flipUVs 0 -colorBorders 1;
+    select -cl;
+    select polySphereD;
+    delete -all -constructionHistory;
+    doDelete;
+    select -r polySolidD;
+    setAttr "polySolidD.scaleZ" $radiusNumber;
+    setAttr "polySolidD.scaleX" $radiusNumber;
+    setAttr "polySolidD.scaleY" $radiusNumber;
+    rename "polySolidD" "hexaSphere1";
+    FreezeTransformations;
+}
+
+//HemiSphere Procedure
+//
+
+global proc createHemiSphere() 
+{
+    int $numberDivisions = `intSliderGrp -q -value hemiSphereSlider`;
+    float $radiusNumber = `floatField -q -value hemiSphereRadiusField`;
+
+	polySphere -n polySphereE -r 1 -sx 200 -sy 200 -ax 0 1 0 -cuv 2 -ch 1;
+    polyPlatonicSolid -n polySolidE -r 1.1 -l 1.0515 -ax 0 1 0 -st 2  -cuv 4 -ch 1;
+    polySmooth  -mth 1 -dv 1 -c 1 -kb 1 -ksb 1 -khe 0 -kt 1 -kmb 1 -suv 1 -peh 0 -sl 1 -dpe ($numberDivisions - 1) -ps 1 -ro 1.5 -ch 1 polySolidE;
+    select -cl;
+    select -r polySphereE polySolidE;
+    transferAttributes -transferPositions 1 -transferNormals 0 -transferUVs 0 -transferColors 0 -sampleSpace 1 -sourceUvSpace "map1" -targetUvSpace "map1" -searchMethod 3-flipUVs 0 -colorBorders 1;
+    select -cl;
+    select polySphereE;
+    delete -all -constructionHistory;
+    doDelete;
+    select -r polySolidE;
+    setAttr "polySolidE.scaleZ" $radiusNumber;
+    setAttr "polySolidE.scaleX" $radiusNumber;
+    setAttr "polySolidE.scaleY" $radiusNumber;
+    rename "polySolidE" "HemiSphere1";
+    FreezeTransformations;
+}
+
+//The End
+//

@@ -1,0 +1,918 @@
+
+
+// THE RIG TAB
+
+global proc string flipperRigTabUI(int $lato, string $win, string $presets[], string $currentPanel, string $panelType)
+{
+    string $winTR = `python("'"+$win+"'.split('|')[-1]")`;
+    string $mauUtyFLrig    =    `formLayout -p $winTR`;
+    // COMMON BUTTON
+    string $aniMSetBttn    =        `button` ;
+    string $polyMSetBttn   =        `button` ;
+    string $surfMSetBttn   =        `button` ;
+    string $dynMSetBttn    =        `button` ;
+    string $renMSetBttn    =        `button` ;
+    string $nCMSetBttn     =        `button` ;
+    string $utyNodesFR     =        `frameLayout`;
+    string $utyNodesFL     =            `formLayout`;
+    string $utyPL          =                `formLayout`;
+    string $utyCreateFL    =                    `frameLayout`;
+    string $utyCreateFL2    =                        `formLayout`;
+    string $utiNodes1TSL   =                            `textScrollList`;
+                                                        setParent..;
+                                                    setParent..;
+                                                 setParent..;
+    string $nodeNameTX     =                    `textField`;
+    string $buttonUty      =                    `button`;
+    string $buttonConn     =                    `button`;
+    string $buttonLockN    =                    `button`;
+    string $buttonUnLockN  =                    `button`;
+    string $buttonCleanUNK  =                    `button`;
+                                                setParent..;
+                                            setParent..;
+    string $sepa00         =            `separator`;
+    string $sepa02         =            `separator`;
+    string $matchFL        =            `frameLayout`;
+    string $matchRCL       =                `formLayout`;
+    string $INcheckBttn    =                    `checkBox`;
+    string $parentCB       =                    `checkBox`;
+    string $multyCB        =                    `checkBox`;
+    string $MCradioGrp     =                    `radioButtonGrp -m 0 -nrb 2 -l "" -la2 "Match" "Copy"-cl2 "left" "left"-sl 1 -ad3 3 -cw3 1 55 45`;
+    string $buttonTR       =                    `button`;
+    string $trsXcheckbox   =                    `checkBox`;
+    string $trsYcheckbox   =                    `checkBox`;
+    string $trsZcheckbox   =                    `checkBox`;
+    string $buttonRO       =                    `button`;
+    string $rotXcheckbox   =                    `checkBox`;
+    string $rotYcheckbox   =                    `checkBox`;
+    string $rotZcheckbox   =                    `checkBox`;
+    string $buttonSO       =                    `button`;
+    string $scaXcheckbox   =                    `checkBox`;
+    string $scaYcheckbox   =                    `checkBox`;
+    string $scaZcheckbox   =                    `checkBox`;
+    string $buttonTRO      =                    `button`;
+    string $buttonCENT     =                    `button`;
+    string $sepaRot        =                    `separator`;
+    string $RTradioGrp     =                    `radioButtonGrp -nrb 2 -l "" -la2 "Local" "World"-cl3 "center" "left" "left"-sl 1 -ad4 3 -cw3 5 55 60`;
+    string $turnXcheckbox  =                    `checkBox`;
+    string $turnYcheckbox  =                    `checkBox`;
+    string $turnZcheckbox  =                    `checkBox`;
+    string $angleTX        =                    `text`;
+    string $discreteFF     =                    `floatField`;
+    string $buttonAROT     =                    `button`;
+    string $buttonBROT     =                    `button`;
+    string $sepaAni        =                    `separator`;
+    string $offSetCB       =                    `checkBox`;
+    string $offSetFF       =                    `floatField`;
+    string $WLradioGrp     =                    `radioButtonGrp -nrb 2 -l "" -la2 "Local" "World"-cl3 "center" "left" "left"-sl 1 -ad4 3 -cw3 5 55 60`;
+    string $SiNcheckbox    =                    `checkBox`;
+    string $selSW          =                    `button`;
+    string $selRW          =                    `button`;
+    string $buttonANI      =                    `button`;
+                                                setParent..;
+                                            setParent..;
+    string $flipFL         =            `frameLayout`;
+    string $flipFR         =                `formLayout`;
+    string $XYZradioGrp    =                    `radioButtonGrp -nrb 3 -l "" -la3 "X" "Y" "Z"-cl4 "center" "left" "left" "left" -sl 1 -ad4 4 -cw4 45 45 45 45 `;
+    string $typeButt       =                    `checkBoxGrp -cl2 "left" "left" -cw 1 45 -en 0 -l "Copy"`;
+    string $locButt        =                    `checkBoxGrp -cl2 "left" "left" -cw 1 55 -v1 0 -l "Locator" -en 1 `;
+    string $XYZcheckGrp    =                    `checkBoxGrp -l "Axis" -ncb 2 -la2 "Translate" "Rotate" -cw3 10 120 120 -cl3 "left" "left" "left"`;
+    string $flipButt       =                    `button`;
+                                                setParent..;
+                                            setParent..;
+    string $attrFL         =            `frameLayout`;
+    string $attrFR         =                `formLayout`;
+    string $selSAA         =                    `button`;
+    string $selRAA         =                    `button`;
+    string $attrCFL        =                    `frameLayout`;
+    string $attrCFR        =                        `formLayout`;
+    string $attrTF         =                            `textField`;
+    string $attrRBG1       =                            `radioButtonGrp -nrb 3 -ad4 4 -sl 1 -cw4 45 60 60 60 -cl4 "left" "left" "left" "left" -l "Data" -la3 "String" "Bolean" "Enum"`;
+    string $attrRBG2       =                            `radioButtonGrp -nrb 3 -scl $attrRBG1 -ad4 4 -cw4 45 60 60 60 -cl4 "left" "left" "left" "left"-l "Type" -la3 "Float" "Vector" "Int"`;
+    string $enumTF         =                            `textScrollList`;
+    string $attrTFG        =                            `textField`;
+    string $attrFFCB       =                            `checkBox`;
+    string $attrFFG        =                            `floatFieldGrp -cw3 40 50 50 -cl3 "left" "left" "left" -adj 1 -nf 2 -l "Min/Max : " -en 0 -v1 0 -v2 0`;
+    string $attrCB         =                            `checkBox`;
+    string $attrVCB        =                            `checkBox`;
+    string $attrRCB        =                            `checkBox`;
+    string $attrButt       =                            `button`;
+                                                        setParent..;
+                                                    setParent..;
+    string $attrLFL        =                    `frameLayout`;
+    string $attrLFR        =                        `formLayout`;
+    string $attrTraCB      =                            `checkBoxGrp -ct4 "left" "left" "left" "left" -cw4 80 40 40 40 -v1 1 -v2 1 -v3 1 -ncb 3 -l "Translation" -la3 "X" "Y" "Z"`;
+    string $attrRotCB      =                            `checkBoxGrp -ct4 "left" "left" "left" "left" -cw4 80 40 40 40 -v1 1 -v2 1 -v3 1 -ncb 3 -l "Rotation" -la3 "X" "Y" "Z"`;
+    string $attrScaCB      =                            `checkBoxGrp -ct4 "left" "left" "left" "left" -cw4 80 40 40 40 -v1 1 -v2 1 -v3 1 -ncb 3 -l "Scale" -la3 "X" "Y" "Z"`;
+    string $attrVisCB      =                            `checkBoxGrp -ct2 "left" "left" -cw2 80 40 -ncb 1 -l "Visibility" -l1 "Vis"`;
+    string $attrBTTm       =                            `button`;
+    string $sepaLock01     =                            `separator`;
+    string $lockAttrCB     =                            `checkBox`;
+    string $hideAttrCB     =                            `checkBox`;
+    string $lockBTTm       =                            `button`;
+    string $unlocBTTm      =                            `button`;
+                                                        setParent..;
+                                                    setParent..;
+                                                setParent..;
+                                            setParent..;
+    string $jntFR          =            `frameLayout`;
+    string $jntFL          =                `formLayout`;
+    string $jntButt        =                    `button`;
+    string $hmBttn         =                    `button`;
+    string $checkPoleButt  =                    `checkBox`;
+    string $poleButt       =                    `button`;
+    string $stretchButt    =                    `button`;
+    string $scaleStrButt   =                    `checkBox`;
+    string $sepa01JNT      =                    `separator`;
+    string $jntOB          =                    `optionMenu`;
+    string $jntMI1         =                        `menuItem`;
+    string $jntMI2         =                        `menuItem`;
+    string $jntRBG01       =                    `radioButtonGrp -nrb 3 -ad4 4 -sl 1-cw4 45 45 45 45-cl4 "left" "left" "left" "left"-l "Orient" -la3 "XYZ" "YZX" "ZXY"`;
+    string $jntRBG02       =                    `radioButtonGrp -nrb 4 -scl $jntRBG01 -ad4 5 -cw5 1 45 45 45 45 -cl5 "left" "left" "left" "left" "left" -l "" -la4 "ZYX" "YXZ" "XZY" "None"`;
+    string $jntOB2         =                    `optionMenu`;
+    string $jntMI3         =                        `menuItem`;
+    string $jntMI4         =                        `menuItem`;
+    string $jntMI5         =                        `menuItem`;
+    string $jntMI6         =                        `menuItem`;
+    string $jntMI7         =                        `menuItem`;
+    string $jntMI8         =                        `menuItem`;
+    string $jntMI9         =                        `menuItem`;
+    string $oriChildCB     =                    `checkBox`;
+    string $oriScaleCB     =                    `checkBox`;
+    string $sepa02JNT      =                    `separator`;
+    string $fieldButt      =                    `button`;
+    string $jntTF          =                    `textField`;
+    string $oriButt        =                    `button`;
+                                                 setParent..;
+                                             setParent..;
+    string $seleFR         =            `frameLayout`;
+    string $seleFL         =                `formLayout`;
+    string $selInvB        =                    `button`;
+    string $addSelCB       =                    `checkBox`;
+    string $numL           =                    `button`;
+    string $numR           =                    `button`;
+    string $numIntF        =                    `intField`;
+    string $headTailCB     =                    `checkBox`;
+    string $invertCB       =                    `checkBox`;
+    string $firstSelCB     =                    `checkBox`;
+    string $selGfrom       =                    `button`;
+    string $txFrom         =                    `textField`;
+    string $mi5            =                        `popupMenu`;
+    string $selGto         =                    `button`;
+    string $txTo           =                    `textField`;
+    string $mi6            =                        `popupMenu`;
+    string $selSwap        =                    `button`;
+    string $selSS          =                    `button`;
+    string $selRS          =                    `button`;
+                                                 setParent..;
+                                             setParent..;
+                                        setParent..;
+                                    setParent..;
+
+
+    //----------------------------------------------------------------------------------------------------------------------------
+    // RIG TAB SET UP
+    //----------------------------------------------------------------------------------------------------------------------------
+    frameLayout -e -cll true -cl 1
+                -l "Create Utility Nodes"
+                $utyNodesFR;
+        formLayout -e $utyNodesFL;
+            button -e -l "anim"       -c ( "workingMode animationMenuSet") $aniMSetBttn;
+            button -e -l "poly"       -c ( "workingMode polygonsMenuSet") $polyMSetBttn;
+            button -e -l "surf"       -c ( "workingMode surfacesMenuSet") $surfMSetBttn;
+            button -e -l "dyn"        -c ( "workingMode dynamicsMenuSet") $dynMSetBttn;
+            button -e -l "render"     -c ( "workingMode renderingMenuSet") $renMSetBttn;
+            button -e -l "nDyn"       -c ( "workingMode nDynamicsMenuSet") $nCMSetBttn;
+            formLayout -e $utyPL;
+                frameLayout -e -cll true -l "Create" -cl 1 $utyCreateFL;
+                    formLayout -e -p $utyCreateFL  $utyCreateFL2;
+                        textScrollList -e -nr 6 -h 300 -p $utyCreateFL2
+                                       -a "multiplyDivide" -a "reverse" -a "plusMinusAverage" -a "nearestPointOnMesh"
+                                       -a "closestPointOnMesh" -a "closestPointOnSurface" -a "curveInfo"
+                                       -a "vectorProduct" -a "samplerInfo" -a "condition" -a "distanceBetween"
+                                       -a "setRange" -a "clamp" -a "blendColors" -a "arrayMapper" -a "ramp"
+                                       -a "singleShadingSwitch" -a "doubleShadingSwitch"
+                                       -a "tripleShadingSwitch" -a "quadShadingSwitch"
+                                       -ams 0
+                                       $utiNodes1TSL;
+                    formLayout -e
+                        -af $utiNodes1TSL "top" 0
+                        -af $utiNodes1TSL "left" 0
+                        -af $utiNodes1TSL "right" 0
+                        -af $utiNodes1TSL "bottom" 0
+
+                    $utyCreateFL2;
+            formLayout -e
+
+                -af $utyCreateFL "top" 5
+                -af $utyCreateFL "left" 5
+                -af $utyCreateFL "right" 5
+                -af $utyCreateFL "bottom" 5//
+
+            $utyPL ;
+
+        textField -e $nodeNameTX;
+        button -e -l "Create Node" -c ("fillTSL( 1, \""+$utiNodes1TSL+"\", \""+$nodeNameTX+"\" )") $buttonUty;
+        button -e -l "Connection Editor" -c ("fillTSL( 4, \""+$utiNodes1TSL+"\", \""+$nodeNameTX+"\" )") $buttonConn;
+
+        string $cleanN = "python(\"for s in cmds.ls('*'):\n    if cmds.nodeType(s) == 'unknown':\n        print s\n        cmds.lockNode(s, l=False)\n        cmds.delete(s)\")";
+        button -e -l "LockNode" -c "lockNode -l 1" $buttonLockN;
+        button -e -l "unLockNode" -c "lockNode -l 0" $buttonUnLockN;
+        button -e -l "Clean Unknown Nodes" -c $cleanN $buttonCleanUNK;
+
+        formLayout -e
+
+            -af $utyPL "top" 5
+            -af $utyPL "left" 5
+            -af $utyPL "right" 5
+            -ac $utyPL "bottom" 5 $nodeNameTX
+
+            -af $nodeNameTX "left" 5
+            -af $nodeNameTX "right" 5
+            -ac $nodeNameTX "bottom" 5 $buttonUty
+
+            -af $buttonUty "left" 5
+            -af $buttonUty "right" 5
+            -ac $buttonUty "bottom" 0 $buttonConn
+
+            -af $buttonConn "left" 5
+            -af $buttonConn "right" 5
+            -ac $buttonConn "bottom" 0 $buttonLockN
+
+            -af $buttonLockN "left" 5
+            -ap $buttonLockN "right" 0 50
+            -ac $buttonLockN "bottom" 0 $buttonCleanUNK
+
+            -ac $buttonUnLockN "left" 0 $buttonLockN
+            -af $buttonUnLockN "right" 5
+            -ac $buttonUnLockN "bottom" 0 $buttonCleanUNK
+
+            -af $buttonCleanUNK "left" 5
+            -af $buttonCleanUNK "right" 5
+            -af $buttonCleanUNK "bottom" 0
+
+        $utyNodesFL;
+
+    string $cmda = ("python(\"transformTools.middleLoc()\")");
+    string $uiComponent1[] = { (uiHelper($MCradioGrp)+"\","), ("\""+uiHelper($WLradioGrp)+"\","), ("\""+uiHelper($INcheckBttn)+"\","), ("\""+uiHelper($parentCB)+"\","), ("\""+uiHelper($discreteFF)+"\","),("\""+uiHelper($trsXcheckbox)+"\","), ("\""+uiHelper($trsYcheckbox)+"\","), ("\""+uiHelper($trsZcheckbox)+"\","),
+                              ("\""+uiHelper($rotXcheckbox)+"\","), ("\""+uiHelper($rotYcheckbox)+"\","), ("\""+uiHelper($rotZcheckbox)+"\","), ("\""+uiHelper($scaXcheckbox)+"\","), ("\""+uiHelper($scaYcheckbox)+"\","), ("\""+uiHelper($scaZcheckbox)+"\","),("\""+uiHelper($turnXcheckbox)+"\","),
+                              ("\""+uiHelper($turnYcheckbox)+"\","), ("\""+uiHelper($turnZcheckbox)+"\","), ("\""+uiHelper($RTradioGrp)) };
+    string $components1 = stringArrayToString($uiComponent1, " ");
+
+    frameLayout -e -cll true -cl 1 -l "Match it and copy" $matchFL;
+        formLayout -e $matchRCL;
+            checkBox -e -l "Maya Like"
+                     -ofc ("checkBox -e -l \"Maya Like\" \""+$INcheckBttn+"\"")
+                     -onc ("checkBox -e -l \"Maya Inv\" \""+$INcheckBttn+"\"")
+                     $INcheckBttn;
+
+            checkBox -e -l "Has Child" -onc ("checkBox -e -l \"No Child\" \""+$parentCB+"\"") -ofc ("checkBox -e -l \"Has Child\" \""+$parentCB+"\"") -v 0 $parentCB;
+            checkBox -e -l "Single"
+                     -onc ("checkBox -e -l \"Multy\" \""+$multyCB+"\";"+
+                          "checkBox -e -en 0 \""+$parentCB+"\";checkBox -e -en 0 \""+$INcheckBttn+"\";"+
+                          "checkBox -e -en 0 \""+$trsXcheckbox+"\";checkBox -e -en 0 \""+$trsYcheckbox+"\";checkBox -e -en 0 \""+$trsZcheckbox+"\";"+
+                          "button -e -en 0 \""+$buttonTR+"\";button -e -en 0 \""+$buttonRO+"\";button -e -en 0 \""+$buttonSO+"\";"+
+                          "checkBox -e -en 0 \""+$rotXcheckbox+"\";checkBox -e -en 0 \""+$rotYcheckbox+"\";checkBox -e -en 0 \""+$rotZcheckbox+"\";"+
+                          "checkBox -e -en 0 \""+$scaXcheckbox+"\";checkBox -e -en 0 \""+$scaYcheckbox+"\";checkBox -e -en 0 \""+$scaZcheckbox+"\";"+
+                          "button -e -en 0 \""+$buttonTRO+"\";button -e -l \"Average Transforms\" \""+$buttonCENT+"\";"+
+                          "button -e -c "+$cmda+" \""+$buttonCENT+"\";")
+                     -ofc ("checkBox -e -l \"Single\" \""+$multyCB+"\";"+
+                          "checkBox -e -en 1 \""+$parentCB+"\";checkBox -e -en 1 \""+$INcheckBttn+"\";"+
+                          "checkBox -e -en 1 \""+$trsXcheckbox+"\";checkBox -e -en 1 \""+$trsYcheckbox+"\";checkBox -e -en 1 \""+$trsZcheckbox+"\";"+
+                          "button -e -en 1 \""+$buttonTR+"\";button -e -en 1 \""+$buttonRO+"\";button -e -en 1 \""+$buttonSO+"\";"+
+                          "checkBox -e -en 1 \""+$rotXcheckbox+"\";checkBox -e -en 1 \""+$rotYcheckbox+"\";checkBox -e -en 1 \""+$rotZcheckbox+"\";"+
+                          "checkBox -e -en 1 \""+$scaXcheckbox+"\";checkBox -e -en 1 \""+$scaYcheckbox+"\";checkBox -e -en 1 \""+$scaZcheckbox+"\";"+
+                          "button -e -en 1 \""+$buttonTRO+"\";button -e -l \"Centroid\" \""+$buttonCENT+"\";"+
+                          "button -e -c \"do_centroidMau\" \""+$buttonCENT+"\";")
+                     -v 0 $multyCB;
+            radioButtonGrp -e $MCradioGrp;
+
+            button -e -l "Translate" -c ("matcher (1,{\""+$components1+"\"})") $buttonTR;
+
+            checkBox -e -l "X" -v 1 $trsXcheckbox;
+            checkBox -e -l "Y" -v 1 $trsYcheckbox;
+            checkBox -e -l "Z" -v 1 $trsZcheckbox;
+            button -e -l "Rotate" -c ("matcher (2,{\""+$components1+"\"})") $buttonRO;
+
+            checkBox -e -l "X" -v 1 $rotXcheckbox;
+            checkBox -e -l "Y" -v 1 $rotYcheckbox;
+            checkBox -e -l "Z" -v 1 $rotZcheckbox;
+            button -e -l "Scale" -c ("matcher (3,{\""+$components1+"\"})") $buttonSO;
+
+            checkBox -e -l "X" -v 1 $scaXcheckbox;
+            checkBox -e -l "Y" -v 1 $scaYcheckbox;
+            checkBox -e -l "Z" -v 1 $scaZcheckbox;
+            button -e -l "All" -c ("matcher (1,{\""+$components1+"\"});\"matcher (2,{\""+$components1+"\"});\"matcher (3,{\""+$components1+"\"});") $buttonTRO;
+            button -e -l "Centroid" -c "do_centroidMau" $buttonCENT;
+            separator -e -st "double" $sepaRot;
+            radioButtonGrp -e $RTradioGrp;
+
+            checkBox -e -l "X" -v 0 $turnXcheckbox;
+            checkBox -e -l "Y" -v 1 $turnYcheckbox;
+            checkBox -e -l "Z" -v 0 $turnZcheckbox;
+            text -e -l "Angle" $angleTX;
+            floatField -e -v 90 -pre 1 $discreteFF;
+            button -e -l "<---- " -c ("matcher (4, {\""+$components1+"\"})") $buttonAROT;
+            button -e -l " ---->" -c ("matcher (5, {\""+$components1+"\"})") $buttonBROT;
+            separator -e -st "double" $sepaAni;
+            checkBox -e -l "offSet" -v 0 -onc ("floatField -e -en 1 \""+$offSetFF+"\"") -ofc ("floatField -e -en 0 \""+$offSetFF+"\"") $offSetCB;
+            floatField -e -en 0 $offSetFF;
+            radioButtonGrp -e $WLradioGrp;
+            checkBox -e -l "Simply" -en 0 -v 0 $SiNcheckbox;
+            button -e -l "Store WINFO" -c writeWP $selSW;
+            button -e -l "Read WINFO" -c readWP $selRW;
+            button -e -l "Transfer Anim" -c "python (\"transAnim.transAnim()\")" $buttonANI;
+
+            formLayout -e
+
+                -af $INcheckBttn "left" 0
+                -af $INcheckBttn "top" 0
+                -ap $INcheckBttn "right" 0 34
+
+                -ac $parentCB "left" 5 $INcheckBttn
+                -af $parentCB "top" 0
+                -ap $parentCB "right" 0 70
+
+                -ac $multyCB "left" 5 $parentCB
+                -af $multyCB "top" 0
+                -af $multyCB "right" 5
+
+                -ac $MCradioGrp "left" 0 $INcheckBttn
+                -af $MCradioGrp "top" 0
+
+                -af $buttonTR "left" 0
+                -ac $buttonTR "top" 0 $INcheckBttn
+                -ap $buttonTR "right" 0 40
+
+                -ac $trsXcheckbox "left" 10 $buttonTR
+                -ac $trsXcheckbox "top" 3 $INcheckBttn
+
+                -ac $trsYcheckbox "left" 10 $trsXcheckbox
+                -ac $trsYcheckbox "top" 3 $INcheckBttn
+
+                -ac $trsZcheckbox "left" 10 $trsYcheckbox
+                -ac $trsZcheckbox "top" 3 $INcheckBttn
+
+                -af $buttonRO "left" 0
+                -ac $buttonRO "top" 0 $buttonTR
+                -ap $buttonRO "right" 0 40
+
+                -ac $rotXcheckbox "left" 10 $buttonRO
+                -ac $rotXcheckbox "top" 3 $trsXcheckbox
+
+                -ac $rotYcheckbox "left" 10 $trsXcheckbox
+                -ac $rotYcheckbox "top" 3 $trsYcheckbox
+
+                -ac $rotZcheckbox "left" 10 $trsYcheckbox
+                -ac $rotZcheckbox "top" 3 $trsZcheckbox
+
+                -af $buttonSO "left" 0
+                -ac $buttonSO "top" 0 $buttonRO
+                -ap $buttonSO "right" 0 40
+
+                -ac $scaXcheckbox "left" 10 $buttonSO
+                -ac $scaXcheckbox "top" 3 $rotXcheckbox
+
+                -ac $scaYcheckbox "left" 10 $scaXcheckbox
+                -ac $scaYcheckbox "top" 3 $rotYcheckbox
+
+                -ac $scaZcheckbox "left" 10 $scaYcheckbox
+                -ac $scaZcheckbox "top" 3 $rotZcheckbox
+
+                -af $buttonTRO "left" 0
+                -ac $buttonTRO "top" 0 $buttonSO
+                -ap $buttonTRO "right" 0 50
+
+                -ac $buttonCENT "left" 0 $buttonTRO
+                -ac $buttonCENT "top" 0 $buttonSO
+                -af $buttonCENT "right" 0
+
+                -af $sepaRot "left" 0
+                -ac $sepaRot "top" 0 $buttonCENT
+                -af $sepaRot "right" 0
+
+                -af $RTradioGrp "left" 0
+                -ac $RTradioGrp "top" 0 $sepaRot
+
+                -af $turnXcheckbox "left" 10
+                -ac $turnXcheckbox "top" 3 $RTradioGrp
+
+                -ac $turnYcheckbox "left" 20 $turnXcheckbox
+                -ac $turnYcheckbox "top" 3 $RTradioGrp
+
+                -ac $turnZcheckbox "left" 15 $turnYcheckbox
+                -ac $turnZcheckbox "top" 3 $RTradioGrp
+
+                -ac $angleTX "left" 10 $turnZcheckbox
+                -ac $angleTX "top" 0 $RTradioGrp
+
+                -ac $discreteFF "left" 5 $angleTX
+                -af $discreteFF "right" 5
+                -ac $discreteFF "top" 0 $RTradioGrp
+
+                -af $buttonAROT "left" 0
+                -ac $buttonAROT "top" 0 $turnXcheckbox
+                -ap $buttonAROT "right" 0 50
+
+                -ac $buttonBROT "left" 0 $buttonAROT
+                -ac $buttonBROT "top" 0 $turnZcheckbox
+                -af $buttonBROT "right" 0
+
+                -af $sepaAni "left" 0
+                -ac $sepaAni "top" 0 $buttonAROT
+                -af $sepaAni "right" 0
+
+                -af $WLradioGrp "left" 0
+                -ac $WLradioGrp "top" 0 $sepaAni
+
+                -ac $SiNcheckbox "left" 0 $WLradioGrp
+                -ac $SiNcheckbox "top" 0 $sepaAni
+                -af $SiNcheckbox "right" 0
+
+                -af $offSetCB "left" 25
+                -ac $offSetCB "top" 0 $WLradioGrp
+
+                -ac $offSetFF "left" 20 $offSetCB
+                -ac $offSetFF "top" 0 $WLradioGrp
+
+                -af $buttonANI "left" 0
+                -ac $buttonANI "top" 0 $offSetFF
+                -af $buttonANI "right" 0
+
+                -af $selSW "left" 0
+                -ac $selSW "top" 0 $buttonANI
+                -ap $selSW "right" 0 50
+
+                -ac $selRW "left" 0 $selSW
+                -ac $selRW "top" 0 $buttonANI
+                -af $selRW "right" 0
+
+            $matchRCL;
+
+    frameLayout -e -cll true -cl 1 -l "Flip it"  $flipFL;
+        formLayout -e $flipFR;
+            radioButtonGrp -e $XYZradioGrp;
+            checkBoxGrp -e -onc ("checkBoxGrp -e -en 0 \""+$locButt+"\"")
+                           -ofc ("checkBoxGrp -e -en 1 \""+$locButt+"\"")
+                           $typeButt;
+            checkBoxGrp -e -onc ("checkBoxGrp -e -en 0 \""+$typeButt+"\"")
+                           -ofc ("checkBoxGrp -e -en 1 \""+$typeButt+"\"")
+                           $locButt;
+            checkBoxGrp -e $XYZcheckGrp;
+            button -e -l "Flip it" -rs 1 -c ("XYZflipper (\""+$XYZradioGrp+"\", \""+$XYZcheckGrp+"\")") $flipButt;
+
+        formLayout -e
+
+            -af $XYZradioGrp "left" 0
+            -af $XYZradioGrp "top" 0
+            -af $XYZradioGrp "right" 0
+
+            -af $typeButt "left" 10
+            -ac $typeButt "top" 0 $XYZradioGrp
+            -ap $typeButt "right" 0 50
+
+            -ac $locButt "left" 0 $typeButt
+            -ac $locButt "top" 0 $XYZradioGrp
+
+            -af $XYZcheckGrp "left" 0
+            -ac $XYZcheckGrp "top" 0 $typeButt
+            -af $XYZcheckGrp "right" 0
+
+            -af $flipButt "left" 0
+            -ac $flipButt "top" 0 $XYZcheckGrp
+            -af $flipButt "right" 0
+
+        $flipFR;
+
+    string $uiComponent2[] = { ($attrTFG+"\","),("\""+$attrTF+"\","),("\""+$enumTF+"\","),("\""+$attrRBG1+"\","),("\""+$attrRBG2+"\","),("\""+$attrCB+"\","),("\""+$attrFFG+"\","),("\""+$attrVCB+"\","),("\""+$attrRCB+"\","),("\""+$attrFFCB)};
+    string $components2 = stringArrayToString($uiComponent2, " ");
+    frameLayout -e -cll true -cl 1  -l "Attributes" $attrFL ;
+        formLayout -e $attrFR;
+            button -e -l "Store Attrs" -c writeAttr $selSAA;
+            button -e -l "Read Attrs" -c readAttr $selRAA;
+            frameLayout -e -cll true -cl 1  -l "Create" $attrCFL ;
+                formLayout -e $attrCFR;
+                    textField -e $attrTF;
+                    radioButtonGrp -e
+                    -on1 ("floatFieldGrp -e -v1 0 \""+$attrFFG+"\";floatFieldGrp -e -v2 0 \""+$attrFFG+"\"")
+                    -on2 ("floatFieldGrp -e -v1 0 \""+$attrFFG+"\";floatFieldGrp -e -v2 0 \""+$attrFFG+"\"")
+                    -on3 ("textScrollList -e -en 1 \""+$enumTF+"\";"
+                          +"textField -e -en 1 \""+$attrTFG+"\";"
+                          +"floatFieldGrp -e -v1 0 \""+$attrFFG+"\";floatFieldGrp -e -v2 0 \""+$attrFFG+"\";")
+                    -of3 ("textScrollList -e -en 0 \""+$enumTF+"\";"
+                          +"textField -e -en 0 \""+$attrTFG+"\";"
+                          +"textScrollList -e -ra \""+$enumTF+"\";"
+                          +"textField -e -tx \"\" \""+$attrTFG+"\";")
+                    $attrRBG1;
+
+                    radioButtonGrp -e $attrRBG2;
+
+                    textField -e -en 0 -ec ("attrTools (1, {\""+$components2+"\"});textField -e -tx \"\" \""+$attrTFG+"\"") $attrTFG;
+                    checkBox -e -l "Disabled" -v 0
+                             -onc ("checkBox -e -l \"Enabled\" \""+$attrFFCB+"\";floatFieldGrp -e -en 1 \""+$attrFFG+"\"")
+                             -ofc ("checkBox -e -l \"Disabled\" \""+$attrFFCB+"\";floatFieldGrp -e -en 0 \""+$attrFFG+"\"") $attrFFCB;
+                    floatFieldGrp -e -en 0 $attrFFG;
+                    textScrollList -e -en 0 -nr 5 $enumTF;
+                    checkBox -e -l "Key" -v 1 -onc ("checkBox -e -l \"Key\" \""+$attrCB+"\";checkBox -e -en 0 \""+$attrVCB+"\";") -ofc ("checkBox -e -l \"Non Key\" \""+$attrCB+"\";checkBox -e -en 1 \""+$attrVCB+"\"") $attrCB;
+                    checkBox -e -l "Non Vis" -en 0 -v 0 -onc ("checkBox -e -l \"Vis\" \""+$attrVCB+"\"") -ofc ("checkBox -e -l \"Non Vis\" \""+$attrVCB+"\"") $attrVCB;
+                    checkBox -e -l " " -v 1
+                             -onc ("button -e -l \"addAttr\" \""+$attrButt+"\";floatFieldGrp -e -en 1 \""+$attrFFG+"\";textScrollList -e -en 1 \""+$enumTF+"\";checkBox -e -en 1 \""+$attrCB+"\";radioButtonGrp -e -en 1 \""+$attrRBG1+"\";radioButtonGrp -e -en 1 \""+$attrRBG2+"\"")
+                             -ofc ("button -e -l \"remAttr\" \""+$attrButt+"\";floatFieldGrp -e -en 0 \""+$attrFFG+"\";textScrollList -e -en 0 \""+$enumTF+"\";checkBox -e -en 0 \""+$attrCB+"\";radioButtonGrp -e -en 0 \""+$attrRBG1+"\";radioButtonGrp -e -en 0 \""+$attrRBG2+"\"")
+                             $attrRCB;
+                    button -e -l "addAttr" -c ("attrTools (0, {\""+$components2+"\"})") $attrButt;
+
+            formLayout -e
+
+                -af $attrTF "left" 0
+                -af $attrTF "top" 0
+                -af $attrTF "right" 0
+
+                -af $attrRBG1 "left" 0
+                -ac $attrRBG1 "top" 0 $attrTF
+                -af $attrRBG1 "right" 0
+
+                -af $attrRBG2 "left" 0
+                -ac $attrRBG2 "top" 0 $attrRBG1
+                -af $attrRBG2 "right" 0
+
+                -af $attrFFCB "left" 0
+                -ac $attrFFCB "top" 0 $attrRBG2
+                -ap $attrFFCB "right" 0 30
+
+                -ac $attrFFG "left" 5 $attrFFCB
+                -ac $attrFFG "top" 0 $attrRBG2
+                -af $attrFFG "right" 0
+
+                -ac $enumTF "top" 0 $attrFFG
+                -af $enumTF "left" 0
+                -af $enumTF "right" 0
+
+                -ac $attrTFG "top" 0 $enumTF
+                -af $attrTFG "right" 0
+                -af $attrTFG "left" 0
+
+                -af $attrCB "left" 0
+                -ac $attrCB "top" 0 $attrTFG
+                -ap $attrCB "right" 0 25
+
+                -ac $attrVCB "left" 0 $attrCB
+                -ac $attrVCB "top" 0 $attrTFG
+                -ap $attrVCB "right" 0 60
+
+                -ac $attrRCB "left" 0 $attrVCB
+                -ac $attrRCB "top" 0 $attrTFG
+                -ap $attrRCB "right" 0 70
+
+                -ac $attrButt "left" 0 $attrRCB
+                -ac $attrButt "top" 0 $attrTFG
+                -af $attrButt "right" 0
+
+            $attrCFR;
+
+            frameLayout -e -cll true -cl 1 -l "Locking" $attrLFL ;
+                formLayout -e $attrLFR;
+                    checkBoxGrp -e $attrTraCB ;
+                    checkBoxGrp -e $attrRotCB ;
+                    checkBoxGrp -e $attrScaCB ;
+                    checkBoxGrp -e $attrVisCB ;
+                    button -e -l "Set lock Pref" -c "setLockAttrMG 0 0 0 0 0 0 0 0 0 0" $attrBTTm ;
+                    separator -e $sepaLock01 ;
+                    checkBox -e -l "Sel" -v 0 -ofc ("checkBox -e -l \"Sel\" \""+$lockAttrCB+"\"") -onc ("checkBox -e -l \"All\" \""+$lockAttrCB+"\"") $lockAttrCB;
+                    checkBox -e -l "Hide" -v 0 $hideAttrCB;
+                    button -e -l "lock" -c "dolockAttrMG 1 0" $lockBTTm ;
+                    button -e -l "unlock" -c "dolockAttrMG 0 1" $unlocBTTm ;
+
+                formLayout -e
+
+                    -af $attrTraCB "left" 0
+                    -af $attrTraCB "top" 0
+                    -af $attrTraCB "right" 0
+
+                    -af $attrRotCB "left" 0
+                    -af $attrRotCB "top" 0
+                    -af $attrRotCB "right" 0
+
+                    -af $attrScaCB "left" 0
+                    -ac $attrScaCB "top" 0 $attrRotCB
+                    -af $attrScaCB "right" 0
+
+                    -af $attrVisCB "left" 0
+                    -ac $attrVisCB "top" 0 $attrScaCB
+                    -af $attrVisCB "right" 0
+
+                    -af $attrBTTm "left" 80
+                    -ac $attrBTTm "top" 0 $attrVisCB
+                    -af $attrBTTm "right" 5
+
+                    -af $sepaLock01 "left" 5
+                    -ac $sepaLock01 "top" 10 $attrBTTm
+                    -af $sepaLock01 "right" 5
+
+                    -af $lockAttrCB "left" 0
+                    -ac $lockAttrCB "top" 0 $sepaLock01
+                    -ap $lockAttrCB "right" 0 20
+
+                    -ac $hideAttrCB "left" 0 $lockAttrCB
+                    -ac $hideAttrCB "top" 0 $sepaLock01
+                    -ap $hideAttrCB "right" 0 42
+
+                    -ac $lockBTTm "left" 0 $hideAttrCB
+                    -ac $lockBTTm "top" 0 $sepaLock01
+                    -ap $lockBTTm "right" 0 70
+
+                    -ac $unlocBTTm "left" 0 $lockBTTm
+                    -ac $unlocBTTm "top" 0 $sepaLock01
+                    -af $unlocBTTm "right" 5
+
+                $attrLFR ;
+
+            formLayout -e
+
+                -af $attrCFL "left" 0
+                -af $attrCFL "top" 0
+                -af $attrCFL "right" 0
+
+                -af $attrLFL "left" 0
+                -ac $attrLFL "top" 0 $attrCFL
+                -af $attrLFL "right" 0
+
+                -af $selSAA "left" 0
+                -ac $selSAA "top" 0 $attrLFL
+                -ap $selSAA "right" 0 50
+
+                -ac $selRAA "left" 0 $selSAA
+                -ac $selRAA "top" 0 $attrLFL
+                -af $selRAA "right" 0
+
+            $attrFR;
+
+    string $uiComponent3[] = { ($jntButt+"\","), ("\""+$hmBttn+"\","), ("\""+$checkPoleButt+"\","), ("\""+$poleButt+"\","), ("\""+$stretchButt+"\","), ("\""+$scaleStrButt+"\","),
+                              ("\""+$jntOB+"\","), ("\""+$jntRBG01+"\","),("\""+$jntRBG02+"\","), ("\""+$jntOB2+"\","), ("\""+$oriChildCB+"\","), ("\""+$oriScaleCB+"\","),
+                              ("\""+$jntTF+"\","), ("\""+$fieldButt) };
+    string $components3 = stringArrayToString($uiComponent3, " ");
+    frameLayout -e -cll true -cl 1  -l "Joint Tools" $jntFR;
+        formLayout -e $jntFL;
+            button -e -l "Joint on Vtx" -c jntONvtx $jntButt;
+            button -e -l "HmNUL" -c "jntNUL 0" $hmBttn;
+            checkBox -e -l "Connect" -v 0 $checkPoleButt;
+            button -e -l "poleVec" -c ("makePoleVector (`checkBox -q -v \""+$checkPoleButt+"\"`)") $poleButt;
+            button -e -l "Stretchy" -c ("stretchyStuff (`checkBox -q -v \""+$scaleStrButt+"\"`)") $stretchButt;
+            checkBox -e -l "scale" -v 0
+                     -ofc ("checkBox -e -l \"Scale\" \""+$scaleStrButt+"\"")
+                     -onc ("checkBox -e -l \"Trans\" \""+$scaleStrButt+"\"")
+                     $scaleStrButt;
+
+            separator -e $sepa01JNT;
+
+            optionMenu -e -l "" -cc ("mgOrientJNT (1, {\""+$components3+"\"})") -w 180 -en 1 $jntOB;
+                menuItem -e -l "          World Axis      " $jntMI1;
+                menuItem -e -l "        Object Rotation   " $jntMI2;
+
+            radioButtonGrp -e $jntRBG01;
+            radioButtonGrp -e $jntRBG02;
+
+            optionMenu -e -l "Second Axis" -w 120 -en 1 $jntOB2;
+                menuItem -e -l "        +x      " $jntMI3;
+                menuItem -e -l "        -x      " $jntMI4;
+                menuItem -e -l "        +y      " $jntMI5;
+                menuItem -e -l "        -y      " $jntMI6;
+                menuItem -e -l "        +z      " $jntMI7;
+                menuItem -e -l "        -z      " $jntMI8;
+                menuItem -e -l "       None     " $jntMI9;
+
+            optionMenu -e -v "        +y      " $jntOB2;
+            checkBox -e -l "Orient child joint" -v 1 $oriChildCB;
+            checkBox -e -l "Reorient local scale axes" -v 1 $oriScaleCB;
+            separator -e $sepa02JNT;
+            button -e -l ">>>" -c ("mgOrientJNT (0, {\""+$components3+"\"})") -en 0 $fieldButt;
+            textField -e -en 0 $jntTF;
+            button -e -l "Orient" -c ("mgOrientJNT (2, {\""+$components3+"\"})") $oriButt;
+
+            formLayout -e
+
+                -af $jntButt "left" 0
+                -af $jntButt "top" 0
+                -ap $jntButt "right" 0 50
+
+                -ac $hmBttn "left" 0 $jntButt
+                -af $hmBttn "top" 0
+                -af $hmBttn "right" 0
+
+                -af $checkPoleButt "left" 0
+                -ac $checkPoleButt "top" 0 $jntButt
+                -ap $checkPoleButt "right" 0 27
+
+                -ac $poleButt "left" 0 $checkPoleButt
+                -ac $poleButt "top" 0 $jntButt
+                -ap $poleButt "right" 0 52
+
+                -ac $scaleStrButt "left" 0 $poleButt
+                -ac $scaleStrButt "top" 0 $hmBttn
+                -ap $scaleStrButt "right" 0 75
+
+                -ac $stretchButt "left" 0 $scaleStrButt
+                -ac $stretchButt "top" 0 $hmBttn
+                -af $stretchButt "right" 0
+
+                -af $sepa01JNT "left" 0
+                -ac $sepa01JNT "top" 5 $poleButt
+                -af $sepa01JNT "right" 0
+
+                -af $jntOB "left" 10
+                -ac $jntOB "top" 0 $sepa01JNT
+                -af $jntOB "right" 10
+
+                -af $jntRBG01 "left" 0
+                -ac $jntRBG01 "top" 0 $jntOB
+                -af $jntRBG01 "right" 5
+
+                -af $jntRBG02 "left" 0
+                -ac $jntRBG02 "top" 0 $jntRBG01
+                -af $jntRBG02 "right" 5
+
+                -af $jntOB2 "left" 0
+                -ac $jntOB2 "top" 0 $jntRBG02
+                -af $jntOB2 "right" 5
+
+                -af $oriChildCB "left" 0
+                -ac $oriChildCB "top" 0 $jntOB2
+                -af $oriChildCB "right" 5
+
+                -af $oriScaleCB "left" 0
+                -ac $oriScaleCB "top" 0 $oriChildCB
+                -af $oriScaleCB "right" 5
+
+                -af $sepa02JNT "left" 0
+                -ac $sepa02JNT "top" 5 $oriScaleCB
+                -af $sepa02JNT "right" 0
+
+                -af $fieldButt "left" 5
+                -ac $fieldButt "top" 0 $sepa02JNT
+                -ap $fieldButt "right" 0 25
+
+                -ac $jntTF "left" 2 $fieldButt
+                -ac $jntTF "top" 0 $sepa02JNT
+                -af $jntTF "right" 5
+
+                -af $oriButt "left" 5
+                -ac $oriButt "top" 0 $jntTF
+                -af $oriButt "right" 5
+
+            $jntFL;
+
+
+    string $uiComponent4[] = { ($txFrom+"\","), ("\""+$txTo+"\","), ("\""+$headTailCB+"\","), ("\""+$firstSelCB+"\","), ("\""+$numIntF+"\","), ("\""+$addSelCB) };
+    string $components4 = stringArrayToString($uiComponent4, " ");
+    for($e in $presets)
+    {
+        $pmi = `menuItem -l $e -p $mi5`;
+        menuItem -e -c ("textField -e -tx \""+$e+"\" \""+$txFrom+"\"") $pmi;
+        $pmi = `menuItem -l $e -p $mi6`;
+        menuItem -e -c ("textField -e -tx \""+$e+"\" \""+$txTo+"\"") $pmi;
+    }
+    frameLayout -e -cll true -cl 1 -l "Selection" $seleFR;
+      formLayout -e $seleFL;
+        button -e -l "Invert Sel" -c ("selectionInverter (1,{\""+$components4+"\"})") $selInvB;
+        checkBox -e -l "add" $addSelCB;
+        button -e -l "<" -c ("selectionInverter (5,{\""+$components4+"\"})") $numL;
+        button -e -l ">" -c ("selectionInverter (6,{\""+$components4+"\"})") $numR;
+        intField -e $numIntF;
+        checkBox -e -l "  Tail" -onc ("checkBox -e -l\"  Head\" \""+$headTailCB+"\";\"") -ofc ("checkBox -e -l\"  Tail\" \""+$headTailCB+"\";\"") $headTailCB;
+        checkBox -e -l "invert"
+                 -onc ("textField -e -tx (`textField -q -tx \""+$txTo+"\"`) \""+$txFrom+"\";\"")
+                 -ofc ("textField -e -tx (`textField -q -tx \""+$txFrom+"\"`) \""+$txTo+"\";\"") $invertCB;
+        checkBox -e -l "1 Letter" $firstSelCB;
+        button -e -l ">>>" -c ("selectionInverter (3,{\""+$components4+"\"})") $selGfrom;
+        textField -e $txFrom;
+        button -e -l ">>>" -c ("selectionInverter (4,{\""+$components4+"\"})") $selGto;
+        textField -e $txTo;
+        button -e -l "Swap Sel" -c ("selectionInverter (2,{\""+$components4+"\"})") $selSwap;
+        button -e -l "Store Sel" -c writeSel $selSS;
+        button -e -l "Read Sel" -c readSel $selRS;
+
+        formLayout -e
+
+            -af $selInvB "left" 0
+            -af $selInvB "top" 0
+            -ap $selInvB "right" 0 50
+
+            -ac $addSelCB "left" 0 $selInvB
+            -af $addSelCB "top" 0
+            -ap $addSelCB "right" 0 70
+
+            -ac $firstSelCB "left" 0 $addSelCB
+            -af $firstSelCB "top" 0
+            -af $firstSelCB "right" 5
+
+            -af $numL "left" 0
+            -ac $numL "top" 0 $selInvB
+            -ap $numL "right" 0 10
+
+            -ac $numR "left" 0 $numL
+            -ac $numR "top" 0 $selInvB
+            -ap $numR "right" 0 20
+
+            -ac $numIntF "left" 0 $numR
+            -ac $numIntF "top" 0 $selInvB
+            -ap $numIntF "right" 0 40
+
+            -ac $headTailCB "left" 10 $numIntF
+            -ac $headTailCB "top" 0 $selInvB
+
+            -ac $invertCB "left" 10 $headTailCB
+            -ac $invertCB "top" 0 $selInvB
+
+            -af $selGfrom "left" 0
+            -ac $selGfrom "top" 0 $numL
+            -ap $selGfrom "right" 0 15
+
+            -ac $txFrom "left" 0 $selGfrom
+            -ac $txFrom "top" 0 $numL
+            -ap $txFrom "right" 0 45
+
+            -ac $selGto "left" 0 $txFrom
+            -ac $selGto "top" 0 $numL
+            -ap $selGto "right" 0 60
+
+            -ac $txTo "left" 0 $selGto
+            -ac $txTo "top" 0 $numL
+            -af $txTo "right" 5
+
+            -af $selSwap "left" 0
+            -ac $selSwap "top" 0 $txFrom
+            -af $selSwap "right" 0
+
+            -af $selSS "left" 0
+            -ac $selSS "top" 0 $selSwap
+            -ap $selSS "right" 0 50
+
+            -af $selRS "right" 0
+            -ac $selRS "top" 0 $selSwap
+            -ac $selRS "left" 0 $selSS
+
+        $seleFL;
+
+
+    // ARRANGEMENT FOR THE RIG TAB
+    formLayout -e
+
+        -af $aniMSetBttn "top" 5
+        -af $aniMSetBttn "left" 5
+        -ap $aniMSetBttn "right" 0 15
+
+        -ac $polyMSetBttn "left" 0 $aniMSetBttn
+        -af $polyMSetBttn "top" 5
+        -ap $polyMSetBttn "right" 0 30
+
+        -af $surfMSetBttn "top" 5
+        -ac $surfMSetBttn "left" 0 $polyMSetBttn
+        -ap $surfMSetBttn "right" 0 45
+
+        -ac $dynMSetBttn "left" 0 $surfMSetBttn
+        -af $dynMSetBttn "top" 5
+        -ap $dynMSetBttn "right" 0 60
+
+        -af $renMSetBttn "top" 5
+        -ac $renMSetBttn "left" 0 $dynMSetBttn
+        -ap $renMSetBttn "right" 0 80
+
+        -af $nCMSetBttn "top" 5
+        -ac $nCMSetBttn "left" 0 $renMSetBttn
+        -af $nCMSetBttn "right" 5
+
+        -af $utyNodesFR "left" 5
+        -af $utyNodesFR "right" 5
+        -ac $utyNodesFR "top" 5 $aniMSetBttn
+
+        -af $sepa00 "left" 0
+        -af $sepa00 "right" 0
+        -ac $sepa00 "top" 5 $utyNodesFR
+
+        -ac $matchFL "top" 5 $sepa00
+        -af $matchFL "left" 5
+        -af $matchFL "right" 5
+
+        -af $flipFL "left" 5
+        -af $flipFL "right" 5
+        -ac $flipFL "top" 5 $matchFL
+
+        -af $sepa02 "left" 0
+        -af $sepa02 "right" 0
+        -ac $sepa02 "top" 5 $flipFL
+
+        -af $attrFL "left" 5
+        -af $attrFL "right" 5
+        -ac $attrFL "top" 0 $sepa02
+
+        -ac $jntFR "top" 0 $attrFL
+        -af $jntFR "left" 5
+        -af $jntFR "right" 5
+
+        -ac $seleFR "top" 0 $jntFR
+        -af $seleFR "left" 5
+        -af $seleFR "right" 5
+
+    $mauUtyFLrig;
+
+    return $mauUtyFLrig;
+}

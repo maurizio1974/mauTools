@@ -1,0 +1,584 @@
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// Procedure resize the window based on the frame layout collapse status
+// -------------------------------------------------------------------------------------------------------------------------------
+global proc resizeWIN(int $value)
+{
+    print ("Test   "+$value+"\n");
+    /*
+    float $h=`window -q -h mauUtyWin`;
+    float $w=`window -q -w mauUtyWin`;
+    string $currentTab = `tabLayout -q -st mauUtyTL`;
+    string $allTabs[] = `tabLayout -q -ca mauUtyTL`;
+    string $basicChilds[] = `formLayout -q -ca $allTabs[0]`;
+    string $rigChilds[] = `formLayout -q -ca $allTabs[1]`;
+    string $skinChilds[] = `formLayout -q -ca $allTabs[2]`;
+    string $visChilds[] = `formLayout -q -ca $allTabs[4]`;
+    string $system = `python "sys.platform"`;
+
+    //------------- flipFL ----------------
+    if($value==1)
+    {
+        if($w > 260)
+            window -e -wh $w ($h-88) mauUtyWin;
+        else
+            window -e -wh 260 ($h-88) mauUtyWin;
+    }
+
+    if($value==2)
+    {
+        if($w > 260)
+            window -e -wh $w ($h+88) mauUtyWin;
+        else
+            window -e -wh 260 ($h+88) mauUtyWin;
+    }
+    //------------- showFL ----------------
+    if($value==3)
+    {
+        if($w > 260)
+        {
+            if ( $system == "win32" )
+                window -e -wh $w ($h-280) mauUtyWin;
+            if($system == "linux2")
+                window -e -wh $w ($h-356) mauUtyWin;
+        }else{
+            if ( $system == "win32" )
+                window -e -wh 260 ($h-280) mauUtyWin;
+            if($system == "linux2")
+                window -e -wh 260 ($h-356) mauUtyWin;
+        }
+    }
+    if($value==4)
+    {
+        if($w > 260)
+        {
+            if ( $system == "win32" )
+                window -e -wh $w ($h+280) mauUtyWin;
+            if($system == "linux2")
+                window -e -wh $w ($h+356) mauUtyWin;
+        }else{
+            if ( $system == "win32" )
+                window -e -wh 260 ($h+280) mauUtyWin;
+            if($system == "linux2")
+                window -e -wh 260 ($h+356) mauUtyWin;
+        }
+    }
+    //------------- matchFL ----------------
+    if($value==5)
+    {
+        if($w > 260)
+        {
+            if ( $system == "win32" )
+                window -e -wh $w ($h-230) mauUtyWin;
+            if($system == "linux2")
+                window -e -wh $w ($h-295) mauUtyWin;
+        }else{
+            if ( $system == "win32" )
+                window -e -wh 260 ($h-230) mauUtyWin;
+            if($system == "linux2")
+                window -e -wh 260 ($h-295) mauUtyWin;
+        }
+    }
+    if($value==6)
+    {
+        if($w > 260)
+        {
+            if ( $system == "win32" )
+                window -e -wh $w ($h+230) mauUtyWin;
+            if($system == "linux2")
+                window -e -wh $w ($h+295) mauUtyWin;
+        }else{
+            if ( $system == "win32" )
+                window -e -wh 260 ($h+230) mauUtyWin;
+            if($system == "linux2")
+                window -e -wh 260 ($h+295) mauUtyWin;
+        }
+    }
+    //---------- SelectionFL -------------
+    if($value==7)
+    {
+        if($w > 260)
+            window -e -wh $w ($h-123) mauUtyWin;
+        else
+            window -e -wh 260 ($h-123) mauUtyWin;
+    }
+    if($value==8)
+    {
+        if($w > 260)
+            window -e -wh $w ($h+123) mauUtyWin;
+        else
+            window -e -wh 260 ($h+123) mauUtyWin;
+    }
+    //------------- glFL ----------------
+    if($value==9)
+    {
+        if($w > 260)
+             window -e -wh $w ($h-98) mauUtyWin;
+        else
+            window -e -wh 260 ($h-98) mauUtyWin;
+    }
+    if($value==10)
+    {
+        if($w > 260)
+             window -e -wh $w ($h+98) mauUtyWin;
+        else
+            window -e -wh 260 ($h+98) mauUtyWin;
+    }
+    //------------- renameFL ---------------addRemFR replaceFR
+    if($value==11) // CLOSE
+    {
+        // ALL UNCOLLAPSED
+        if(`frameLayout -q -cl addRemFR`==0 && `frameLayout -q -cl replaceFR`==0 && `frameLayout -q -cl renumberFR`==0)
+            window -e -wh 260 ($h-333) mauUtyWin;
+        // ALL COLLAPSED
+        if(`frameLayout -q -cl addRemFR`==1 && `frameLayout -q -cl replaceFR`==1 && `frameLayout -q -cl renumberFR`==1)
+            window -e -wh 260 ($h-143) mauUtyWin;
+        // --------------------------------------------------------
+        // Add Remove = Open    Replace = Close    Renumber = Close
+        if(`frameLayout -q -cl addRemFR`==0 && `frameLayout -q -cl replaceFR`==1 && `frameLayout -q -cl renumberFR`==1)
+            window -e -wh 260 ($h-190) mauUtyWin;
+        // Add Remove = Open    Replace = Open     Renumber = Close
+        if(`frameLayout -q -cl addRemFR`==0 && `frameLayout -q -cl replaceFR`==0 && `frameLayout -q -cl renumberFR`==1)
+            window -e -wh 260 ($h-263) mauUtyWin;
+        // Add Remove = Open    Replace = Close    Renumber = Open
+        if(`frameLayout -q -cl addRemFR`==0 && `frameLayout -q -cl replaceFR`==1 && `frameLayout -q -cl renumberFR`==0)
+            window -e -wh 260 ($h-263) mauUtyWin;
+        // --------------------------------------------------------
+        // Add Remove = Close    Replace = Open    Renumber = Close
+        if(`frameLayout -q -cl addRemFR`==1 && `frameLayout -q -cl replaceFR`==0 && `frameLayout -q -cl renumberFR`==1)
+            window -e -wh 260 ($h-213) mauUtyWin;
+        // --------------------------------------------------------
+        // Add Remove = Close    Replace = Open    Renumber = Open
+        if(`frameLayout -q -cl addRemFR`==1 && `frameLayout -q -cl replaceFR`==0 && `frameLayout -q -cl renumberFR`==0)
+            window -e -wh 260 ($h-286) mauUtyWin;
+        // Add Remove = Close    Replace = Close   Renumber = Open
+        if(`frameLayout -q -cl addRemFR`==1 && `frameLayout -q -cl replaceFR`==1 && `frameLayout -q -cl renumberFR`==0)
+            window -e -wh 260 ($h-213) mauUtyWin;
+    }
+    if($value==12) // OPEN
+    {
+        // ALL UNCOLLAPSED
+        if(`frameLayout -q -cl addRemFR`==0 && `frameLayout -q -cl replaceFR`==0 && `frameLayout -q -cl renumberFR`==0)
+            window -e -wh 260 ($h+333) mauUtyWin;
+        // ALL COLLAPSED
+        if(`frameLayout -q -cl addRemFR`==1 && `frameLayout -q -cl replaceFR`==1 && `frameLayout -q -cl renumberFR`==1)
+            window -e -wh 260 ($h+143) mauUtyWin;
+        //--------------------------------------------------------
+        // Add Remove = Open    Replace = Close    Renumber = Close
+        if(`frameLayout -q -cl addRemFR`==0 && `frameLayout -q -cl replaceFR`==1 && `frameLayout -q -cl renumberFR`==1)
+            window -e -wh 260 ($h+190) mauUtyWin;
+        // Add Remove = Open    Replace = Open    Renumber = Close
+        if(`frameLayout -q -cl addRemFR`==0 && `frameLayout -q -cl replaceFR`==0 && `frameLayout -q -cl renumberFR`==1)
+            window -e -wh 260 ($h+263) mauUtyWin;
+        // Add Remove = Open    Replace = Close    Renumber = Open
+        if(`frameLayout -q -cl addRemFR`==0 && `frameLayout -q -cl replaceFR`==1 && `frameLayout -q -cl renumberFR`==0)
+            window -e -wh 260 ($h+263) mauUtyWin;
+        //--------------------------------------------------------
+        // Add Remove = Close    Replace = Open    Renumber = Close
+        if(`frameLayout -q -cl addRemFR`==1 && `frameLayout -q -cl replaceFR`==0 && `frameLayout -q -cl renumberFR`==1)
+            window -e -wh 260 ($h+213) mauUtyWin;
+        //--------------------------------------------------------
+        // Add Remove = Close    Replace = Open    Renumber = Open
+        if(`frameLayout -q -cl addRemFR`==1 && `frameLayout -q -cl replaceFR`==0 && `frameLayout -q -cl renumberFR`==0)
+            window -e -wh 260 ($h+286) mauUtyWin;
+        // Add Remove = Close    Replace = Close    Renumber = Open
+        if(`frameLayout -q -cl addRemFR`==1 && `frameLayout -q -cl replaceFR`==1 && `frameLayout -q -cl renumberFR`==0)
+            window -e -wh 260 ($h+213) mauUtyWin;
+    }
+    //------ utyCreateFL utyThereFL --------
+    if($value==13)
+    {
+        if( $w > 260)
+            window -e -wh $w ($h-100) mauUtyWin;
+        else
+            window -e -wh 260 ($h-100) mauUtyWin;
+
+        if( `frameLayout -q -cl utyCreateFL` == 0 )
+            paneLayout -e -ps 1 100 80 utyPL;
+        if( `frameLayout -q -cl utyThereFL` == 0 )
+            paneLayout -e -ps 2 100 80 utyPL;
+
+        if( `frameLayout -q -cl utyThereFL` == 1 && `frameLayout -q -cl utyCreateFL` == 1 )
+        {
+            paneLayout -e -ps 1 100 50 utyPL;
+            paneLayout -e -ps 2 100 50 utyPL;
+        }
+    }
+    if($value==14)
+    {
+        if( $w > 260)
+            window -e -wh $w ($h+100) mauUtyWin;
+        else
+            window -e -wh 260 ($h+100) mauUtyWin;
+
+        if(`frameLayout -q -cl utyCreateFL`==1)
+            paneLayout -e -ps 1 100 20 utyPL;
+        if(`frameLayout -q -cl utyThereFL`==1)
+            paneLayout -e -ps 2 100 20 utyPL;
+        if( `frameLayout -q -cl utyThereFL` == 0 && `frameLayout -q -cl utyCreateFL` == 0 )
+        {
+            paneLayout -e -ps 1 100 50 utyPL;
+            paneLayout -e -ps 2 100 50 utyPL;
+        }
+    }
+    //------------- shelfFL ----------------
+    if($value==15)
+    {
+        if(`frameLayout -q -cl presetFR`==1)
+        {
+            if($w > 260)
+                 window -e -wh $w ($h-295) mauUtyWin;
+            else
+                window -e -wh 260 ($h-295) mauUtyWin;
+        }else{
+            if($w > 260)
+                 window -e -wh $w ($h+395) mauUtyWin;
+            else
+                window -e -wh 260 ($h+395) mauUtyWin;
+        }
+    }
+    if($value==16)
+    {
+        if(`frameLayout -q -cl presetFR`==1)
+        {
+            window -e -wh 260 ($h+295) mauUtyWin;
+            paneLayout -e -ps 1 100 85 shelfPL;
+            paneLayout -e -ps 2 100 15 shelfPL;
+        }else{
+            window -e -wh 260 ($h+395) mauUtyWin;
+            paneLayout -e -ps 1 100 85 shelfPL;
+            paneLayout -e -ps 2 100 15 shelfPL;
+        }
+    }
+    //------------- utyThere ----------------
+    if($value==151)
+    {
+        window -e -wh 260 ($h-100) mauUtyWin;
+        paneLayout -e -ps 1 100 85 shelfPL;
+        paneLayout -e -ps 2 100 15 shelfPL;
+    }
+    if($value==161)
+    {
+        window -e -wh 260 ($h+100) mauUtyWin;
+        paneLayout -e -ps 1 100 55 shelfPL;
+        paneLayout -e -ps 2 100 45 shelfPL;
+    }
+    //------------- utyNodesFR -------------
+    if($value==17)
+    {
+        if(`frameLayout -q -cl utyCreateFL`==1 && `frameLayout -q -cl utyThereFL`==1)
+        {
+            if( $w > 260)
+                window -e -wh $w ($h-168) mauUtyWin;
+            else
+                window -e -wh 260 ($h-168) mauUtyWin;
+        }
+        if(`frameLayout -q -cl utyCreateFL`==0 && `frameLayout -q -cl utyThereFL`==0)
+        {
+            if( $w > 260)
+                window -e -wh $w ($h-368) mauUtyWin;
+            else
+                window -e -wh 260 ($h-368) mauUtyWin;
+        }
+        if(`frameLayout -q -cl utyCreateFL`==1 && `frameLayout -q -cl utyThereFL`==0)
+        {
+            if( $w > 260)
+                window -e -wh $w ($h-268) mauUtyWin;
+            else
+                window -e -wh 260 ($h-268) mauUtyWin;
+        }
+        if(`frameLayout -q -cl utyCreateFL`==0 && `frameLayout -q -cl utyThereFL`==1)
+        {
+            if( $w > 260)
+                window -e -wh $w ($h-268) mauUtyWin;
+            else
+                window -e -wh 260 ($h-268) mauUtyWin;
+        }
+    }
+    if($value==18)
+    {
+        if(`frameLayout -q -cl utyCreateFL`==1  && `frameLayout -q -cl utyThereFL`==1)
+        {
+            if( $w > 260)
+                window -e -wh $w ($h+168) mauUtyWin;
+            else
+                window -e -wh 260 ($h+168) mauUtyWin;
+        }
+        if(`frameLayout -q -cl utyCreateFL`==0  && `frameLayout -q -cl utyThereFL`==0)
+        {
+            if( $w > 260)
+                window -e -wh $w ($h+368) mauUtyWin;
+            else
+                window -e -wh 260 ($h+368) mauUtyWin;
+        }
+        if(`frameLayout -q -cl utyCreateFL`==1  && `frameLayout -q -cl utyThereFL`==0)
+        {
+            if( $w > 260)
+                window -e -wh $w ($h+268) mauUtyWin;
+            else
+                window -e -wh 260 ($h+268) mauUtyWin;
+        }
+        if(`frameLayout -q -cl utyCreateFL`==0  && `frameLayout -q -cl utyThereFL`==1)
+        {
+           if( $w > 260)
+                window -e -wh $w ($h+268) mauUtyWin;
+            else
+                window -e -wh 260 ($h+268) mauUtyWin;
+        }
+    }
+    //------------- makeNurbFL --------------
+    if($value==19)
+    {
+        if($w > 260)
+            window -e -wh $w ($h-87) mauUtyWin;
+        else
+            window -e -wh 260 ($h-87) mauUtyWin;
+    }
+
+    if($value==20)
+    {
+        if($w > 260)
+            window -e -wh $w ($h+87) mauUtyWin;
+        else
+            window -e -wh 260 ($h+87) mauUtyWin;
+    }
+    //------------- jointFL ----------------
+    if($value==21)
+    {
+        if($w > 260)
+            window -e -wh $w ($h-256) mauUtyWin;
+        else
+            window -e -wh 260 ($h-256) mauUtyWin;
+    }
+    if($value==22)
+    {
+        if($w > 260)
+            window -e -wh $w ($h+256) mauUtyWin;
+        else
+            window -e -wh 260 ($h+256) mauUtyWin;
+    }
+    //------------ Replace ----------------
+    if($value==231)
+    {
+        if($w > 260)
+            window -e -wh $w ($h-48) mauUtyWin;
+        else
+            window -e -wh 260 ($h-48) mauUtyWin;
+    }
+    if($value==241)
+    {
+        if($w > 260)
+            window -e -wh $w ($h+48) mauUtyWin;
+        else
+            window -e -wh 260 ($h+48) mauUtyWin;
+    }
+    //------------ RenameFL ----------------
+    if($value==23)
+        window -e -wh 260 ($h-71) mauUtyWin;
+    if($value==24)
+        window -e -wh 260 ($h+71) mauUtyWin;
+    //------------ RenumberFL ----------------
+    if($value==232)
+        window -e -wh 260 ($h-71) mauUtyWin;
+
+    if($value==242)
+        window -e -wh 260 ($h+71) mauUtyWin;
+    //------------ Switch Tabs -------------
+    if($value==25)
+    {
+        if($currentTab == "mauUtyFLbase")
+        {
+            if($w > 260)
+            {
+                if($system == "win32")
+                    window -e -wh $w 125 mauUtyWin;
+                if($system == "linux2")
+                    window -e -wh $w 105 mauUtyWin;
+            }else{
+                if($system == "win32")
+                    window -e -wh 260 125 mauUtyWin;
+                if($system == "linux2")
+                    window -e -wh 260 105 mauUtyWin;
+            }
+
+            for($eB in $basicChilds)
+            {
+                if(`objectType $eB` == "frameLayout")
+                {
+                    if(( $eB == "shelfFL" ) && ( `frameLayout -q -cl $eB` == 0 ))
+                        resizeWIN 16;
+                    if(( $eB == "renameFL" ) && ( `frameLayout -q -cl $eB` ==  0 ))
+                        resizeWIN 12;
+                    
+                }
+            }
+
+        }
+        if($currentTab == "mauUtyFLrig")
+        {
+            if($w > 260)
+            {
+                if($system == "win32")
+                    window -e -wh $w 215 mauUtyWin;
+                if($system == "linux2")
+                    window -e -wh $w 210 mauUtyWin; 
+            }else{
+                if($system == "win32")
+                    window -e -wh 260 215 mauUtyWin;
+                if($system == "linux2")
+                    window -e -wh 260 210 mauUtyWin;
+            }
+
+            for($eR in $rigChilds)
+            {
+                if(`objectType $eR` == "frameLayout")
+                {
+                    if(( $eR == "utyNodesFR" ) && ( `frameLayout -q -cl $eR` == 0 ))
+                        resizeWIN 18;
+                    if(( $eR == "matchFL" ) && ( `frameLayout -q -cl $eR` ==  0 ))
+                        resizeWIN 6;
+                    if(( $eR == "flipFL") && ( `frameLayout -q -cl $eR` == 0 ))
+                        resizeWIN 2;
+                    if(( $eR == "attrFL" ) && ( `frameLayout -q -cl $eR` == 0 ))
+                        resizeWIN 32;
+                    if(( $eR == "jntFR" ) && ( `frameLayout -q -cl $eR` == 0 ))
+                        resizeWIN 22;
+                    if(( $eR == "seleFR" ) && ( `frameLayout -q -cl $eR` == 0 ))
+                        resizeWIN 8;
+                }
+            }
+        }
+        if($currentTab == "mauUtyFLpick")
+        {
+            if($w > 260)
+                window -e -wh $w 315 mauUtyWin;
+            else
+                window -e -wh 260 315 mauUtyWin;
+        }
+
+        if($currentTab == "mauUtyFLskin")
+        {
+            if($w > 260)
+            {   
+                if($system == "win32")
+                    window -e -wh $w 163 mauUtyWin;
+                if($system == "linux2")
+                    window -e -wh $w 150 mauUtyWin;
+            }else{
+                if($system == "win32")
+                    window -e -wh 260 163 mauUtyWin;
+                if($system == "linux2")
+                    window -e -wh 260 150 mauUtyWin;
+            }
+
+            for($sV in $skinChilds)
+            {
+                if(`objectType $sV` == "frameLayout")
+                {
+                    if(( $sV == "skinBtwFR" ) && ( `frameLayout -q -cl $sV` == 0 ))
+                        resizeWIN 28;
+                    if(( $sV == "bindPoseFR" ) && ( `frameLayout -q -cl $sV` == 0 ))
+                        resizeWIN 30;
+                    if(( $sV == "skinAverageFR" ) && ( `frameLayout -q -cl $sV` == 0 ))
+                        resizeWIN 30;
+                }
+            }
+        }
+
+        if($currentTab == "mauUtyFLvis")
+        {
+            if($w > 260)
+            {
+                if($system == "win32")
+                    window -e -wh $w 125 mauUtyWin;
+                if($system == "linux2")
+                    window -e -wh $w 100 mauUtyWin;
+            }else{
+                if($system == "win32")
+                    window -e -wh 260 125 mauUtyWin;
+                if($system == "linux2")
+                    window -e -wh 260 100 mauUtyWin;
+            }
+
+            for($eV in $visChilds)
+            {
+                if(`objectType $eV` == "frameLayout")
+                {
+                    if(( $eV == "glFR" ) && ( `frameLayout -q -cl $eV` == 0 ))
+                        resizeWIN 10;
+                    if(( $eV == "showFL" ) && ( `frameLayout -q -cl $eV` ==  0 ))
+                        resizeWIN 4;
+                    if(( $eV == "extraFR" ) && ( `frameLayout -q -cl $eV` == 0 ))
+                        resizeWIN 8;
+                }
+            }
+        }
+    }
+    //------------- skinBtwnFL ----------------
+    if( $value == 27 )
+    {
+        if($w > 260)
+            window -e -wh $w ($h-100) mauUtyWin;
+        else
+            window -e -wh 260 ($h-100) mauUtyWin;
+    }
+    if( $value == 28 )
+    {
+        if($w > 260)
+            window -e -wh $w ($h+100) mauUtyWin;
+        else
+            window -e -wh 260 ($h+100) mauUtyWin;
+    }
+    if( $value == 271 )
+    {
+        if($w > 260)
+            window -e -wh $w ($h-30) mauUtyWin;
+        else
+            window -e -wh 260 ($h-30) mauUtyWin;
+    }
+    if( $value == 281 )
+    {
+        if($w > 260)
+            window -e -wh $w ($h+30) mauUtyWin;
+        else
+            window -e -wh 260 ($h+30) mauUtyWin;
+    }
+    //------------- SkinAverageFR & bindPoseFR ----------------
+    if( $value == 29 )
+    {
+        if($w > 260)
+            window -e -wh $w ($h-90) mauUtyWin;
+        else
+            window -e -wh 260 ($h-90) mauUtyWin;
+    }
+    if( $value == 30 )
+    {
+        if($w > 260)
+            window -e -wh $w ($h+90) mauUtyWin;
+        else
+            window -e -wh 260 ($h+90) mauUtyWin;
+    }
+
+    //--------------- attrFL -----------------
+    if( $value == 31 )
+    {
+        if($w > 260)
+            window -e -wh $w ($h-288) mauUtyWin;
+        else
+            window -e -wh 260 ($h-288) mauUtyWin;
+    }
+    if( $value == 311 )
+    {
+        window -e -wh 260 $h mauUtyWin;
+    }
+    if( $value == 32 )
+    {
+        if( $w >260)
+            window -e -wh $w ($h+288) mauUtyWin;
+        else
+            window -e -wh 260 ($h+288) mauUtyWin;
+    }
+    if( $value == 322 )
+        window -e -wh ($w+100) $h mauUtyWin;
+    */
+}

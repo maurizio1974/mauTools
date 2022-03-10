@@ -1,0 +1,501 @@
+
+// THE VTX DATA TAB     
+
+global proc string flipperVertexDataTabUI(int $lato, string $win, string $presets[], string $currentPanel, string $panelType)
+{
+    
+    string $mauUtyFLskin    =       `formLayout -p $win`;
+    // COMMON BUTTON
+    string $aniMSetBttn     =           `button` ;
+    string $polyMSetBttn    =           `button` ;
+    string $surfMSetBttn    =           `button` ;
+    string $dynMSetBttn     =           `button` ;
+    string $renMSetBttn     =           `button` ;
+    string $nCMSetBttn      =           `button` ;
+    string $vtxSkinFL       =           `frameLayout`;// Skin Data Copy Paste vertex Skin Value
+    string $vtxSkinFR       =               `formLayout`;
+    string $skinPaintFR     =                   `frameLayout`;
+    string $copyPasteBtwnFL =                       `formLayout`;
+    string $copyVtxBttn     =                           `button`;
+    string $pasteVtxBttn    =                           `button`;
+    string $copyVtxCB       =                           `checkBox`;
+                                                        setParent..;
+                                                    setParent..;
+    string $skinBtwFR       =                   `frameLayout`;// Skin Data Weight in between two Joints
+    string $skinBtwnFL      =                       `formLayout`;
+    string $jnt01Bttn       =                       `button`;
+    string $jnt02Bttn       =                       `button`;
+    string $jnt01TF         =                       `textField`;
+    string $jnt02TF         =                       `textField`;
+    string $jnt01FF         =                       `floatField`;
+    string $jnt02FF         =                       `floatField`;
+    string $assBttn         =                       `button`;
+                                                    setParent..;
+                                                setParent..;
+    string $skinAverageFR   =               `frameLayout`;// Skin Data Average Weights
+    string $skinAverageFL   =                   `formLayout`;
+    string $avgIF1          =                       `intField`;
+    string $avgIF2          =                       `intField`;
+    string $avgIF3          =                       `intField`;
+    string $tx1             =                       `text`;
+    string $tx2             =                       `text`;
+    string $tx3             =                       `text`;
+    string $avgBTT          =                       `button`;
+                                                    setParent..;
+                                                setParent..;
+    string $bindPoseFR      =               `frameLayout`;// Skin Data Bind Pose
+    string $bindPoseFL      =                   `formLayout`;
+    string $bindPoseCB      =                       `checkBox`;
+    string $bindPoseBttn    =                       `button`;
+    string $resetPoseBttn   =                       `button`;
+                                                    setParent..;
+                                                setParent..;
+                                            setParent..;
+                                        setParent..;
+    string $vtxDataFL       =       `frameLayout`;//    vertexData Tab
+    string $vtxDataFR       =           `formLayout`;// vertexData Save
+    string $vertexMapSFR    =               `frameLayout`;
+    string $vtxMapSFR       =                   `formLayout`;
+    string $vtxMapGSBTT     =                       `button`;
+    string $vtxMapSTF       =                       `textField`;
+    string $vtxMapGSNBTT    =                       `button`;
+    string $vtxMapSNTF      =                       `textField`;
+    string $vtxMapGSOM    =                       `optionMenu`;
+    string $vtxMapSBTT      =                       `button`;
+                                                    setParent..;
+                                                setParent..;
+    string $vertexMapLFR    =               `frameLayout`;// vertexData Load
+    string $vtxMapLFR       =                   `formLayout`;
+    string $vtxMapGLBTT     =                       `button`;
+    string $vtxMapLTF       =                       `textField`;
+    string $vtxMapGLNBTT    =                       `button`;
+    string $vtxMapLNTF      =                       `textField`;
+    string $vtxMapLBTT      =                       `button`;
+                                                    setParent..;
+                                                setParent..;
+    string $vertexMapCFR    =               `frameLayout`;// vertexData Copy
+    string $vtxMapCFR       =                   `formLayout`;
+    string $vtxMapGCBTT     =                       `button`;
+    string $vtxMapCTF       =                       `textField`;
+    string $vtxMapCOM1    =                       `optionMenu`;
+    string $vtxMapGCNBTT    =                       `button`;
+    string $vtxMapCNTF      =                       `textField`;
+    string $vtxMapCOM2    =                       `optionMenu`;
+    string $vtxMapCBTT      =                       `button`;
+    string $vtxMapCBX      =                       `checkBox`;
+                                                    setParent..;
+                                                setParent..;
+    string $vertexMapMFR    =               `frameLayout`;// vertexData Mirror
+    string $vtxMapMFR       =                   `formLayout`;
+    string $vtxMapGMBTT     =                       `button`;
+    string $vtxMapMTF       =                       `textField`;
+    string $vtxMapMOM1    =                       `optionMenu`;
+    string $vtxMapGMDBTT    =                       `button`;
+    string $vtxMapMDTF      =                       `textField`;
+    string $vtxMapMOM2    =                       `optionMenu`;
+    string $vtxMapRadioGrp  =                       `radioButtonGrp -nrb 3 -l "" -la3 "X" "Y" "Z"-cl4 "center" "left" "left" "left" -sl 1 -ad4 4 -cw4 45 45 45 45 `;
+    string $vtxMapMBTT      =                       `button`;
+                                                    setParent..;
+                                                setParent..;
+                                            setParent..;
+                                        setParent..;
+                                    setParent..;
+                                
+    //----------------------------------------------------------------------------------------------------------------------------
+    // THIS WE START THE VERTEX DATA TAB
+    //----------------------------------------------------------------------------------------------------------------------------
+    
+        frameLayout -e -cll true -cl 1 -l "Skin" $vtxSkinFL;
+            button -e -l "anim"       -c ( "workingMode animationMenuSet") $aniMSetBttn;
+            button -e -l "poly"       -c ( "workingMode polygonsMenuSet") $polyMSetBttn;
+            button -e -l "surf"       -c ( "workingMode surfacesMenuSet") $surfMSetBttn;
+            button -e -l "dyn"        -c ( "workingMode dynamicsMenuSet") $dynMSetBttn;
+            button -e -l "render"     -c ( "workingMode renderingMenuSet") $renMSetBttn;
+            button -e -l "nDyn"     -c ( "workingMode nDynamicsMenuSet") $nCMSetBttn;
+            formLayout -e  $vtxSkinFR;
+                frameLayout -e -w $lato -cll true -cl 1 -l "Copy/Paste vtx Weight" $skinPaintFR;
+                    formLayout -e $copyPasteBtwnFL;
+                        button -e -l "Copy VTXs" -c "storeSelectedVtxWeight" $copyVtxBttn;
+                        button -e -l "Paste VTXs" -c "pasteStoredVtxWeight" $pasteVtxBttn;
+                        checkBox -e -en 0 -v 0 -l "M" -ann "Mirror the selected invluences acting on the vetexes." -al "left" $copyVtxCB;
+                    
+                    formLayout -e
+                    
+                        -af $copyVtxCB "left" 0
+                        -af $copyVtxCB "top" 5
+                        -ap $copyVtxCB "right" 0 15
+                        
+                        -ac $copyVtxBttn "left" 0 $copyVtxCB
+                        -af $copyVtxBttn "top" 5
+                        -ap $copyVtxBttn "right" 0 60
+                
+                        -ac $pasteVtxBttn "left" 0 $copyVtxBttn
+                        -af $pasteVtxBttn "top" 5
+                        -af $pasteVtxBttn "right" 0
+                    
+                    $copyPasteBtwnFL;
+                        
+                frameLayout -e -w $lato -cll true -cl 1 -l "Weight Between 2 Joints" $skinBtwFR;
+                    formLayout -e $skinBtwnFL;
+                        button -e -l "JointOne" -c "skinBtwn 0" $jnt01Bttn;
+                        button -e -l "jointTwo" -c "skinBtwn 1" $jnt02Bttn;
+                        textField -e -ed 0 $jnt01TF;
+                        textField -e -ed 0 $jnt02TF;
+                        floatField -e -v 0.5000 -min 0 -max 1 -pre 4 -cc ("floatField -e -v (1-`floatField -q -v \""+$jnt01FF+"\"`)\""+$jnt02FF+"\"") $jnt01FF;
+                        floatField -e -v 0.5000 -pre 4 -cc ("floatField -e -v (1-`floatField -q -v \""+$jnt02FF+"\"`)\""+$jnt01FF+"\"") $jnt02FF;
+                        button -e -l "Select Vertx and Assign" -c "skinBtwn 2" $assBttn;
+                
+                    formLayout -e
+            
+                        -af $jnt01Bttn "left" 0
+                        -af $jnt01Bttn "top" 5
+                        -ap $jnt01Bttn "right" 0 50
+                
+                        -ac $jnt02Bttn "left" 0 $jnt01Bttn
+                        -af $jnt02Bttn "top" 5
+                        -af $jnt02Bttn "right" 0
+                
+                        -af $jnt01TF "left" 0
+                        -ac $jnt01TF "top" 0 $jnt01Bttn
+                        -ap $jnt01TF "right" 0 50
+                
+                        -ac $jnt02TF "left" 0 $jnt01TF
+                        -ac $jnt02TF "top" 0 $jnt02Bttn
+                        -af $jnt02TF "right" 0
+                
+                        -af $jnt01FF "left" 0
+                        -ac $jnt01FF "top" 0 $jnt01TF
+                        -ap $jnt01FF "right" 0 50
+                
+                        -ac $jnt02FF "left" 0 $jnt01FF
+                        -ac $jnt02FF "top" 0 $jnt02TF
+                        -af $jnt02FF "right" 0
+                
+                        -af $assBttn "left" 0
+                        -ac $assBttn "top" 0 $jnt01FF
+                        -af $assBttn "right" 0
+            
+                    $skinBtwnFL;
+                
+                frameLayout -e -w $lato -cll true -cl 1  -l "Average Weight" $skinAverageFR;
+                    formLayout -e $skinAverageFL;
+                        intField -e $avgIF1;
+                        intField -e -v 2 $avgIF2;
+                        intField -e -v 1 -min 0 $avgIF3;
+                        text -e -l "Weight Change" $tx1;
+                        text -e -l "Interations" $tx2;
+                        text -e -l "Radius" $tx3;
+                        button -e -c ("avgWeights ((`intField -q -v \""+$avgIF1+"\"`),(`intField -q -v \""+$avgIF1+"\"`),(`intField -q -v \""+$avgIF1+"\"`))") -l "Average Weight" $avgBTT;
+                    
+                    formLayout -e
+                        
+                        -af $tx1 "top" 5
+                        -af $tx1 "left" 0
+                        -ap $tx1 "right" 0 70
+                        
+                        -af $avgIF1 "top" 5
+                        -ac $avgIF1 "left" 5 $tx1
+                        -af $avgIF1 "right" 0
+                        
+                        -ac $tx2 "top" 3 $tx1
+                        -af $tx2 "left" 0
+                        -ap $tx2 "right" 0 70
+                        
+                        -ac $avgIF2 "top" 0 $avgIF1
+                        -ac $avgIF2 "left" 5 $tx2
+                        -af $avgIF2 "right" 0
+                        
+                        -ac $tx3 "top" 3 $tx2
+                        -af $tx3 "left" 0
+                        -ap $tx3 "right" 0 70
+                        
+                        -ac $avgIF3 "top" 0 $avgIF2
+                        -ac $avgIF3 "left" 5 $tx2
+                        -af $avgIF3 "right" 0
+                        
+                        -ac $avgBTT "top" 5 $avgIF3
+                        -af $avgBTT "left" 0
+                        -af $avgBTT "right" 0
+                    
+                    $skinAverageFL;
+                    
+                frameLayout -e -w $lato -cll true -cl 1 -l "Set new BindPose" $bindPoseFR;
+                    formLayout -e $bindPoseFL;
+                        checkBox -e -l "   Selection Based"
+                                 -onc ("checkBox -e -l \"   Everything in the scene\" \""+$bindPoseCB+"\";window -e -w "+$lato+" \""+$win+"\"")
+                                 -ofc ("checkBox -e -l \"   Selection Based\" \""+$bindPoseCB+"\";window -e -w "+$lato+" \""+$win+"\"")
+                                 $bindPoseCB;
+                        button -e -l " Set new bindPose" -c "mauBindPose 0" $bindPoseBttn;
+                        button -e -l " Reset bindPose" -c "mauBindPose 1" $resetPoseBttn;
+        
+                    formLayout -e
+            
+                        -af $bindPoseCB "left" 15
+                        -af $bindPoseCB "top" 5
+                        -af $bindPoseCB "right" 0
+                
+                        -af $bindPoseBttn "left" 0
+                        -ac $bindPoseBttn "top" 5 $bindPoseCB
+                        -af $bindPoseBttn "right" 0
+                
+                        -af $resetPoseBttn "left" 0
+                        -ac $resetPoseBttn "top" 5 $bindPoseBttn
+                        -af $resetPoseBttn "right" 0
+            
+                    $bindPoseFL;
+            
+            
+        formLayout -e
+            -af $skinPaintFR "left" 5
+            -af $skinPaintFR "right" 5
+            -af $skinPaintFR "top" 5
+        
+            -af $skinBtwFR "left" 5
+            -af $skinBtwFR "right" 5
+            -ac $skinBtwFR "top" 5 $skinPaintFR
+        
+            -af $skinAverageFR "left" 5
+            -af $skinAverageFR "right" 5
+            -ac $skinAverageFR "top" 5 $skinBtwFR
+        
+            -af $bindPoseFR "left" 5
+            -af $bindPoseFR "right" 5
+            -ac $bindPoseFR "top" 5 $skinAverageFR
+        $vtxSkinFR;
+        
+        frameLayout -e -cll true -cl 1 -l "Vertex Data" $vtxDataFL;
+            formLayout -e  $vtxDataFR;
+                frameLayout -e -w $lato -cll true -cl 1 -l "Save" $vertexMapSFR;
+                    formLayout -e  $vtxMapSFR;
+                        button -e -l "Path" -c ("textField -e -tx (`mgPath 3`) "+$vtxMapSTF+";") $vtxMapGSBTT;
+                        textField -e -tx "" $vtxMapSTF;
+                        button -e -l "Node" -c ("textField -e -tx (`mgSingleSel`) \""+$vtxMapSNTF+"\";multiIUHelper(\""+$vtxMapSNTF+"\",\""+$vtxMapGSOM+"\")") $vtxMapGSNBTT;
+                        textField -e -tx "" $vtxMapSNTF;
+                        button -e -l "Save" -c ("writeVtxData((`textField -q -tx\""+$vtxMapSNTF+"\"`),(`textField -q -tx\""+$vtxMapSTF+"\"`));") $vtxMapSBTT;
+                    formLayout -e
+            
+                        -af $vtxMapGSBTT "left" 5
+                        -ap $vtxMapGSBTT "right" 5 30
+                        -af $vtxMapGSBTT "top" 5
+                        
+                        -ac $vtxMapSTF "left" 5 $vtxMapGSBTT
+                        -af $vtxMapSTF "right" 5
+                        -af $vtxMapSTF "top" 5
+                        
+                        -af $vtxMapGSNBTT "left" 5
+                        -ap $vtxMapGSNBTT "right" 5 30
+                        -ac $vtxMapGSNBTT "top" 5 $vtxMapGSBTT 
+                        
+                        -ac $vtxMapSNTF "left" 5 $vtxMapGSNBTT
+                        -af $vtxMapSNTF "right" 5
+                        -ac $vtxMapSNTF "top" 5 $vtxMapSTF
+                        
+                        -af $vtxMapGSOM "left" 5
+                        -af $vtxMapGSOM "right" 5
+                        -ac $vtxMapGSOM "top" 5 $vtxMapSNTF
+                        
+                        -af $vtxMapSBTT "left" 5
+                        -af $vtxMapSBTT "right" 5
+                        -ac $vtxMapSBTT "top" 5 $vtxMapGSOM
+            
+                    $vtxMapSFR;
+                    
+                frameLayout -e -w $lato -cll true -cl 1 -l "Load" $vertexMapLFR;
+                    formLayout -e  $vtxMapLFR;
+                        button -e -l "File" -c ("textField -e -tx (`mgPath 1`) "+$vtxMapLTF+";") $vtxMapGLBTT;
+                        textField -e -tx "" $vtxMapLTF;
+                        button -e -l "Node" -c ("textField -e -tx (`mgSingleSel`) "+$vtxMapLNTF+";") $vtxMapGLNBTT;
+                        textField -e -tx "" $vtxMapLNTF;
+                        button -e -l "Load" -c ("readVtxData((`textField -q -tx\""+$vtxMapLNTF+"\"`),(`textField -q -tx\""+$vtxMapLTF+"\"`));") $vtxMapLBTT;
+                    formLayout -e
+            
+                        -af $vtxMapGLBTT "left" 5
+                        -ap $vtxMapGLBTT "right" 5 30
+                        -af $vtxMapGLBTT "top" 5
+                        
+                        -ac $vtxMapLTF "left" 5 $vtxMapGLBTT
+                        -af $vtxMapLTF "right" 5
+                        -af $vtxMapLTF "top" 5
+                        
+                        -af $vtxMapGLNBTT "left" 5
+                        -ap $vtxMapGLNBTT "right" 5 30
+                        -ac $vtxMapGLNBTT "top" 5 $vtxMapGLBTT
+                        
+                        -ac $vtxMapLNTF "left" 5 $vtxMapGLNBTT
+                        -af $vtxMapLNTF "right" 5
+                        -ac $vtxMapLNTF "top" 5 $vtxMapLTF
+                        
+                        -af $vtxMapLBTT "left" 5
+                        -af $vtxMapLBTT "right" 5
+                        -ac $vtxMapLBTT "top" 5 $vtxMapLNTF
+            
+                    $vtxMapLFR;
+                
+                frameLayout -e -w $lato -cll true -cl 1 -l "Copy" $vertexMapCFR;
+                    formLayout -e  $vtxMapCFR;
+                        button -e -l "From" -c ("textField -e -tx (`mgSingleSel`) \""+$vtxMapCTF+"\";multiIUHelper(\""+$vtxMapCTF+"\",\""+$vtxMapCOM1+"\")") $vtxMapGCBTT;
+                        textField -e -tx "" $vtxMapCTF;
+                        button -e -l "To" -c ("textField -e -tx (`mgSingleSel`) \""+$vtxMapCNTF+"\";multiIUHelper(\""+$vtxMapCNTF+"\",\""+$vtxMapCOM2+"\")") $vtxMapGCNBTT;
+                        textField -e -tx "" $vtxMapCNTF;
+                        checkBox -e -l "normal" -onc ("checkBox -e -l \"inverted\""+$vtxMapCBX+";") -ofc ("checkBox -e -l \"normal\""+$vtxMapCBX+";") $vtxMapCBX;
+                        button -e -l "Copy" -c ("string $uTemp = `textField -q -tx\""+$vtxMapCTF+"\"`;"+
+                                                             "string $dTemp = `textField -q -tx\""+$vtxMapCNTF+"\"`;"+
+                                                             "string $uoTemp = `optionMenu -q -v\""+$vtxMapCOM1+"\"`;"+
+                                                             "string $doTemp = `optionMenu -q -v\""+$vtxMapCOM2+"\"`;"+
+                                                             "int $cxTemp = `checkBox -q -v\""+$vtxMapCBX+"\"`;"+
+                                                             "python(\"vertexLib.mnmPastePerVertex('\"+$uTemp+\"','\"+$dTemp+\"','\"+$uoTemp+\"','\"+$doTemp+\"',\"+$cxTemp+\")\");")
+                                                             $vtxMapCBTT;
+                                                             //"python(\"vertexLib.mnmPastePerVertex('\"+$uTemp+\"','\"+$dTemp+\"','\"+$uoTemp+\"','\"+$doTemp+\"')\");")
+                    formLayout -e
+            
+                        -af $vtxMapGCBTT "left" 5
+                        -ap $vtxMapGCBTT "right" 5 30
+                        -af $vtxMapGCBTT "top" 5
+                        
+                        -ac $vtxMapCTF "left" 5 $vtxMapGCBTT
+                        -af $vtxMapCTF "right" 5
+                        -af $vtxMapCTF "top" 5
+                        
+                        -ac $vtxMapCOM1 "top" 5 $vtxMapCTF
+                        -af $vtxMapCOM1 "right" 5
+                        -af $vtxMapCOM1 "left" 5
+                        
+                        -af $vtxMapGCNBTT "left" 5
+                        -ap $vtxMapGCNBTT "right" 5 30
+                        -ac $vtxMapGCNBTT "top" 5 $vtxMapCOM1
+                        
+                        -ac $vtxMapCNTF "left" 5 $vtxMapGCNBTT
+                        -af $vtxMapCNTF "right" 5
+                        -ac $vtxMapCNTF "top" 5 $vtxMapCOM1
+                        
+                        -ac $vtxMapCOM2 "top" 5 $vtxMapCNTF
+                        -af $vtxMapCOM2 "right" 5
+                        -af $vtxMapCOM2 "left" 5
+                        
+                        -af $vtxMapCBX "left" 5
+                        -ap $vtxMapCBX "right" 5 10
+                        -ac $vtxMapCBX "top" 5 $vtxMapCOM2
+                        
+                        -ac $vtxMapCBTT "left" 5 $vtxMapCBX
+                        -af $vtxMapCBTT "right" 5
+                        -ac $vtxMapCBTT "top" 5 $vtxMapCOM2
+            
+                    $vtxMapCFR;
+                    
+                frameLayout -e -w $lato -cll true -cl 1 -l "Mirror" $vertexMapMFR;
+                    formLayout -e  $vtxMapMFR;
+                        button -e -l "From" -c ("textField -e -tx (`mgSingleSel`) \""+$vtxMapMTF+"\";multiIUHelper(\""+$vtxMapMTF+"\",\""+$vtxMapMOM1+"\")") $vtxMapGMBTT;
+                        textField -e -tx "" $vtxMapMTF;
+                        button -e -l "From" -c ("textField -e -tx (`mgSingleSel`) \""+$vtxMapMDTF+"\";multiIUHelper(\""+$vtxMapMDTF+"\",\""+$vtxMapMOM2+"\")") $vtxMapGMDBTT;
+                        textField -e -tx "" $vtxMapMDTF;
+                        radioButtonGrp -e $vtxMapRadioGrp;
+                        button -e -l "Mirror" -c ("mirrorVtxData((`textField -q -tx \""+$vtxMapMTF+"\"`),(`textField -q -tx \""+$vtxMapMDTF+"\"`),(`radioButtonGrp -q -sl \""+$vtxMapRadioGrp+"\"`))") $vtxMapMBTT;
+                        
+                    formLayout -e
+            
+                        -af $vtxMapGMBTT "left" 5
+                        -ap $vtxMapGMBTT "right" 5 40
+                        -af $vtxMapGMBTT "top" 5
+                        
+                        -ac $vtxMapMTF "left" 5 $vtxMapGMBTT
+                        -af $vtxMapMTF "right" 5
+                        -af $vtxMapMTF "top" 5
+                                                
+                        -af $vtxMapMOM1 "left" 5
+                        -af $vtxMapMOM1 "right" 5
+                        -ac $vtxMapMOM1 "top" 5 $vtxMapMTF
+                        
+                        -af $vtxMapGMDBTT "left" 5
+                        -ap $vtxMapGMDBTT "right" 5 40
+                        -ac $vtxMapGMDBTT "top" 5 $vtxMapMOM1
+                        
+                        -ac $vtxMapMDTF "left" 5 $vtxMapGMDBTT
+                        -af $vtxMapMDTF "right" 5
+                        -ac $vtxMapMDTF "top" 5 $vtxMapMOM1
+                        
+                        -af $vtxMapMOM2 "left" 5
+                        -af $vtxMapMOM2 "right" 5
+                        -ac $vtxMapMOM2 "top" 5 $vtxMapMDTF
+                        
+                        -af $vtxMapRadioGrp "left" 5
+                        -af $vtxMapRadioGrp "right" 5
+                        -ac $vtxMapRadioGrp "top" 5 $vtxMapMOM2
+
+                        -af $vtxMapMBTT "left" 5
+                        -af $vtxMapMBTT "right" 5
+                        -ac $vtxMapMBTT "top" 5 $vtxMapRadioGrp
+            
+                    $vtxMapMFR;
+                
+            formLayout -e
+              
+                -af $vertexMapSFR "left" 5
+                -af $vertexMapSFR "right" 5
+                -af $vertexMapSFR "top" 5
+                
+                -af $vertexMapLFR "left" 5
+                -af $vertexMapLFR "right" 5
+                -ac $vertexMapLFR "top" 5 $vertexMapSFR
+                
+                -af $vertexMapCFR "left" 5
+                -af $vertexMapCFR "right" 5
+                -ac $vertexMapCFR "top" 5 $vertexMapLFR
+                
+                -af $vertexMapMFR "left" 5
+                -af $vertexMapMFR "right" 5
+                -ac $vertexMapMFR "top" 5 $vertexMapCFR
+            
+            $vtxDataFR;
+            
+    // ARRANGEMENT FOR THE SKIN TAB
+    formLayout -e
+    
+        -af $aniMSetBttn "top" 5
+        -af $aniMSetBttn "left" 5
+        -ap $aniMSetBttn "right" 0 15
+        
+        -ac $polyMSetBttn "left" 0 $aniMSetBttn
+        -af $polyMSetBttn "top" 5
+        -ap $polyMSetBttn "right" 0 30
+        
+        -af $surfMSetBttn "top" 5
+        -ac $surfMSetBttn "left" 0 $polyMSetBttn
+        -ap $surfMSetBttn "right" 0 45
+        
+        -ac $dynMSetBttn "left" 0 $surfMSetBttn
+        -af $dynMSetBttn "top" 5
+        -ap $dynMSetBttn "right" 0 60
+        
+        -af $renMSetBttn "top" 5
+        -ac $renMSetBttn "left" 0 $dynMSetBttn
+        -ap $renMSetBttn "right" 0 80
+        
+        -af $nCMSetBttn "top" 5
+        -ac $nCMSetBttn "left" 0 $renMSetBttn
+        -af $nCMSetBttn "right" 5
+        
+        -af $vtxSkinFL "left" 5
+        -af $vtxSkinFL "right" 5
+        -ac $vtxSkinFL "top" 5 $aniMSetBttn
+        
+        -af $vtxDataFL "left" 5
+        -af $vtxDataFL "right" 5
+        -ac $vtxDataFL "top" 5 $vtxSkinFL
+
+    $mauUtyFLskin;
+    
+    return $mauUtyFLskin;
+}
+
+
+global proc multiIUHelper(string $node, string $menu)
+{
+        // CLEAN THE UI
+        string $menuItems[] = `optionMenu -q -ils $menu`;
+        for ($i in $menuItems)
+                deleteUI $i;
+        $node = `textField -q -tx $node`;
+        string $attrs[] = python( "nodeLib.mnmMultiAttr('"+$node+"')" );
+        for ($each in $attrs)
+                menuItem -l $each -p $menu;
+}

@@ -1,0 +1,398 @@
+/*
+	Selection Manager v1.7, 14 June 2006
+	====================================
+ 
+ 
+	Author
+	======
+	calin panait [ yashu ] 2006, alayashu@yahoo.com / http://yashu.go.ro
+	also thanks to jojaa for the elegant way to add an button to the cbox :)
+
+	Install
+	=======
+	copy this script to user scripts dir then	add "source ya_selectionManager;"
+	to the userSetup.mel file.
+	
+	to use, fire up maya and click on the new button in the
+	channelbox/layer editor button field.
+	
+
+	Notes
+	=====
+	The selManager list has an RMB menu from where you can fastly access the main commands.
+	The select button has an RMB menu from wich you can switch the button to execute different
+	commands. The command also gets executed when you click on the respective menuItems.
+	The Selection Manager icon on the channelBox area has an RMB menu (v1.7+) from wich
+	you can change the layout to single selManager or channelBox + selManager.
+	
+	
+	Version History
+	===============
+	
+	Sel Manager 1.7 (14 June 2006)
+	 -added substract Quick Selection Sets (QSS) from Selection function
+	 -added substract Selection from QSS function
+	 -added intersect QSS with Selection function
+	 -added options to switch the single selManager layout to channelbox / selManager layout
+	 -added options to set the QSS List Height
+	 -misc UI adjustments
+	
+	Sel Manager 1.5 (27 May 2006)
+	 -made it possible to select more QSS at a time
+	 -made it possible to select the intersection of multiple qSets
+	 -worked a bit the UI
+	
+	Sel Manager 1.0
+	 -first version of the script
+	 
+	
+
+	Big Thanks to all the users of this script for the feedback and ideas ;)
+	
+	If you have further request / enhancement ideas then mail me
+	or post it on the selManager forum from highend3d:
+	http://www.highend3d.com/boards/index.php?showtopic=223791
+	 
+*/
+
+global proc ya_showSelectionManager(string $mode)
+{
+	if ($mode == "selManager")
+	{
+		paneLayout -e -cn "single" ChannelsLayersPaneLayout; 
+		paneLayout -e -setPane ya_selectionManagerTopControl 1 ChannelsLayersPaneLayout; 
+		textScrollList -e -h `optionVar -q ya_selManagerListHeight` ya_selectionManagerList;
+		ya_updateSelectionManager();
+	}
+	else if ($mode == "cBoxAndSelManager")
+	{
+		global string $gChannelBoxForm;
+		
+		paneLayout -e -cn "horizontal2" ChannelsLayersPaneLayout; 
+		paneLayout -e -setPane $gChannelBoxForm 1 ChannelsLayersPaneLayout; 
+		paneLayout -e -setPane ya_selectionManagerTopControl 2 ChannelsLayersPaneLayout;
+		textScrollList -e -h `optionVar -q ya_selManagerListHeight2` ya_selectionManagerList;
+		ya_updateSelectionManager();
+	}
+	
+	iconTextCheckBox -edit -value 0 ChannelsLayersChannelsCheckBox;
+	iconTextCheckBox -edit -value 0 ChannelsLayersLayersCheckBox;
+	iconTextCheckBox -edit -value 0 ChannelsLayersBothCheckBox;
+	iconTextCheckBox -edit -value 1 ChannelsLayersSelectionManagerCheckBox;
+	symbolButton -edit -enable false cbManipsButton;
+	symbolButton -edit -enable false cbSpeedButton;
+	symbolCheckBox -edit -enable false cbHyperbolicButton;
+	
+}
+
+global proc ya_updateSelectionManager()
+{
+	textScrollList -e -ra ya_selectionManagerList;
+	
+	string $qSets[] = `ls -sets`;
+
+	for( $qSet in $qSets )
+	{
+		if( `sets -q -t $qSet` == "gCharacterSet" )
+		{
+			textScrollList -e -a $qSet -dcc "ya_selectionManagerPerform(\"Select\")" ya_selectionManagerList;
+		}
+	}
+}
+ 
+
+global proc ya_selectionManagerPerform(string $mod)
+{
+	string $item[] = `textScrollList -q -si ya_selectionManagerList`;
+	
+	if ($mod == "Select")
+	{
+		if (size($item)) select -cl;
+		for ($qs in $item)
+			if (objExists($qs)) select -add $qs;
+	}
+	
+	else if ($mod == "Delete")
+	{
+		for ($qs in $item)
+			if (objExists($qs)) delete $qs;
+			
+		ya_updateSelectionManager();
+	}
+	
+	else if ($mod == "Create")
+	{
+		string $qSet = `textField -q -tx ya_selectionManagerCreateField`;
+		sets -text "gCharacterSet" -name $qSet;
+		ya_updateSelectionManager();
+	}
+	
+	else if ($mod == "Intersect")
+	{
+		string $setList[] = `textScrollList -q -si ya_selectionManagerList`;
+		
+		if (size($setList) > 1)
+		{
+			string $qss;
+			
+			for ($k=0;$k<size($setList);$k++)
+					$qss += ($setList[$k] + " ");
+		
+			string $intersection[] = eval("sets -int " + $qss);
+			select -r $intersection;
+		}
+	}
+	else if ($mod == "Intersect2") // intersect qss(s) with selection
+	{
+		string $setList[] = `textScrollList -q -si ya_selectionManagerList`;
+			
+		if (size($setList) > 0)
+		{
+			sets -text "gCharacterSet" -name ya_tempSetSelection;
+			
+			string $qss;
+			
+			for ($k=0;$k<size($setList);$k++)
+					$qss += ($setList[$k] + " ");
+		
+			string $intersection[] = eval("sets -int " + $qss + "ya_tempSetSelection");
+			select -r $intersection;
+			
+			delete ya_tempSetSelection;
+		}
+	}
+	else if ($mod == "Substract" || $mod == "Substract2")
+	{
+		string $setList[] = `textScrollList -q -si ya_selectionManagerList`;
+		
+		if (size($setList) > 0)
+		{
+			sets -text "gCharacterSet" -name ya_tempSetSelection;
+			
+			string $qss;
+			for ($k=0;$k<size($setList);$k++)
+					$qss += ($setList[$k] + " ");
+	
+			if (size($setList) == 1)
+			{
+				eval("sets -text \"gCharacterSet\" -n \"ya_tempSetUnion\" " + $qss);
+				sets -fl ya_tempSetUnion;
+			} else
+			{
+				string $setComp[] = `eval("sets -un " + $qss)`;
+				sets -text "gCharacterSet" -n "ya_tempSetUnion" $setComp;
+			}
+			
+			if ($mod == "Substract") select `sets -sub ya_tempSetSelection ya_tempSetUnion`;
+			else                     select `sets -sub ya_tempSetUnion ya_tempSetSelection`;
+			
+			delete ya_tempSetUnion;
+			delete ya_tempSetSelection;
+		}
+	}
+}
+
+
+global proc ya_listHeight(string $mode)
+{
+	int $height = `textScrollList -q -h ya_selectionManagerList`;
+	
+	if ($mode == "add")
+	{
+		if ($height < 400) $height += 50;
+		textScrollList -e -h $height ya_selectionManagerList;
+	}
+	else
+	{
+		if ($height > 100) $height -= 50;
+		textScrollList -e -h $height ya_selectionManagerList;
+	}
+
+	if (`iconTextCheckBox -q -l ChannelsLayersSelectionManagerCheckBox` == "   !")
+	optionVar -iv ya_selManagerListHeight2 $height;
+	else optionVar -iv ya_selManagerListHeight $height;
+}
+ 
+ 
+global proc ya_buildSelectionManager()
+{
+	
+if (!`optionVar -ex ya_selManagerListHeight`) optionVar -iv ya_selManagerListHeight 220;
+if (!`optionVar -ex ya_selManagerListHeight2`) optionVar -iv ya_selManagerListHeight2 120;
+
+frameLayout
+		-labelVisible  false
+		-collapsable   false
+		-collapse      false 
+		-marginHeight  1
+		-marginWidth   1
+		-borderStyle   "etchedIn"
+		-p ChannelsLayersPaneLayout
+ya_selectionManagerTopControl;
+
+
+//scrollLayout -cr 1;
+$col1 = `columnLayout -adj true -co "both" 3`;
+
+	separator -style "none" -h 3 -p $col1;
+	
+	frameLayout -fn "smallPlainLabelFont" -l "Quick Selection Sets" -la "bottom" -bs "etchedOut" -p $col1;
+		columnLayout -adj 1 -co "both" 2;
+			separator -style "none" -h 2;
+			textScrollList -h `optionVar -q ya_selManagerListHeight` -ams 1 -dkc "ya_selectionManagerPerform(\"Delete\")" ya_selectionManagerList;
+			popupMenu -p ya_selectionManagerList;
+				menuItem -l "Select QSS" -c "ya_selectionManagerPerform(\"Select\")" -ann "Union Select: Selects all the hilited qSets from the selManager list.";
+				menuItem -d 1;
+				menuItem -l "Intersect QSS" -c "ya_selectionManagerPerform(\"Intersect\")" -ann "Intersection Select: Intersects all the hilited QSS.";
+				menuItem -l "Intersect QSS-Sel" -c "ya_selectionManagerPerform(\"Intersect2\")" -ann "Intersect QSS with Selection: Intersects the hilited QSS with the current selection.";
+				menuItem -d 1;
+				menuItem -l "Substract QSS-Sel" -c "ya_selectionManagerPerform(\"Substract\")" -ann "Substract QSS from Selection: Removes the hilited quick selection sets from the current selection.";
+				menuItem -l "Substract Sel-QSS" -c "ya_selectionManagerPerform(\"Substract2\")" -ann "Substract Selection from QSS: Removes the current selection from the hilited quick selection sets.";
+				menuItem -d 1;
+				menuItem -l "Delete QSS" -c "ya_selectionManagerPerform(\"Delete\")" -ann "Delete the hilited QSS";
+				menuItem -d 1;
+				menuItem -l "Refresh List" -c "ya_updateSelectionManager";
+				menuItem -d 1;
+				menuItem -l "List Height +50" -c "ya_listHeight(\"add\")" -ann "Make the QSS List 50 pixels higher";
+				menuItem -l "List Height -50" -c "ya_listHeight(\"lower\")" -ann "Make the QSS List 50 pixels lower";
+			separator -style "none" -h 4;
+			
+			$form = `formLayout -nd 100`;
+				button -l "Select *" -ann "Union Select: Selects all the hilited qSets from the selManager list. RMB for more selection options." -c "ya_selectionManagerPerform(\"Select\")" ya_selectionManagerSelectButton;
+				popupMenu;
+					menuItem -l "Select" -ann "Union Select: Selects all the hilited qSets from the selManager list." -c ("ya_selectionManagerPerform(\"Select\"); button -e -ann \"Union Select: Select all hilited QSS. RMB for more selection options.\" -l \"Select *\" -c \"ya_selectionManagerPerform(\\\"Select\\\")\" ya_selectionManagerSelectButton");
+					menuItem -d 1;
+					menuItem -l "Intersect QSS" -ann "Intersection Select: Intersects all the hilited QSS." -c ("ya_selectionManagerPerform(\"Intersect\"); button -e -ann \"Intersection Select: Intersects all the hilited QSS. RMB for more selection options.\" -l \"Int. QSS *\" -c \"ya_selectionManagerPerform(\\\"Intersect\\\")\" ya_selectionManagerSelectButton");
+					menuItem -l "Intersect QSS-Sel" -ann  "Intersect QSS with Selection: Intersects all the hilited QSS with the current selection." -c ("ya_selectionManagerPerform(\"Intersect2\"); button -e -ann \"Intersect QSS with Selection: Intersects all the hilited QSS with the current selection. RMB for more selection options.\" -l \"Int. QSS-Sel *\" -c \"ya_selectionManagerPerform(\\\"Intersect2\\\")\" ya_selectionManagerSelectButton");
+					menuItem -d 1;
+					menuItem -l "Substract QSS-Sel" -ann "Substract QSS from Selection: Removes the hilited quick selection sets from the current selection." -c ("ya_selectionManagerPerform(\"Substract\"); button -e -ann \"Substract qss-sel: Removes the hilited quick selection sets from the current selection. RMB for more selection options.\" -l \"Subs. Q-S *\" -c \"ya_selectionManagerPerform(\\\"Substract\\\")\" ya_selectionManagerSelectButton");
+					menuItem -l "Substract Sel-QSS" -ann "Substract Selection from QSS: Removes the current selection from the hilited quick selection sets." -c ("ya_selectionManagerPerform(\"Substract2\"); button -e -ann \"Susbtract sel-qss: Removes the current selection from the hilited quick selection sets. RMB for more selection options.\" -l \"Subs. S-Q *\" -c \"ya_selectionManagerPerform(\\\"Substract2\\\")\" ya_selectionManagerSelectButton");
+				setParent -m ..;
+								
+				$but2 = `button -l "Delete" -ann "Delete hilited QSS" -c "ya_selectionManagerPerform(\"Delete\")"`;
+
+			formLayout -e
+							-af ya_selectionManagerSelectButton left 1
+							-ap ya_selectionManagerSelectButton "right" 2 50
+							-af $but2 right 1
+							-ap $but2 "left" 2 50
+			$form;
+			setParent..;
+		
+			separator -style "none" -h 4;
+	
+	separator -style "none" -h 5 -p $col1;
+	
+	frameLayout -fn "smallPlainLabelFont" -l "Create QSS from Selection" -la "bottom" -cll 1 -bs "etchedOut" -p $col1;
+		columnLayout -adj 1 -co "both" 2;
+			separator -style "none" -h 2;
+			textField -ann "Enter the new QSS Name. Press keypad ENTER to create." -ec "ya_selectionManagerPerform(\"Create\");" ya_selectionManagerCreateField;
+			separator -style "none" -h 2;
+			button -l "Create Set" -ann "Create QSS from selection" -c "ya_selectionManagerPerform(\"Create\");";
+			separator -style "none" -h 4;
+			
+	separator -style "none" -h 5 -p $col1;
+	
+} 
+
+
+
+global proc updateChannelsLayers()
+{
+	global string $gChannelsLayersForm;
+	setParent $gChannelsLayersForm;
+	string $childArray[], $configuration, $pane;
+	$configuration = `paneLayout -query -configuration ChannelsLayersPaneLayout`;
+	int $channels = false, $layers = false, $both = false, $selectionManager= false;
+	int $attrEd = false, $tools = false;
+	if (`isUIComponentVisible("Channel Box / Layer Editor")` ){
+		if ("horizontal2" == $configuration) {
+			$channels = false;
+			$layers = false;
+			$both = true;
+			$childArray = `paneLayout -query -childArray ChannelsLayersPaneLayout`;
+			paneLayout -e -setPane $childArray[1] 2 ChannelsLayersPaneLayout; 
+ 
+		} else if ("single" == $configuration) {
+			$pane = `paneLayout -query -pane1 ChannelsLayersPaneLayout`;
+			$childArray = `paneLayout -query -childArray ChannelsLayersPaneLayout`;
+			$both = false;
+			
+			if ($pane == $childArray[0]) {
+				$channels = true;
+				$layers = false;
+			  $selectionManager = false;
+			} else if ($pane == $childArray[1]){
+				$channels = false;
+				$layers = true;
+			  $selectionManager = false;
+			} else {
+				$channels = false;
+				$layers = false;
+			  $selectionManager = true;
+			}
+		} else {
+			error ("Unexpected pane layout configuration. " +
+				"Should be \"single\" or \"horizontal2\"");
+			return;
+		}
+ 
+	} else if (`isUIComponentVisible("Attribute Editor")`) {
+		$attrEd = true;
+	} else if (`isUIComponentVisible("Tool Settings")`) {
+		$tools = true;
+	}
+	iconTextCheckBox -edit -value $channels ChannelsLayersChannelsCheckBox;
+	iconTextCheckBox -edit -value $layers ChannelsLayersLayersCheckBox;
+	iconTextCheckBox -edit -value $both ChannelsLayersBothCheckBox;
+	iconTextCheckBox -edit -value $selectionManager ChannelsLayersSelectionManagerCheckBox;
+	
+	if ($layers == 1 || $selectionManager == 1) {
+		symbolButton -edit -enable false cbManipsButton;
+		symbolButton -edit -enable false cbSpeedButton;
+		symbolCheckBox -edit -enable false cbHyperbolicButton;
+	} else {
+		initChannelBoxButtons;
+	}
+}
+
+
+
+global proc jooya_AddButtonsToChannelBox()
+{
+	global string $gChannelsLayersForm;
+	$butline = `formLayout -query -childArray $gChannelsLayersForm`;
+	setParent ($gChannelsLayersForm+"|"+$butline[0]);
+	$array=`layout -q -ca ($gChannelsLayersForm+"|"+$butline[0])`;
+	int $topSpacing = 0;
+	int $botSpacing = 1;
+	
+	$selectionManager = `iconTextCheckBox
+											-cc "ya_showSelectionManager(\"selManager\")"
+											-l ""
+											/*-image1 "rvPauseIprTuning.xpm"*/
+                                            -i1 "/u/mng/maya/2009-x64/prefs/icons/jooja_sm.xpm"
+											-st "iconAndTextCentered"
+											-width 23 -height 23
+											-ann "Selection Manager" ChannelsLayersSelectionManagerCheckBox
+											`;
+
+	popupMenu -p $selectionManager;
+		menuItem -l "Sel Manager"
+						 -c "ya_showSelectionManager(\"selManager\");iconTextCheckBox -e -l \"\" -ann \"Selection manager\" -cc \"ya_showSelectionManager(\\\"selManager\\\")\" ChannelsLayersSelectionManagerCheckBox"
+						 ;
+		menuItem -l "Channelbox / Sel Manager"
+						 -c "ya_showSelectionManager(\"cBoxAndSelManager\");iconTextCheckBox -e -l \"   !\" -ann \"ChannelBox / Selection Manager\" -cc \"ya_showSelectionManager(\\\"cBoxAndSelManager\\\")\" ChannelsLayersSelectionManagerCheckBox";
+	setParent -m..;
+	
+	formLayout -edit 
+			-attachNone	    $selectionManager	"top" 
+			-attachControl	$selectionManager	"left" 0 $array[2]
+			-attachForm	    $selectionManager	"bottom" $botSpacing
+			-attachNone	    $selectionManager	"right"
+			($gChannelsLayersForm + "|" + $butline[0]);		 
+	
+	ya_buildSelectionManager();
+}
+
+jooya_AddButtonsToChannelBox();

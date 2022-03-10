@@ -1,0 +1,53 @@
+//------------------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------//
+//	SCRIPT:	mgGetMat.mel
+//	VERSION: 1.0
+//	AUTHOR:	Maurizio Giglioli
+//		    maurizio1974@gmail.com
+//	DATE:         19 10 2010
+//  Last Updated:  10 2010
+//
+//
+//	DESCRIPTION:	select all the faces of the same material
+//
+//
+//	INSTRUCTIONS:	source the srcript
+//			        call the procedure mgGetMat()
+//
+//  UPDATE:         retarded faster by using the sets command to get the faces
+//
+//------------------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------//
+
+// GET THE SAME SHADING GROUP FACES
+global proc getFacesShaders(string $shader, string $obj)
+{
+    string $faces[] = `sets -q $shader`;
+    select -add $faces;
+	print ("All faces of the shading group "+$shader+" have been selected\n");
+}
+
+global proc mgGetMat()
+{
+	string $f[] =`ls -fl -sl`;
+	string $sG[] =`ls -type shadingEngine`;
+	string $buf[];
+	
+	if(size($f) != 0)
+	{
+        select -cl;
+        for($ef in $f)
+        {
+            // GET THE OBJECT
+            tokenize($ef,".",$buf);
+            string $o = $buf[0];
+            for($es in $sG)
+            {
+                if(`sets -isMember $es $ef`)
+                    getFacesShaders $es $o;
+            }
+        }
+    }else{
+        warning "Please select only one face of one object !\n";
+    }
+}

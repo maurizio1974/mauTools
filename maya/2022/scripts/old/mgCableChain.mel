@@ -1,0 +1,78 @@
+global proc mgCableChain(string $dir)
+{
+   //source "/media/space/minimo/users/mau/scripts/selectIsoParm.mel";                   
+   
+   string $sel[]=`ls -sl`;
+   
+   for($each in $sel)
+   {
+      string $subD[1]=`polyToSubdiv -ap 0 -ch 0 -aut off  -maxPolyCount 100000  -maxEdgesPerVert 32 $each`;
+      string $nub[1]=`subdToNurbs -ch off -aut on  -ot 0 $subD[0]`;
+      print $nub[0];
+      selectIsoParmCustom($nub[0], $dir);
+      
+      DuplicateCurve;
+      string $circles[]=`ls -type "transform" "duplicatedCurve*"`;
+      select -cl;
+      
+      delete $subD[0];
+      int $counter;
+      
+      for ($eachCircle in $circles)
+      {
+         select $eachCircle;
+         CenterPivot;
+         
+         string $bone=`joint -rad 0.1 -n ("cable"+$each + $counter)`;
+
+         string $pConstr[1]=`pointConstraint $eachCircle $bone`;
+         
+         if(!`objExists ($each+"GRP")`)
+             group -em -w -n ($each+"GRP");
+            
+         parent $bone ($each+"GRP");
+         
+         delete $pConstr[0];
+         delete $eachCircle;
+         $counter++;
+      }
+      
+      string $allJNT[]=`ls ("cable"+$each+"*")`;
+      for($i=0;$i<size($allJNT);$i++)
+      {
+         if($i != (size($allJNT)-1))
+            parent $allJNT[$i] $allJNT[$i+1];
+      }
+   }
+   print "DONE !!! \n";
+}
+
+global proc selectIsoParmCustom(string $sel, string $dir)
+{
+   string $shape[1]=`listRelatives -c $sel`;
+   string $sele[]=`ls -fl ($shape[0]+".u[*][*]")`;
+
+   // Two tokenize command to get what we ned to get a loop for the selection
+   string $buffer[];
+   tokenize($sele[0],"[*:*]",$buffer);
+   print ($sele[0]+"\n\n");
+   print $buffer;
+
+   int $nurb1=$buffer[2];
+   int $nurb2=$buffer[4]+1;
+   
+   int $i;
+   int $nurbX;
+   select -cl;
+   
+   if($nurb1>$nurb2)
+      $nurbX=$nurb1;
+   else
+      $nurbX=$nurb2;
+   
+   // Loop trou all the isoparms and select them
+   for($i=0;$i<$nurbX;$i++)
+   {
+      select -add ($shape[0]+"."+$dir+"["+$i+"]");
+   }
+}

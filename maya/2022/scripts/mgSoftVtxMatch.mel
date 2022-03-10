@@ -1,0 +1,241 @@
+//------------------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------//
+//	SCRIPT:	mgSoftVtxMatch.mel
+//	VERSION: 0.1
+//	AUTHOR:	Maurizio Giglioli
+//		    maurizio1974@gmail.com
+//	DATE:         09 12 2010
+//  Last Updated: 09 13 2010
+//
+//
+//	DESCRIPTION:	Use vertex links to match one mesh shape to anotehr
+//
+//
+//	INSTRUCTIONS:	source the script
+//                  to add links : 
+//                      select the vertex on the matching geo adn the one we want to go to on the matcher geo
+//                      run linkShrinkVtx();
+//			        to make links visible : 
+//                      Select matching geo and run makeLinkShrink()
+//			        to make the actual soft match : 
+//                      Select matching geo , then matcher geo and run mgSoftVtxMatch 1;
+//                      The integer at the end is the interations
+//
+//  LIMITATIONS:    needs xyShrinkWrap.mel.
+//                  Iterations not implemented
+//                  
+//------------------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------//
+
+python ("import maya.cmds as mc");
+python ("import maya.mel as mel");
+python ("import string");
+python ("import sys");
+
+global proc mgSoftVtxMatch( int $iteration)
+{
+    string $buf[], $vtxMatch, $soft01[2], $temp[], $temp1[];
+    int $clean ;
+    float $pos[3], $centerSoft[3];
+    
+    string $sel[] =`ls -sl`;
+    string $attrs[] = `listAttr $sel[0]`;
+    int $vtx[1] = `polyEvaluate -v $sel[0]`;
+    select -cl;
+    
+    // CALCULATE FALLOF BASED ON THE BOUNDING BOX OF THE OBJECT WE WANT TO MATCH
+    float $bBox[] = `exactWorldBoundingBox $sel[0]`;
+    float $fallof = abs((($bBox[0]-$bBox[3])+($bBox[1]-$bBox[4])+($bBox[2]-$bBox[5]))/3);
+    
+    if( size($sel) == 2)
+    {
+        for($eAttr in $attrs)
+        {
+            if(`gmatch $eAttr "vtxLink*"`)
+            {
+                $clean = 1; 
+                for($i=0;$i<$iteration;$i++)
+                {
+                    // GET THE NAME OUT OF THE VERTEX MATCHING PATTERN
+                    $vtxMatch = `getAttr ($sel[0]+"."+$eAttr)`;
+                    python ("pAttrs = '"+$vtxMatch+"'");
+                    $n = python ("pAttr.split('___')");
+                    $pos = `xform -q -ws -t $n[1]`;
+                    $centerSoft = `xform -q -ws -t $n[0]`;
+                    /*
+                    tokenize($vtxMatch,"___",$buf);
+                    $pos = `xform -q -ws -t $buf[1]`;
+                    $centerSoft = `xform -q -ws -t $buf[0]`;
+                    */
+                    // CREATE SOFT MOD TO ADJUST THE SHAPE OF THE MATCHING OBJECT BASE ON OUR VERTEX PATTERN
+                    select $sel[0];
+                    $soft01 = `softMod -bf -fas 1 -fbx 1 -fby 1 -fbz 1 -fom 0 -fr ($fallof/2) -n $sel[0]`;
+                    setAttr ($soft01[0]+".falloffCenter") -type double3 $centerSoft[0] $centerSoft[1] $centerSoft[2] ; // set pivot to vertex position
+                    
+                    // USE A GROUP TO MOVE THE SOFTMOD TO MATCH THE COORDINATE SISTEM WITHOUT WORRING ABOUT THE OFFSET PIVOT
+                    $grp =`group -em -n ($sel[0]+"_grpTemp")`;
+                    move -a $centerSoft[0] $centerSoft[1] $centerSoft[2] $grp; // get the group to the vertex position
+                    $temp =`parentConstraint -mo $grp $soft01[1]`;
+                    move -a $pos [0] $pos[1] $pos[2] $grp; // move to the vertex of the matcher object
+                    
+                    // CLEAN UP
+                    delete $temp[0];
+                    delete $grp;
+                }
+            }
+        }
+        if($clean = 1 ) // if the matching object had out vertex link attribute then we need to clean the history and attrs
+        {
+            select $sel[0];
+            delete -ch;
+        }
+        select -cl;
+        select $sel[0] $sel[1];
+        xyShrinkWrap(); // use Imre Tuske Wrap script
+    
+        // CLEAN UP
+        if(`objExists "attrLink_grp"`)
+        {
+            $temp = `listRelatives -c "attrLink_grp"`;
+            for($eT in $temp)
+            {
+                if(`nodeType $eT` == "pointConstraint" )
+                {
+                    $temp1 = `listConnections -s 1 -d 1 $eT`;
+                    for($eT1 in $temp1)
+                        delete $eT1;
+                }
+            }
+        }
+    }else{
+        warning "please make sure to select two mech objects, first to be matched.\n";
+    }
+}
+
+// PROC TO CREATE THE LINK VERTEX LINK ATTRIBUTE
+global proc linkShrinkVtx()
+{
+	int $i = 1;
+	string $buf[];
+	string $sel[]= `ls -sl`;
+	tokenize($sel[0],".",$buf); // get the name iof the matching obj out of the vertex passed
+	if (!`attributeExists ("vtxLink"+$i) $buf[0]`)
+	{
+		addAttr - k false -ln ("vtxLink"+$i) -dt "string" $buf[0];
+		setAttr -type "string" ($buf[0]+".vtxLink"+$i) ($sel[0]+"___"+$sel[1]);
+		
+		print ("Added attribute vtxLink"+$i+"\n");
+	}else{
+		$i = `attrIndex $buf[0]`;
+		addAttr - k false -ln ("vtxLink"+$i) -dt "string" $buf[0];
+		setAttr -type "string" ($buf[0]+".vtxLink"+$i) ($sel[0]+"___"+$sel[1]);
+		
+		print ("Added attribute vtxLink"+$i+"\n");
+	}
+}
+
+// PROC TO CREATE A VISUAL LINK OF THE VERTEXES
+global proc makeLinkShrink()
+{
+    string $loc1[], $loc2[], $crv, $n1, $n2, $pc1, $pc2, $buf1[], $buf2[], $obj, $attr, $sh[1];
+    float $p1[3], $p2[3];
+    int $i = 1 ;
+    string $sel[] = ` ls -sl `; // get selection
+    $obj = $sel[0];
+    string $attrs[] = `listAttr $obj`;
+    if( size($sel) == 1 )
+    {
+        for($each in $attrs)
+        {
+            print $attrs;
+            if(`gmatch $each "vtxLink*"`)
+            {
+                print ($each+"\n");
+                $attr = `getAttr ($obj+"."+$each)`; // get the vertex link info out of the string attr
+                python ("pAttr = '"+$attr+"'");
+                $n = python ("pAttr.split('___')");
+                $n1 = $n[0];
+                $n2 = $n[1];
+                $p1 = `xform -q -ws -t $n[0]`;
+                $p2 = `xform -q -ws -t $n[1]`;
+                
+                
+                $n1 = `substitute ".vtx" $n1 "_"`;
+                $n2 = `substitute ".vtx" $n2 "_"`;
+                
+                python ("n1P = '"+$n1+"'");
+                python ("n2P = '"+$n2+"'");
+                
+                $n1 = python("n1P.replace('[','')");
+                python ("n1P = '"+$n1+"'");
+                $n1 = python("n1P.replace(']','')");
+                
+                $n2 = python("n2P.replace('[','')");
+                python ("n2P = '"+$n2+"'");
+                $n2 = python("n2P.replace(']','')");
+                
+                if(!`objExists ($n1+"_"+$n2+"_"+$i+"_AttachCRV")`)
+                {
+
+                    // LOCATORS TO USE ON THE LINK OF THE VERTEX
+                    if(!`objExists $n1`)
+                    {
+                        print ($n1+"        -----FUCK\n");
+                        $loc1 = `spaceLocator -n $n1`; 
+                        move -a $p1[0] $p1[1] $p1[2] $loc1[0]; 
+                        setAttr ($loc1[0]+".v") 0;
+                    }
+                    if(!`objExists $n2`)
+                    {
+                        print ($n2+"        -----FUCK\n");
+                        $loc2 = `spaceLocator -n $n2`; 
+                        move -a $p2[0] $p2[1] $p2[2] $loc2[0]; 
+                        setAttr ($loc2[0]+".v") 0;
+                    }
+                    
+                    // CREATE THE TWO POINT CURVE
+                    $crv = `curve -p $p1[0] $p1[1] $p1[2] -n ($n1+"_"+$n2+"_"+$i+"_AttachCRV")`;
+                    curve -a -p $p2[0] $p2[1] $p2[2] $crv;
+                    setAttr -l 1 ($crv+".t");
+                    setAttr -l 1 ($crv+".r");
+                    setAttr -l 1 ($crv+".s");
+                    
+                    $sh = `listRelatives -s $crv`; // rename the shape of the created curve
+                    rename $sh[0] ($crv+"Shape");
+                    
+                    // USE POINT CONTRAINT NODES TO LINK THE CVs TO THE LOCATORS
+                    $pc1 = `createNode pointConstraint -n ($n1+"_pointConstraint1")`;
+                    connectAttr -f ($loc1[0]+".worldPosition[0]") ($pc1+".target[0].targetTranslate");
+                    connectAttr -f ($pc1+".constraintTranslate") ($crv+"Shape.controlPoints[0]");
+                    
+                    $pc2 = `createNode pointConstraint -n ($n2+"_pointConstraint1")`;
+                    connectAttr -f ($loc2[0]+".worldPosition[0]") ($pc2+".target[0].targetTranslate");
+                    connectAttr -f ($pc2+".constraintTranslate") ($crv+"Shape.controlPoints[1]");
+                    
+                    if(!`objExists "attrLink_grp"`) // group the curves and constraints under a group 
+                        group -em -n "attrLink_grp";
+                    
+                    parent $crv $pc1 $pc2 "attrLink_grp";
+                    parent $loc1[0] $obj;
+                    parent $loc2[0] $n2;
+                    $i = $i+1 ;
+                }
+            }
+        }
+    }else{
+        warning "please select theobject that needs to be matched and you added the links to.\n";
+    }
+}
+
+// PRCO TO GET AN AVAILABLE VERTEX ATTRIBUTE INDEX
+global proc int attrIndex( string $obj)
+{
+	int $i = 1;
+	string $attrs[] = `listAttr $obj`;
+	for($each in $attrs)
+	{
+		if(`gmatch $each "vtxLink*"`)
+			$i = $i+1 ;
+	}	
+	return $i;
+}

@@ -1,0 +1,68 @@
+// ---------------------------------------------------------------------------------------------------------------------
+//
+// PROJECT THE VOLUME OF A MESH TO ANOTHER ONE CREATING A SET OR JUST SELECT THE POLYS
+// usage:
+//      
+//      select the object you want to get the skin off,
+//      then the object you want the skin copyed on.
+//      limitations: both objest need to have the same influences;
+//
+// ---------------------------------------------------------------------------------------------------------------------
+
+source "/u/mng/maya/scripts/skinning/mg_skinLib.mel";
+
+global proc mgTransSkinGeo()
+{
+    global string $gMainProgressBar; 
+    
+	string $sel[] = `ls -fl -sl`, $CPS;
+	string $skinGeo = $sel[size($sel)-1];
+	float $pPos[3] ;
+	int $x = 0, $vtxs[], $points[], $vtx;
+
+    select -cl;
+    if(`gmatch $sel[0] "*.vtx*"`)
+    {
+        progressBar -e -bp -ii true -st "Transfering Selection ..." -max (size($sel)-1) $gMainProgressBar;
+        for($eS in $sel)
+        {
+            if($eS != $skinGeo)
+            {
+                //$cutGeo = $eS;
+                //$points[1] = `polyEvaluate -v $cutGeo` ;
+                
+                //progressBar -e -bp -ii true -st "Transfering Selection ..." -max (size($sel)-1) $gMainProgressBar;
+                
+                $CPS = `createNode closestPointOnMesh` ;
+                $pPos = `xform -q -ws -t $eS` ;
+                setAttr ($CPS+".inPosition") $pPos[0] $pPos[1] $pPos[2] ;
+                connectAttr -f ($skinGeo+".worldMesh[0]") ($CPS+".inMesh") ;
+                $vtx = `getAttr ($CPS+".closestVertexIndex")` ;
+                
+                select -cl;
+                select ($skinGeo+".vtx["+$vtx+"]");
+                storeSelectedVtxWeight;
+                select -cl;
+                select $eS;
+                pasteStoredVtxWeight;
+                
+                print (($skinGeo+".vtx["+$vtx+"]") +"   ----->   "+$eS+"\n");
+                
+                progressBar -e -s 1 $gMainProgressBar;
+
+            }
+            //progressBar -e -ep $gMainProgressBar;
+        }
+        progressBar -e -ep $gMainProgressBar;
+        print "Done.\n";
+    }else{
+        print ($sel[0]+"   is not match \n");
+    }
+    
+    select -cl;
+    select $sel;
+    /*
+    if(size($sel) < 2)
+        error "select two objects !\n";
+        */
+}

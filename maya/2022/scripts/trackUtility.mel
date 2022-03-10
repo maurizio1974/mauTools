@@ -1,0 +1,100 @@
+global proc animMauUI()
+{
+    if (`window -ex animWINMau`)
+        deleteUI animWINMau;
+        
+    window -wh 400 100 animWINMau;
+    
+    formLayout animFFR;
+    button -c "playButtonStepBackward" -rs 1 revBTT;
+    button -c "playButtonStepForward" -rs 1 forwBTT;
+    optionMenu -label "CTRLs" trackOM;
+    optionMenu -label "ATTRs" trackATTR;
+        menuItem -l "tx" -p trackATTR menuItemTX;
+        menuItem -l "ty" -p trackATTR menuItemTY;
+        menuItem -l "tz" -p trackATTR menuItemTZ;
+        menuItem -l "rx" -p trackATTR menuItemRX;
+        menuItem -l "ry" -p trackATTR menuItemRY;
+        menuItem -l "rz" -p trackATTR menuItemRZ;
+        menuItem -l "sx" -p trackATTR menuItemSX;
+        menuItem -l "sy" -p trackATTR menuItemSY;
+        menuItem -l "sz" -p trackATTR menuItemSZ;
+    
+    attrFieldGrp -l "translate" trackTAF;
+    attrFieldGrp -l "rotate" trackRAF;
+    textField -tx "*" trackTF;
+    button -rs 1 plusBTT;
+    button -rs 1 minusBTT;
+    
+    menuPoplulate("trackOM", "*","trackTAF","trackRAF");
+    
+    optionMenu -e -cc ("select (`optionMenu -q -v trackOM`);attrFieldGrp -e -at ((`optionMenu -q -v trackOM`) + \".t\") trackTAF;attrFieldGrp -e -at ((`optionMenu -q -v trackOM`) + \".r\") trackRAF;") trackOM;
+    textField -e -cc ("menuPoplulate trackOM (`textField -q -tx trackTF`) trackTAF trackRAF ") trackTF;
+    button -e -c "float $value = getAttr ((`optionMenu -q -v trackOM`)+\".\"+(`optionMenu -q -v trackATTR`)) -0.1;setAttr ((`optionMenu -q -v trackOM`)+\".\"+(`optionMenu -q -v trackATTR`)) $value;" plusBTT;
+    button -e -c "float $value = getAttr ((`optionMenu -q -v trackOM`)+\".\"+(`optionMenu -q -v trackATTR`)) +0.1;setAttr ((`optionMenu -q -v trackOM`)+\".\"+(`optionMenu -q -v trackATTR`)) $value;" minusBTT;
+    
+    
+    float $value = getAttr ((`optionMenu -q -v trackOM`)+"."+(`optionMenu -q -v trackATTR`)) +1;setAttr ((`optionMenu -q -v trackOM`)+"."+(`optionMenu -q -v trackATTR`)) $value;
+    
+    formLayout -e
+    
+    -af revBTT left 0 
+    -af revBTT top 0 
+    -ap revBTT right 0 50
+    
+    -ac forwBTT left 0 revBTT 
+    -af forwBTT top 0 
+    -af forwBTT right 0
+    
+    -af trackOM left 0 
+    -ac trackOM top 0 revBTT
+    -ap trackOM right 0 45
+    
+    -ac trackTF left 5 trackOM 
+    -ac trackTF top 0 revBTT 
+    -af trackTF right 0
+    
+    -af trackATTR left 0 
+    -ac trackATTR top 0 trackOM
+    -ap trackATTR right 0 45
+    
+    -af trackTAF left 0 
+    -ac trackTAF top 0 trackATTR 
+    -af trackTAF right 0
+    
+    -af trackRAF left 0 
+    -ac trackRAF top 0 trackTAF 
+    -af trackRAF right 0
+    
+    -af plusBTT left 0 
+    -ac plusBTT top 0 trackRAF 
+    -ap plusBTT right 0 50
+    
+    -ac minusBTT left 0 plusBTT
+    -ac minusBTT top 0 trackRAF 
+    -af minusBTT right 0
+    
+    animFFR;
+    
+    showWindow animWINMau;
+}
+
+global proc menuPoplulate(string $menu, string $filter, string $atx1, string $atx2)
+{
+    string $sel[] =`ls "*_CTRL"`;
+    string $all[] =`optionMenu -q -ill $menu`;
+    for($a in $all)
+        deleteUI $a;
+    
+    for($s in $sel)
+    {
+        if(`gmatch $s $filter`)
+            menuItem -l $s -p $menu ;
+    }
+    attrFieldGrp -e -at ((`optionMenu -q -v $menu`) + ".t") $atx1;
+    attrFieldGrp -e -at ((`optionMenu -q -v $menu`) + ".r") $atx2;
+}
+animMauUI();
+
+
+

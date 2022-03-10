@@ -1,0 +1,548 @@
+global proc flocksimulatorui ()
+{
+if ( (`window -exists flocksimulatorui `) == true ) deleteUI  flocksimulatorui;
+window -title "flocksimulator" -wh 400 300  -mxb false flocksimulatorui;
+
+scrollLayout
+    		-horizontalScrollBarThickness 16
+    		-verticalScrollBarThickness   16;
+    
+    
+columnLayout -adjustableColumn true -rs 5;
+//--------------------------------------------
+textFieldGrp -label "flock SetName:" 
+		-text "boid" 
+		-cw 1 100
+		-cw 2 80
+ 		fssetname;
+ 		
+rowColumnLayout -numberOfColumns 3
+    		-columnWidth 1 80
+    		-columnWidth 2 240
+    		-columnWidth 3 60
+    		-cs 1 8
+    		-cs 2 8
+    		-cs 3 8
+    		;
+    	text -l "Seek:" -al right;
+    	string $fsseekfield = `textField "fsseek"`;    
+    	button -l " add/clear " -c "fsaddseek";
+    	text -l "Flee:" -al right;
+    	string $fsfleefield = `textField "fsflee"`;    
+    	button -l " add/clear " -c "fsaddflee";
+  
+    	setParent..;
+ 
+intFieldGrp 
+		-l "Start / End / By Frame" 
+		-nf 3 -v1 1 -v2 200 -v3 10
+		fsrange;
+
+frameLayout -label "flow field" 
+		-labelAlign "top"
+		-cll true
+		-cl true
+    		-borderStyle "in";
+    			columnLayout -adjustableColumn true;
+    			
+    			floatFieldGrp 
+    				-label "K" 
+  				-numberOfFields 1
+    				-v1 4
+    				fskflow;	
+    				
+    			floatFieldGrp 
+				-l "direction" 
+				-nf 3 -v1 1 -v2 0 -v3 0
+				fsvflow;
+    					
+    				setParent ..;
+    			setParent ..;
+
+    			
+frameLayout -label "wandering velocity" 
+		-labelAlign "top"
+		-cll true
+		-cl true
+    		-borderStyle "in";
+    			columnLayout -adjustableColumn true;
+    			
+    			floatFieldGrp 
+    				-label "K" 
+  				-numberOfFields 1
+    				-v1 4
+    				fskveli;	
+    				
+    			floatFieldGrp 
+				-l "direction" 
+				-nf 3 -v1 0 -v2 0 -v3 1
+				fsvelini;
+
+			floatSliderGrp 
+    				-label "noise" 
+    				-field true
+  				-min 0
+    				-max 1
+    				-v .25
+    				fsnoislider;	
+    					
+    				setParent ..;
+    			setParent ..;
+
+frameLayout -label "boid's eye view" 
+		-labelAlign "top"
+		-cll true
+		-cl true
+    		-borderStyle "in"
+    		
+    		;
+    			columnLayout -adjustableColumn true;
+    			
+    			floatFieldGrp 
+    				-label "seek distance" 
+  				-numberOfFields 1
+    				-v1 72
+    				fsseekdist;
+    			
+    			floatFieldGrp 
+    				-label "flee distance" 
+  				-numberOfFields 1
+    				-v1 48
+    				fsfleedist;
+    				
+    			floatFieldGrp 
+    				-label "offset" 
+  				-numberOfFields 1
+    				-v1 8
+    				fsseekfleeoffset;
+    			
+    			floatFieldGrp 
+    				-label "neighbor distance" 
+  				-numberOfFields 1
+    				-v1 32
+    				fseyedist;	
+    				
+    			floatFieldGrp 
+				-label "angle" 
+  				-numberOfFields 1
+    				-v1 150
+				fseyeang;
+	
+    				setParent ..;
+    			setParent ..;
+    			
+frameLayout -label "steering behaviors" 
+		-labelAlign "top"
+		-cll true
+		-cl true
+    		-borderStyle "in"
+    		
+    		;
+    			columnLayout -adjustableColumn true;
+    			
+    			floatFieldGrp 
+    				-label "Kseparating" 
+  				-numberOfFields 1
+    				-v1 2
+    				fskseparating;	
+    			
+    			floatFieldGrp 
+    				-label "Kcentering" 
+  				-numberOfFields 1
+    				-v1 1
+    				fskcentering;	
+    				
+    			floatFieldGrp 
+    				-label "Kvelocity matching" 
+  				-numberOfFields 1
+    				-v1 1
+    				fskvmatching;	
+    				
+    			floatFieldGrp 
+    				-label "Max velocity" 
+  				-numberOfFields 1
+    				-v1 30
+    				fsmaxvel;	
+    			
+	
+    				setParent ..;
+    			setParent ..;
+    		
+
+    
+rowColumnLayout -numberOfColumns 3
+    		-columnWidth 1 80
+    		-columnWidth 2 120
+    		-columnWidth 3 80
+    		-cs 1 8
+    		-cs 2 8
+    		-cs 3 8
+    		;
+	button -l "pick up" -c "string $setname=`textFieldGrp -q -text fssetname`;select -r $setname";		
+	button -l "*Start Calculation*" 
+		-c "float $seekfleeoffset=`floatFieldGrp -q -v1 fsseekfleeoffset`;float $seekdist=`floatFieldGrp -q -v1 fsseekdist`;float $fleedist=`floatFieldGrp -q -v1 fsfleedist`;float $maxvel=`floatFieldGrp -q -v1 fsmaxvel`;float $kvmatching=`floatFieldGrp -q -v1 fskvmatching`;float $kcentering=`floatFieldGrp -q -v1 fskcentering`;float $kseparating=`floatFieldGrp -q -v1 fskseparating`;float $eyedist=`floatFieldGrp -q -v1 fseyedist`;float $eyeang=`floatFieldGrp -q -v1 fseyeang`;float $kveli = `floatFieldGrp -q -v1 fskveli`;float $noi = `floatSliderGrp -q -v fsnoislider`;float $vx =`floatFieldGrp -q -v1 fsvelini`;float $vy =`floatFieldGrp -q -v2 fsvelini`;float $vz =`floatFieldGrp -q -v3 fsvelini`;int $fssta = `intFieldGrp -q -v1 fsrange`;int $fsend = `intFieldGrp -q -v2 fsrange`;int $fsstep = `intFieldGrp -q -v3 fsrange`;fssimulation($fssta,$fsend,$fsstep,$noi,$vx,$vy,$vz,$kveli,$eyedist,$eyeang,$kseparating,$kcentering,$kvmatching,$seekdist,$fleedist,$seekfleeoffset,$maxvel)"; 
+	button -l "Discard" -c "int $fssta = `intFieldGrp -q -v1 fsrange`;fsdiscard($fssta)";
+setParent..;   
+
+setParent..;  
+     		
+    
+//--------------------------------------------
+showWindow flocksimulatorui;
+}
+flocksimulatorui;
+
+global proc fsaddseek()
+{
+string $sel[] = `ls -sl `;
+int $i;
+string $seekobject;
+if(size($sel)==1)
+	$seekobject = $sel[0];
+else
+	for ( $i=0; $i < size($sel); ++$i )
+		{
+		if($i<size($sel)-1)
+			$seekobject+= $sel[$i]+"#";
+		else
+			$seekobject+= $sel[$i];
+		}
+textField -e -text $seekobject "fsseek"; 
+}
+
+global proc fsaddflee()
+{
+string $sel[] = `ls -sl `;
+int $i;
+string $fleeobject;
+if(size($sel)==1)
+	$fleeobject = $sel[0];
+else
+	for ( $i=0; $i < size($sel); ++$i )
+		{
+		if($i<size($sel)-1)
+			$fleeobject+= $sel[$i]+"#";
+		else
+			$fleeobject+= $sel[$i];
+		}
+textField -e -text $fleeobject "fsflee"; 
+}
+
+//--------------------simulation--------------------
+
+global proc fssimulation(int $start, int $end,int $step,float $noi,float $vx,float $vy,float $vz,float $kvi,float $eyedist,float $eyeang,float $kseparating,float $kcentering,float $kvmatching,float $seekdist,float $fleedist,float $seekfleeoffset,float $maxvel)
+{
+waitCursor -state on;
+ autoKeyframe -state off;
+ 
+string $seek=`textField -q -text  "fsseek"`;
+string $flee=`textField -q -text  "fsflee"`;
+
+
+string $seeklist[],$fleelist[];
+int $numTokens = `tokenize $seek "#" $seeklist`;
+$numTokens = `tokenize $flee "#" $fleelist`;
+
+
+string $sel[] = `ls -sl `;
+int $i,$j,$time,$nei,$neiID[],$neibsize;
+float $t0,$tmid,$starttime,$key; 
+vector $position0[],$velocity0[],$vel,$vseek,$posNei[],$velNei[],$tmp,$separating,$centering,$vmatching,$steer,$wandering,$flow,$pseeklist[],$pfleelist[];
+
+int $size=size($sel);
+
+$starttime=$start;
+
+//get flow field
+
+float $kflow = `floatFieldGrp -q -v1  fskflow`;
+float $vxflow = `floatFieldGrp -q -v1  fsvflow`;
+float $vyflow = `floatFieldGrp -q -v2  fsvflow`;
+float $vzflow = `floatFieldGrp -q -v3  fsvflow`;
+vector $fflow = unit(<<$vxflow,$vyflow,$vzflow>>)*$kflow;
+
+for ( $i=0; $i < $size; ++$i )
+		{
+//read initial position
+		$position0[$i]=getposition($sel[$i],$starttime);
+//set initial velocity
+		$velocity0[$i]=$kvi*unit(<<$vx,$vy,$vz>>+sphrand($noi));
+		}
+
+for ( $time=$start; $time < $end+1; ++$time )
+	{
+	
+	$t0=$time;
+	$tmid=$time+.5;
+	
+	$key=$time-$start;
+	if($key/$step==trunc($key/$step)||$time==$end)
+		for ( $i=0; $i < size($sel); ++$i )
+		{
+//set key
+		keyposition($sel[$i],$t0,$position0[$i]);
+		}
+	
+//update seek target
+	if($seek!="")
+		{
+		for ( $i=0; $i < size($seeklist); ++$i )
+			$pseeklist[$i]=getposition($seeklist[$i],$t0);
+		}
+//update flee target
+	if($flee!="")
+		{
+		for ( $i=0; $i < size($fleelist); ++$i )
+			$pfleelist[$i]=getposition($fleelist[$i],$t0);
+		}
+
+	for ( $i=0; $i < size($sel); ++$i )
+		{
+		$wandering=<<0,0,0>>;
+		$vel=$velocity0[$i];
+		
+		$vflow=$fflow-$vel;
+
+		$neiID=fsdetectneighbor($i,$position0,$vel,$size,$eyedist,$eyeang);
+		
+		
+		if(size($neiID)==0)
+			$wandering =$kvi*unit(<<$vx,$vy,$vz>>+sphrand($noi))-$vel;
+		else 
+			{
+			$vmatching = fscalculatevmatching($i,$position0,$velocity0,$vel,$neiID,$kvmatching);
+			$separating = fscalculateseparating($i,$position0,$vel,$neiID,$kseparating*10);
+			$centering = fscalculatecentering($i,$position0,$vel,$neiID,$kcentering);
+			}
+		
+		if($seek!="")
+			$vseek=calculateseekvelocity($pseeklist,$position0[$i],$vel,$seekdist,$seekfleeoffset,$eyeang);
+		
+		if($flee!="")
+			$vflee=calculatefleevelocity($pfleelist,$position0[$i],$vel,$fleedist,$seekfleeoffset,$eyeang);
+			
+		$steer=$wandering+$separating+$centering+$vmatching+$vseek+$vflee+$vflow;
+		
+		if(angle($vel,$steer)>1.57)
+			$steer=rot($steer,cross($steer,$vel),angle($vel,$steer)-1.57);
+		
+		$vel =clampvector($vel+$steer,$maxvel);
+		
+		
+		$position0[$i]+= $vel*0.04;	
+		
+		$velocity0[$i]=$vel;
+		}
+		
+		
+	}
+
+waitCursor -state off;
+clear $position0;
+clear $velocity0;
+}
+
+//--------------------get vector-----------------
+
+global proc vector getposition(string $name, float $time)
+{
+	float $x,$y,$z;
+	string $tx,$ty,$tz,
+		$tx = $name+".translateX";
+		$ty = $name+".translateY";
+		$tz = $name+".translateZ";
+		$x=`getAttr -time $time $tx`;
+		$y=`getAttr -time $time $ty`;
+		$z=`getAttr -time $time $tz`;
+	vector	$v=<<$x,$y,$z>>;
+	return $v;
+}
+
+
+//--------------------key position-----------------
+
+
+global proc keyposition(string $name,float $time, vector $position)
+{
+	float $x,$y,$z;
+		$x = dot($position,<<1,0,0>>);
+		$y = dot($position,<<0,1,0>>);
+		$z = dot($position,<<0,0,1>>);
+		
+		setKeyframe  -v $x -t $time -attribute "translateX"  $name;
+		setKeyframe  -v $y -t $time -attribute "translateY"  $name;
+		setKeyframe  -v $z -t $time -attribute "translateZ"  $name;
+}
+
+//--------------------discard-----------------
+
+global proc fsdiscard(int $start)
+{
+currentTime $start;
+string $sel[] = `ls -sl `;
+int $i;
+
+for ( $i=0; $i < size($sel); ++$i )
+
+	{
+	cutKey -time ":" -attribute "translateX" $sel[$i];
+	cutKey -time ":" -attribute "translateY" $sel[$i];
+	cutKey -time ":" -attribute "translateZ" $sel[$i];
+	}
+}
+
+//--------------------neighborhood detection--------------
+
+global proc int[] fsdetectneighbor(int $i,vector $x[],vector $v,int $size,float $dist,float $ang)
+{
+int $j,$id[];
+vector $d;
+$nei=0;
+		for ( $j=0; $j < $size ; ++$j )
+			{
+			
+			if($j!=$i)
+				{
+				$d = $x[$j]- $x[$i];
+				if(mag($d)<$dist&&angle($d,$v)<$ang/180*3.1416)
+					{
+					$id[$nei] = $j;
+					$nei+=1;
+					}
+					
+				}
+			}
+return $id;
+}
+
+//--------------------fs calculate separating-----------------
+
+global proc vector fscalculateseparating(int $i,vector $x[],vector $v,int $neiID[],float $K)
+{
+vector $tmp,$desire=<<0,0,0>>;
+int $j,$id;
+float $f,$l;
+vector $vsep;
+
+for ( $j=0; $j < size($neiID); ++$j )
+
+	{
+	$id=$neiID[$j];
+	$tmp=$x[$i]-$x[$id];
+	$l=mag($tmp);
+	$l=max($l,0.000001);
+	$tmp/=$l*$l;
+	$desire+=$tmp*$K;
+	}
+	
+	$vsep =$desire-$v;
+return $vsep;
+}
+
+//--------------------fs calculate centering-----------------
+
+global proc vector fscalculatecentering(int $i,vector $x[],vector $v,int $neiID[],float $K)
+{
+vector $c=<<0,0,0>>;
+int $j,$id;
+
+vector $desire,$vcen;
+
+for ( $j=0; $j < size($neiID); ++$j )
+
+	{
+	$id=$neiID[$j];
+	$c+=$x[$id];
+	}
+	$c/=size($neiID);
+	
+	$desire = $c-$x[$i];
+	
+	$vcen = $K*($desire - $v);
+
+return $vcen;
+}
+
+//--------------------fs calculate velocity matching-----------------
+
+global proc vector fscalculatevmatching(int $i,vector $x[],vector $vn[],vector $v,int $neiID[],float $K)
+{
+vector $vnei=<<0,0,0>>;
+int $j,$id;
+
+vector $desire,$vmat;
+
+for ( $j=0; $j < size($neiID); ++$j )
+
+	{
+	$id=$neiID[$j];
+	$vnei+=$vn[$id];
+	}
+	$vnei/=size($neiID);
+	
+	$desire = $vnei;
+	
+	$vcen = $K*($desire - $v);
+
+return $vmat;
+}
+
+
+//--------------------calculate seek velocity-----------------
+
+global proc vector calculateseekvelocity(vector $pseek[], vector $boid, vector $velocity, float $dist,float $offset,float $angle)
+{
+vector $v=<<0,0,0>>;
+int $i;
+int $id=0;
+float $l,$li;
+$li= mag($pseek[0]-$boid);
+for ( $i=1; $i < size($pseek); ++$i )
+	{
+	$l = mag($pseek[$i]-$boid);
+	if($l<$li)
+		$id=$i;
+	}
+		vector $seekvect=$pseek[$id]-$boid;
+		if(mag($seekvect)<$dist&&angle($seekvect,$velocity)<$angle/180*3.1416)
+			$v=$seekvect-$velocity;
+		$v=max(0.000001,mag($v)-$offset)*unit($v);
+		return $v;
+}
+
+
+//--------------------calculate flee steering-----------------
+
+global proc vector calculatefleevelocity(vector $pflee[], vector $boid, vector $velocity, float $dist,float $offset,float $angle)
+{
+vector $v=<<0,0,0>>;
+int $i;
+int $id=0;
+float $l,$li,$d;
+$li= mag($pflee[0]-$boid);
+for ( $i=1; $i < size($pflee); ++$i )
+	{
+	$l = mag($pflee[$i]-$boid);
+	if($l<$li)
+		$id=$i;
+	}
+		vector $fleevect=$boid-$pflee[$id];
+		if(mag($fleevect)<$dist)
+			$v=$fleevect;
+		$d=max(0.000001,mag($v)-$offset);
+		$v=10000*unit($v)/$d/$d;
+		
+		$v-=$velocity;
+		return $v;
+}
+
+
+
+//--------------------clamp vector-----------------
+
+global proc vector clampvector(vector $in,float $max)
+{
+vector $v = unit($in)*min(mag($in),$max);
+return $v;
+}
+
