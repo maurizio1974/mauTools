@@ -1,0 +1,645 @@
+global proc shelf_mModel () {
+    global string $gBuffStr;
+    global string $gBuffStr0;
+    global string $gBuffStr1;
+
+
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "source \"/nfs/dev/software/mimmo/2016/scripts/materialWin.mel\";materialWin()" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "source \"/nfs/dev/software/mimmo/2016/scripts/materialWin.mel\";m..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.5 
+        -image "Dynam.png" 
+        -image1 "Dynam.png" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "source \"/nfs/dev/software/mimmo/2016/scripts/materialWin.mel\";materialWin()" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "Gear Generator" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "source \"/nfs/dev/software/mimmo/2014/scripts/DVY_GearBuild.mel\"..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.2 
+        -image "/nfs/dev/software/mimmo/2014/icons/DVY_Gears.xpm" 
+        -image1 "/nfs/dev/software/mimmo/2014/icons/DVY_Gears.xpm" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "source \"/nfs/dev/software/mimmo/2014/scripts/DVY_GearBuild.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_GearDriver.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_Gears.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_HelixGear.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_HelixProfile.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_SpurGear.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ToothProfile.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_GetAnimCurve.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_MakeCycle.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_MakeSelectedCycle.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ScaleSet.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_Shaders.mel\";\nDVY_Gears();\n" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation " Ball Bearing Generator" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "source \"/nfs/dev/software/mimmo/2014/scripts/Davveys/Davveys_Be..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.2 
+        -image "/nfs/dev/software/mimmo/2014/scripts/Davveys/Davveys_Bearing_Generator_Ver_1.0/DVY_Bearings.xpm" 
+        -image1 "/nfs/dev/software/mimmo/2014/scripts/Davveys/Davveys_Bearing_Generator_Ver_1.0/DVY_Bearings.xpm" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "source \"/nfs/dev/software/mimmo/2014/scripts/DVY_Bearings.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_BallBearingBuild.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_BushBearingBuild.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_RollerBearingBuild.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ScaleSet.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_Shaders.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ShaftDesign.mel\";\nDVY_Bearings();" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "Belts and Pulley Generator" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "source \"/nfs/dev/software/mimmo/2014/scripts/Davveys/Davveys_Be..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.2 
+        -image "/nfs/dev/software/mimmo/2014/scripts/Davveys/Davveys_BeltandPulley_Generator_Ver_1.0.1/DVY_Pulleys.xpm" 
+        -image1 "/nfs/dev/software/mimmo/2014/scripts/Davveys/Davveys_BeltandPulley_Generator_Ver_1.0.1/DVY_Pulleys.xpm" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "source \"/nfs/dev/software/mimmo/2014/scripts/DVY_BeltBuild.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_BeltCurveBuild.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_BeltDriver.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_BeltSet.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_FlatBeltBuild.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_FlatPulleyBuild.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_GetAnimCurve.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_MakeCycle.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_MakeSelectedCycle.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_Pulleys.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ScaleSet.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_Shaders.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ShaftDesign.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ToothPulleyBuild.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_VeePulleyBuild.mel\";\nDVY_Pulleys()\n" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 10
+        -enable 1
+        -width 13
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.25 
+        -image "/nfs/dev/software/mimmo/2014/icons/concrete.png" 
+        -image1 "/nfs/dev/software/mimmo/2014/icons/concrete.png" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "Chain Generator" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "source \"/nfs/dev/software/mimmo/2014/scripts/Davveys/Davveys_Ch..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.2 
+        -image "/nfs/dev/software/mimmo/2014/scripts/Davveys/Davveys_ChainSprocketGenerator_Ver_1.1.0/DVY_Chains.xpm" 
+        -image1 "/nfs/dev/software/mimmo/2014/scripts/Davveys/Davveys_ChainSprocketGenerator_Ver_1.1.0/DVY_Chains.xpm" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "source \"/nfs/dev/software/mimmo/2014/scripts/DVY_ChainBuild.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ChainCurveBuild.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ChainDriver.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_Chains.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ChainSet.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_GetAnimCurve.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_MakeCycle.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_MakeSelectedCycle.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ScaleSet.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_Shaders.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ShaftDesign.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_SprocketBuild.mel\";\nDVY_Chains();\n" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "NutBolt Generator" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "source \"/nfs/dev/software/mimmo/2014/scripts/DVY_BoltandNut.mel..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.2 
+        -image "/nfs/dev/software/mimmo/2014/icons/NutBolt.XPM" 
+        -image1 "/nfs/dev/software/mimmo/2014/icons/NutBolt.XPM" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "source \"/nfs/dev/software/mimmo/2014/scripts/DVY_BoltandNut.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_GetAnimCurve.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_NutandBoltBuild.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_GetAnimCurve.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_MakeCycle.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_MakeSelectedCycle.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ScaleSet.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_Shaders.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ShaftDesign.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ThreadProfile.mel\";\nDVY_BoltandNut();" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "Screw Generator" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "source \"/nfs/dev/software/mimmo/2014/scripts/DVY_Screws.mel\";\ns..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.2 
+        -image "/nfs/dev/software/mimmo/2014/icons/DVY_Screw.xpm" 
+        -image1 "/nfs/dev/software/mimmo/2014/icons/DVY_Screw.xpm" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "source \"/nfs/dev/software/mimmo/2014/scripts/DVY_Screws.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_WoodScrew.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_GetAnimCurve.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_MakeCycle.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_MakeSelectedCycle.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ScaleSet.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_Shaders.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ShaftDesign.mel\";\nDVY_Screws();\n" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "Springs Generator" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "source \"/nfs/dev/software/mimmo/2014/scripts/DVY_Springs.mel\";\n..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.2 
+        -image "/nfs/dev/software/mimmo/2014/icons/DVY_Springs.xpm" 
+        -image1 "/nfs/dev/software/mimmo/2014/icons/DVY_Springs.xpm" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "source \"/nfs/dev/software/mimmo/2014/scripts/DVY_Springs.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_SpringBuild.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_SteelSections.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_GetAnimCurve.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_MakeCycle.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_MakeSelectedCycle.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ScaleSet.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_Shaders.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ShaftDesign.mel\";\nDVY_Springs();\n" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "Pistons Generators" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "source \"/nfs/dev/software/mimmo/2014/scripts/DVY_PistonBuild.me..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.2 
+        -image "/nfs/dev/software/mimmo/2014/icons/DVY_Pistons.xpm" 
+        -image1 "/nfs/dev/software/mimmo/2014/icons/DVY_Pistons.xpm" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "source \"/nfs/dev/software/mimmo/2014/scripts/DVY_PistonBuild.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_Pistons.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_GetAnimCurve.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_MakeCycle.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_MakeSelectedCycle.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ScaleSet.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_Shaders.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ShaftDesign.mel\";\nDVY_Pistons();" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 10
+        -enable 1
+        -width 13
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.25 
+        -image "/nfs/dev/software/mimmo/2014/icons/concrete.png" 
+        -image1 "/nfs/dev/software/mimmo/2014/icons/concrete.png" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "Stairs Generator" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "source \"/nfs/dev/software/mimmo/2014/scripts/DVY_Stairs.mel\";\ns..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.2 
+        -image "/nfs/dev/software/mimmo/2014/icons/DVY_Stairs.xpm" 
+        -image1 "/nfs/dev/software/mimmo/2014/icons/DVY_Stairs.xpm" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "source \"/nfs/dev/software/mimmo/2014/scripts/DVY_Stairs.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_StairMaker.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_StairBuild.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_Spindles.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ShaftDesign.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_MakeCycle.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_MakeSelectedCycle.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_HandRails.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ScaleSet.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_Shaders.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ShaftDesign.mel\";\nDVY_Stairs();" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "WIndows Generators" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "source \"/nfs/dev/software/mimmo/2014/scripts/DVY_Windows.mel\";\n..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.2 
+        -image "/nfs/dev/software/mimmo/2014/icons/DVY_Windows.xpm" 
+        -image1 "/nfs/dev/software/mimmo/2014/icons/DVY_Windows.xpm" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "source \"/nfs/dev/software/mimmo/2014/scripts/DVY_Windows.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_WindowMaker.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_WindowBuild.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_FrameMaker.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_MakeCycle.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_MakeSelectedCycle.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ScaleSet.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_Shaders.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ShaftDesign.mel\";\nDVY_Windows();" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "Door Generator" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "source \"/nfs/dev/software/mimmo/2014/scripts/Davveys/Davveys_Do..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.2 
+        -image "/nfs/dev/software/mimmo/2014/scripts/Davveys/Davveys_Door_Generator_Ver_1.1.1/DVY_Door.xpm" 
+        -image1 "/nfs/dev/software/mimmo/2014/scripts/Davveys/Davveys_Door_Generator_Ver_1.1.1/DVY_Door.xpm" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "source \"/nfs/dev/software/mimmo/2014/scripts/DVY_DoorBuild.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_DoorFrameMaker.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_DoorMaker.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_GetAnimCurve.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_InExDoors.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_MakeCycle.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_MakeSelectedCycle.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ScaleSet.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_Shaders.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ShaftDesign.mel\";\nDVY_InExDoors();\n" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 10
+        -enable 1
+        -width 13
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.25 
+        -image "/nfs/dev/software/mimmo/2014/icons/concrete.png" 
+        -image1 "/nfs/dev/software/mimmo/2014/icons/concrete.png" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "Steel Section Generator" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "source \"/nfs/dev/software/mimmo/2014/scripts/DVY_Steel.mel\";\nso..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.2 
+        -image "/nfs/dev/software/mimmo/2014/icons/DVY_Steel.xpm" 
+        -image1 "/nfs/dev/software/mimmo/2014/icons/DVY_Steel.xpm" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "source \"/nfs/dev/software/mimmo/2014/scripts/DVY_Steel.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_SteelBuild.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_SteelSections.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_GetAnimCurve.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_MakeCycle.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_MakeSelectedCycle.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ScaleSet.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_Shaders.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ShaftDesign.mel\";\nDVY_Steel();\n" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "Lego Generator" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "source \"/nfs/dev/software/mimmo/2014/scripts/DVY_Lego.mel\";\nsou..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.2 
+        -image "/nfs/dev/software/mimmo/2014/icons/DVY_Lego.xpm" 
+        -image1 "/nfs/dev/software/mimmo/2014/icons/DVY_Lego.xpm" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "source \"/nfs/dev/software/mimmo/2014/scripts/DVY_Lego.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_GetAnimCurve.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_BuildLego.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_MakeCycle.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_MakeSelectedCycle.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ScaleSet.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_Shaders.mel\";\nsource \"/nfs/dev/software/mimmo/2014/scripts/DVY_ShaftDesign.mel\";\nDVY_Lego();" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "source \"/home/mauriziog/maya/2015-x64/scripts/growFacesWithinRegion1_3.mel\"\n" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "source \"/home/mauriziog/maya/2015-x64/scripts/growFacesWithinReg..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.25 
+        -image "/home/mauriziog/maya/2015-x64/prefs/icons/growFacesWithinRegion.png" 
+        -image1 "/home/mauriziog/maya/2015-x64/prefs/icons/growFacesWithinRegion.png" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "source \"growFacesWithinRegion1_3.mel\"\n" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 39
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "import speedCut\nreload(speedCut)\nspeedCut.jwSpeedCutUI()" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "import speedCut\nreload(speedCut)\nspeedCut.jwSpeedCutUI()" 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.5 
+        -image "speedCut.png" 
+        -image1 "speedCut.png" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "import speedCut\nreload(speedCut)\nspeedCut.jwSpeedCutUI()" 
+        -sourceType "python" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+
+} 

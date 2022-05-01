@@ -1,0 +1,230 @@
+//------------------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------//
+//	SCRIPT:	mgSmoothRivet.mel
+//	VERSION: 0.1
+//	AUTHOR:	Maurizio Giglioli
+//		    maurizio1974@gmail.com
+//	DATE:         06 19 2010
+//  Last Updated: 06 20 2010
+//
+//
+//	DESCRIPTION:	Constraint any selected transform to a surface with an average node to avoid flipping
+//
+//
+//	INSTRUCTIONS:	source the srcript
+//                  select any number of tranforms and as last the mesh you would like them to be constrained to
+//			        call the procedure mgSmoothRivet()
+//
+//  LIMITATIONS:    Works only on quad faces
+//                  
+//------------------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------//
+
+global proc mgSmoothRivet( int $vis, int $opt)
+{
+    string $avVtx[], $sh[], $sh[], $pis[], $b[], $feD[], $edges[], $id1[], $id2[], $history[], $clean[], $temp[];
+    string $CPOM, $POM, $CFE1, $CFE2, $LFT, $mat4, $deMat, $grpH, $grp;
+    int $idx1, $idx2, $edds[], $vtxID, $vtxAll[], $inter;
+    
+    string $sel[] = `ls -sl`;
+    string $last = $sel[(size($sel)-1)];
+    string $sh[1] = `listRelatives -s $last` ;
+    
+    if ( size($sel) >= 2 )
+    {
+        if( `objectType $sh[0] ` == "mesh"  )
+        {
+            for($ea in $sel )
+            {
+                if( $ea != $last )
+                {
+                    // ADD ATTRIBUTES TO CONTROL THE BEHAVIOR OF THE AVERAGE NODE
+                    if( !` attributeExists "smoothSurface" $ea `)
+                        addAttr -k 1 -ln "smoothSurface" -at double -min 0 -dv 3 $ea ;
+                    if( !` attributeExists "alpha" $ea `)
+                        addAttr -k 1 -ln "alpha" -at double -min 0 -max 1 -dv 0.5 $ea ;
+                    if( !` attributeExists "beta" $ea `)
+                        addAttr -k 1 -ln "beta" -at double -min 0 -max 1 -dv 0.5 $ea ;
+                    if( !` attributeExists "_" $ea `)
+                        addAttr -ln "_"  -at double  $ea ;
+                    setAttr -e -cb true ($ea+"._") ;
+                    if( !` attributeExists "U" $ea `)
+                        addAttr -k 1 -ln "U" -at double -min 0 -max 1 -dv 0.5 $ea ;
+                    if( !` attributeExists "V" $ea `)
+                        addAttr -k 1 -ln "V" -at double -min 0 -max 1 -dv 0.5 $ea ;
+                    
+                    // GET SOME INFO FROM WHAT WE PASS ON THE LOOP
+                    $shT = `listRelatives -s $ea` ;
+                    $vtxAll = `polyEvaluate -v $last`;
+                    
+                    // GET THE HISTORY ON THE GEOEMRY TO WORK WITH OTHER DEFORMERS
+                    $history = ` listHistory -lv 1 $last ` ;
+                    $clean = stringArrayRemove ( $sh, $history );
+                    
+                    // GETTING OPTIMIZED AREA DUE TO HIRES MODEL
+                    // GET THE CLOSEST TWO EDGES OF THE SURFACE TO THE PASSED TRASFORM 
+                    $CPOM = `createNode closestPointOnMesh -n ($ea+"CPOM")`;
+                    connectAttr -f ($sh[0]+".worldMesh[0]") ($CPOM+".inMesh");
+                    connectAttr ($shT[0]+".worldPosition[0]") ($CPOM+".inPosition");
+                    $vtxID = `getAttr ($CPOM+".closestVertexIndex")`;
+                    $inter = (($vtxAll[0] * 0.5) / 100);
+                    
+                    int $x = 0;
+                    select ($last+".vtx["+$vtxID+"]");
+                    for( $x = 0; $x < $inter; $x++)
+                        PolySelectTraverse 1;
+                    if($vis == 1 )
+                        break;
+                    $temp = `ls -fl -sl`;
+                    select -cl;
+                    print $temp;
+                    
+                    // CREATE THE AVERAGE NODE
+                    if ( $opt == 1 ) 
+                        $avVtx = `polyAverageVertex -ch 1 -i 0 $temp` ;
+                    if ( $opt == 0 )
+                        $avVtx = `polyAverageVertex -ch 1 -i 0 ($last+".vtx[*]") ` ;
+                    rename $avVtx[0] ($ea+"_averageDerivatives") ;
+                    $avVtx[0] = ($ea+"_averageDerivatives") ;
+                
+                    // CONNECT THE NODE TO THE CONTROL ATTRIBUTE MADE ON THE TRANSOFRM
+                    connectAttr -f ($ea+".alpha") ( $avVtx[0]+".alpha") ;
+                    connectAttr -f ($ea+".beta") ( $avVtx[0]+".beta") ;
+                    
+                    // CONNECT THE AVERAGE NODE TO THE SURFACE IN QUESTION
+                    // CONSIDERING THE POSSIBLE DEFORMERS APPLYED TO IT AS WELL
+                    disconnectAttr ($avVtx[0]+".output") ($sh[0]+".inMesh");
+                    connectAttr -f ($ea+".smoothSurface") ($avVtx[0]+".iterations");
+                    
+                    print "\n-----------------------------------------------\n";
+                    print $history;
+                    print "\n-----------------------------------------------\n";
+                    print $last;
+                    
+                    if( size($history) == 1 )
+                        connectAttr -f ($sh[0]+".worldMesh[0]") ($avVtx[0]+".inputPolymesh");
+                    else
+                        connectAttr -f ($clean[0]+".outputGeometry[0]") ($sh[0]+".inMesh");
+                    
+                    // GET THE CLOSEST TWO EDGES OF THE SURFACE TO THE PASSED TRASFORM 
+                    $edges =`polyListComponentConversion -te ( $last+".f["+( getAttr ($CPOM+".closestFaceIndex") )+"]")`;
+                    
+                    $edges = `ls -fl $edges`;
+                    int $i = 0;
+                    int $x = 0;
+                    
+                    // FIND ALL THE VERTEX ON THE SELECTED EDGES AND ORGANIZE THEM SO THAT WE CAN 
+                    // SORT THEM TO FIND OUT THE ONE THAT DON'T SHARE ANY VERTEX
+                    for ($eE in $edges)
+                    {
+                        $pis = `polyInfo -ev $eE`;
+                        tokenize($pis[0]," ",$b);
+                        $edds[$i] = `substitute ":" $b[1] "" `;
+                        $edds[$i+1] = $b[2];
+                        $edds[$i+2] = $b[3];
+                        //print $pis[0];
+                        //print ($edds[$i]+" "+$edds[$i+1]+" "+$edds[$i+2]+"\n");
+                        $i = $i+3;
+                    }
+                    
+                    // FIND THE FIRST EDGE THAT SHARES VERTEX WITH OUR SECOND ONE AMD PICK IT AS 
+                    // A MAIN EDGE FOR THE LOFT
+                    for( $x = 3 ; $x < 11 ; $x++)
+                    {
+                        if ( $edds[1] == $edds[$x+1] )
+                        {
+                            //print ("no this edge: "+$edds[$x]+"\n");
+                            $feD[0] = ($last+".e["+$edds[$x]+"]");
+                            $id1[0] = $edds[$x];
+                        }
+                    }
+                    
+                    // FIND THE SECOND EDGE THAT SHARES VERTEX WITH OUR FIRST ONE AND PICK IT AS 
+                    // ENDING EDGE FOR THE LOFT
+                    int $x = 0;
+                    for( $x = 3 ; $x < 11 ; $x++)
+                    {
+                        if ( $edds[2] == $edds[$x+1] )
+                        {
+                            //print ("no this edge: "+$edds[$x]+"\n");
+                            $feD[1] = ($last+".e["+$edds[$x]+"]");
+                            $id2[0] = $edds[$x];
+                        }
+                    }
+
+                    $idx1 = $id1[0];
+                    $idx2 = $id2[0];
+                                    
+                    // CREATE CURVE FROM THE FOUND EDGES TO MAKE OR NURB SURFACE
+                    $CFE1 = `createNode curveFromMeshEdge -n ($ea+"_edgeToCurveNodeA")`;
+                    connectAttr -f ($avVtx[0]+".output") ($CFE1+".inputMesh");
+                    setAttr ($CFE1+".ei[0]") $idx1;
+                    $CFE2 = `createNode curveFromMeshEdge -n ($ea+"_edgeToCurveNodeB")`;
+                    connectAttr -f ($avVtx[0]+".output") ($CFE2+".inputMesh");
+                    setAttr ($CFE2+".ei[0]") $idx2;
+                    
+                    // MAKE THE NURB SURFACE WITH A LOFT NODE
+                    $LFT = `createNode loft -n ($ea+"generateSurface") `;
+                    connectAttr -f ($CFE1+".outputCurve") ($LFT+".inputCurve[0]");
+                    connectAttr -f ($CFE2+".outputCurve") ($LFT+".inputCurve[1]");
+                    setAttr ($LFT+".uniform") 1;
+                    setAttr ($LFT+".sectionSpans") 3;
+                    
+                    // CREATE A POINT ON SURFACE INFO NODE TO GET THE POSITION AND ORIENTATION INFO TO PIPE INTO THE MATRIX
+                    $POM = `createNode pointOnSurfaceInfo -n ($ea+"POM")`;
+                    connectAttr -f ($LFT+".outputSurface") ($POM+".inputSurface");
+                    setAttr ($POM+".turnOnPercentage") 1;
+                    setAttr ($POM+".parameterU") 0.5;
+                    setAttr ($POM+".parameterV") 0.5;
+                    
+                    // CREATE A 4 BY 4 MATRIX NODE TO RECREATE A MATRIX FROM THE POINT ON SURFACE INFO NODE
+                    $mat4 = `createNode fourByFourMatrix -n ($ea+"_4by4") `;
+                    connectAttr -f ( $POM+".normalizedNormalX" ) ( $mat4+".in00" );
+                    connectAttr -f ( $POM+".normalizedNormalY" ) ( $mat4+".in01" );
+                    connectAttr -f ( $POM+".normalizedNormalZ" ) ( $mat4+".in02" );
+                    connectAttr -f ( $POM+".normalizedTangentUX" ) ( $mat4+".in10" );
+                    connectAttr -f ( $POM+".normalizedTangentUY" ) ( $mat4+".in11" );
+                    connectAttr -f ( $POM+".normalizedTangentUZ" ) ( $mat4+".in12" );
+                    connectAttr -f ( $POM+".normalizedTangentVX" ) ( $mat4+".in22" );
+                    connectAttr -f ( $POM+".normalizedTangentVX" ) ( $mat4+".in20" );
+                    connectAttr -f ( $POM+".normalizedTangentVX" ) ( $mat4+".in21" );
+                    connectAttr -f ( $POM+".positionZ" ) ( $mat4+".in32" );
+                    connectAttr -f ( $POM+".positionX" ) ( $mat4+".in30" );
+                    connectAttr -f ( $POM+".positionY" ) ( $mat4+".in31" );
+                    
+                    // RE-CREATE A USABLE MATRIX FROM THE 4 BY 4 MATRIX NODE
+                    $deMat = `createNode decomposeMatrix -n ($ea+"_deMat") `;
+                    connectAttr -f ( $mat4+".output" ) ( $deMat+".inputMatrix" );
+                    
+                    // CREATE A NETQORK OF GROP UNDER WHICH WILL BE PARENTING OR TRANSFORM
+                    $grpH = `group -em -n ($ea+"_hm_null")`;
+                    connectAttr -f ( $deMat+".outputTranslate" ) ( $grpH+".translate" );
+                    connectAttr -f ( $deMat+".outputRotate" ) ( $grpH+".rotate" );
+                    //setAttr ($grpH+".t") (getAttr ($deMat+".outputTranslateX")) (getAttr ($deMat+".outputTranslateY")) (getAttr ($deMat+".outputTranslateZ")) ;
+                    //setAttr ($grpH+".r") (getAttr ($deMat+".outputRotateX")) (getAttr ($deMat+".outputRotateY")) (getAttr ($deMat+".outputRotateZ")) ;
+                    $grp = ` group -em -n ($ea+"_null") `;
+                    parent $grp $grpH;
+                    $temp = ` parentConstraint $ea $grp `; 
+                    delete $temp;
+
+                    parent $ea $grp;
+                    
+                    print ( "The smoothRivet for "+$ea+" was created form these two edjes : " +$feD[0]+" "+$feD[1]+"\n" );
+                    //print ("select "+$feD[0]+" "+$feD[1]+" ;\n");
+                    
+                }
+            }
+        }else{
+            warning "Last object must be a mesh.";
+        }
+    }else{
+        warning "Make sure you select at least a Transform and a Mesh";
+    }
+}
+
+
+
+
+
+
+

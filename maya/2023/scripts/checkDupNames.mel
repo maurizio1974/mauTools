@@ -1,0 +1,31 @@
+// ---------------------------------------------------------------------------------------------------------------------
+//  Simple script to get the duplicate nodes in the scene
+// ---------------------------------------------------------------------------------------------------------------------
+//
+// MinimoVFX
+// 
+// Maurizio Giglioli
+//
+// Usage: just source and call proc
+//      
+//
+// ---------------------------------------------------------------------------------------------------------------------
+
+global proc string[] checkDupNames()
+{
+    print ("CHECKING FOR DUPLICATE NODE NAMES " + "\n");
+    string $allNodes[] = `ls -sn`, $a, $dups[];
+    int $i = 0;
+    for ($a in $allNodes)
+    {
+        string $buffer[];
+        int $num = `tokenize $a "|" $buffer`;
+        if ($num > 1)
+        {
+            $dups[$i] = $a;
+            //print ("DUPLICATE NODE NAME : " +$a + "\n");
+            $i = $i + 1;
+        }
+    }
+    return $dups;
+}

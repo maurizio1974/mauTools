@@ -1,0 +1,1091 @@
+global proc string mirrorWeights(string $mode)
+{
+//string $mode = "-Y";
+//"" +X -X +Y -Y +Z -Z
+string $defaultAxis = "X";
+if (keysPressed() == "Alt")
+	{
+	mirrorWeightsWindow;
+	return 1;
+	}
+else if (keysPressed() == "Shift")
+	{
+	string $ret;
+	if (sizeSel() == 0)
+		$ret = mirrorWeightsExList_select();
+	else
+		$ret = mirrorWeightsExList_add();
+	return $ret;
+	}
+if (sizeSel() == 0)
+	return 0;
+
+
+int $axis = 0;
+float $minus = 1;
+if ($mode == "" && keysPressed() == "")
+	$mode = "+" + $defaultAxis;
+if ($mode == "" && keysPressed() == "Ctrl")
+	$mode = "-" + $defaultAxis;
+string $axisStr = `substring $mode 2 2`;
+string $minusStr = `substring $mode 1 1`;
+if ($axisStr == "X")
+	$axis = 0;
+else if ($axisStr == "Y")
+	$axis = 1;
+else if ($axisStr == "Z")
+	$axis = 2;
+if ($minusStr == "+")
+	$minus = 1;
+else if ($minusStr == "-")
+	$minus = -1;
+//print $axis
+//print $minus
+
+timerstart;
+progressBegin ("mirroring_skin_weights  to " + $mode);
+progressText "begining...";
+float $middleDistance = 0.01;
+string $set = "tmpVerticesNotMirrorSkin";
+string $object = selObj();
+int $vertsWasSelected = 0;
+if (`size (selMask("v"))` > 0)
+	$vertsWasSelected = 1;
+int $vertDeselected = 0;
+string $vertices[] = {};
+if (`objExists $set`)
+	{
+	ConvertSelectionToVertices;
+	select -d $set;
+	$vertices = sel();
+	$vertsWasSelected = 1;
+	select $set;
+	$vertDeselected = sizeSel();
+	select $vertices;
+	}
+$vertices = conv(sel(), "v");
+select $object;
+if (`objectType $object` == "mesh")
+	pickWalk -d up;
+$object = sel1();
+BindPoseWithFullDisable;
+nearestPointOnMeshCreate({$object});
+string $shape = stringSingle(`listRelatives -f`);
+string $skinCluster = skinClusterFind($shape);
+string $influences[] = `skinCluster -q -wi $skinCluster`;
+string $influencesAll[] = `skinCluster -q -inf $skinCluster`;
+select $influences[0];
+unholdJoints;
+select $object;
+
+string $influencesSource[] = {};
+string $influencesMiddle[] = {};
+string $influence;
+if ($minus == 1)
+	{
+	for ($influence in $influences)
+		{
+	//$influence = $influences[0];
+		float $pos[] = `xform -q -ws -t $influence`;
+		if ($pos[$axis] <= ($middleDistance * -1))
+			$influencesSource[`size $influencesSource`] = $influence;
+		else if ($pos[$axis] > ($middleDistance * -1) && $pos[$axis] < $middleDistance)
+			$influencesMiddle[`size $influencesMiddle`] = $influence;
+		}
+	}
+else if ($minus == -1)
+	{
+	for ($influence in $influences)
+		{
+	//$influence = $influences[0];
+		float $pos[] = `xform -q -ws -t $influence`;
+		if ($pos[$axis] >= $middleDistance)
+			$influencesSource[`size $influencesSource`] = $influence;
+		else if ($pos[$axis] > ($middleDistance * -1) && $pos[$axis] < $middleDistance)
+			$influencesMiddle[`size $influencesMiddle`] = $influence;
+		}
+	}	
+//select $influencesSource;
+//print  $influencesSource;
+//select $influencesMiddle;
+//print  $influencesMiddle;
+
+string $influencesMayDestination[] = stringArrayRemove($influencesSource, $influencesAll);
+$influencesMayDestination = stringArrayRemove($influencesMiddle, $influencesMayDestination);
+
+string $influencesDestination[] = {};
+for ($influence in $influencesSource)
+	{
+//$influence = $influencesSource[0];
+	float $posSource[] = `xform -q -ws -t $influence`;
+	$posSource[$axis] *= -1;
+	string $inf2;
+	float $minDist = 1000000;
+	string $minDistJoint = "";
+	for ($inf2 in $influencesMayDestination)
+		{
+		//$inf2 = $influencesMayDestination[0];
+		float $posDestin[] = `xform -q -ws -t $inf2`;
+		float $distance = twoPointsDistance ($posSource, $posDestin);
+		if ($distance < $minDist)
+			{
+			$minDist = $distance;
+			$minDistJoint = $inf2;
+			}
+		}
+	$influencesDestination[`size $influencesDestination`] = $minDistJoint;
+	}
+//print $influencesDestination;
+//mirrored influences founded
+
+string $verticesDestin[] = {};
+string $verticesMiddle[] = {};
+string $vertex;
+if ($minus == 1)
+	{
+	for ($vertex in $vertices)
+		{
+	//$vertex = $vertices[0];
+		float $pos[] = `pointPosition $vertex`;
+		if ($pos[$axis] >= $middleDistance)
+			$verticesDestin[`size $verticesDestin`] = $vertex;
+		else if ($pos[$axis] > $middleDistance * -1 && $pos[$axis] < $middleDistance)
+			$verticesMiddle[`size $verticesMiddle`] = $vertex;
+		}
+	}
+else if ($minus == -1)
+	{
+	for ($vertex in $vertices)
+		{
+	//$vertex = $vertices[0];
+		float $pos[] = `pointPosition $vertex`;
+		if ($pos[$axis] <= $middleDistance * -1)
+			$verticesDestin[`size $verticesDestin`] = $vertex;
+		else if ($pos[$axis] > $middleDistance * -1 && $pos[$axis] < $middleDistance)
+			$verticesMiddle[`size $verticesMiddle`] = $vertex;
+		}
+	}
+if (`size $verticesDestin` == 0 && `size $verticesMiddle` == 0)
+	{
+	EnableAll;
+	progressEnd;
+	currentTime (`currentTime -q`);
+	if ($vertsWasSelected)
+		select $vertices;
+	return "no destination vertices found in selection";
+	}
+//select $verticesDestin;
+//select $verticesMiddle;
+//vertices founded
+
+string $triangulate = stringSingle(`polyTriangulate $object`);
+select $object;
+int $sizeVertices = `size $verticesDestin` + `size $verticesMiddle`;
+int $countV = 0;
+
+for ($vertex in $verticesDestin)
+	{
+//$vertex = $verticesDestin[19];
+//$vertex = sel1();
+	float $pos[] = `pointPosition $vertex`;
+	$pos[$axis] *= -1;
+	float $nearestPoint[] = nearestPositionAndFace($pos, $object);
+	int $faceNum = $nearestPoint[3];
+	string $face = ($shape + ".f[" + $faceNum + "]");
+/*
+select $vertex;
+move $pos[0] $pos[1] $pos[2] locator1
+select $face;
+*/
+	string $vertFace[] = conv({$face}, "v");
+	float $dist1 = twoPointsDistance($pos, `pointPosition $vertFace[0]`);
+	float $dist2 = twoPointsDistance($pos, `pointPosition $vertFace[1]`);
+	float $dist3 = twoPointsDistance($pos, `pointPosition $vertFace[2]`);
+	float $sum = $dist1 + $dist2 + $dist3;
+	$dist1 = 1 - ($dist1 / $sum);
+	$dist2 = 1 - ($dist2 / $sum);
+	$dist3 = 1 - ($dist3 / $sum);
+	//print ({$dist1, $dist2, $dist3});
+
+
+//BEGIN
+	float $priors[] = {};
+	float $dists[] = {$dist1, $dist2, $dist3};
+	$dists = precisionArray($dists, 0.001);
+//$dists = {0.9,0.3,0.4};
+	float $max = maxOf ($dists);
+	int $numFirst = forInNumFloat($max, $dists);
+	$priors[$numFirst] = $max;
+//print $priors
+
+	float $distsCut[] = {};
+	if ($dists[0] != $max)
+		$distsCut[`size $distsCut`] = $dists[0];
+	if ($dists[1] != $max)
+		$distsCut[`size $distsCut`] = $dists[1];
+	if ($dists[2] != $max)
+		$distsCut[`size $distsCut`] = $dists[2];
+//print $distsCut
+	float $ostatok = 1 - $max;
+	float $sumLastTwo = $distsCut[0] + $distsCut[1];
+	float $maxLast = max($distsCut[0], $distsCut[1]);
+	int $numLast = forInNumFloat($maxLast, $distsCut);
+	int $numInDists = forInNumFloat($maxLast, $dists);
+	$priors[$numInDists] = $distsCut[$numLast] / $sumLastTwo * $ostatok;
+
+	int $lastestNum = stringSingle(stringArrayRemove(intArrayToStringArray({$numFirst, $numInDists}), {"0", "1", "2"}));
+	$priors[$lastestNum] = $ostatok - $priors[$numInDists];
+//print $priors
+//END  of calculation priorityes of vertices
+	$priors = precisionArray($priors, 0.001);
+
+	string $joints1[] = `skinPercent -ib 0.00001 -q -t $skinCluster $vertFace[0]`;
+	float $weights1[] = `skinPercent -ib 0.00001 -q -v $skinCluster $vertFace[0]`;
+	string $joints2[] = `skinPercent -ib 0.00001 -q -t $skinCluster $vertFace[1]`;
+	float $weights2[] = `skinPercent -ib 0.00001 -q -v $skinCluster $vertFace[1]`;
+	string $joints3[] = `skinPercent -ib 0.00001 -q -t $skinCluster $vertFace[2]`;
+	float $weights3[] = `skinPercent -ib 0.00001 -q -v $skinCluster $vertFace[2]`;
+
+	string $joints[] = stringArrayCatenate($joints1,stringArrayCatenate($joints2, $joints3));
+	$joints = stringArrayRemoveDuplicates($joints);
+	float $weights[] = {};
+	string $joint;
+	for ($joint in $joints)
+		{
+	//$joint = $joints[0];
+		int $jointNum = forInNum($joint, $joints);
+		int $jointNumIn1 = forInNum($joint, $joints1);
+		int $jointNumIn2 = forInNum($joint, $joints2);
+		int $jointNumIn3 = forInNum($joint, $joints3);
+		if ($jointNumIn1 != -1)
+			$weights[$jointNum] += $weights1[$jointNumIn1] * $priors[0];
+		if ($jointNumIn2 != -1)
+			$weights[$jointNum] += $weights2[$jointNumIn2] * $priors[1];
+		if ($jointNumIn3 != -1)
+			$weights[$jointNum] += $weights3[$jointNumIn3] * $priors[2];
+		}
+	//print $weights
+	$sum = floatArraySum($weights);
+	if ($sum == 0)
+		warning ("\n" + $countV + " sum is zero");
+	float $weightsResult[] = {};
+	float $weight;
+	for ($weight in $weights)
+		{
+	//$weight = $weights[0];
+		$weightsResult[`size $weightsResult`] = $weight / $sum;
+		}
+	//print $weightsDivide
+	$weights = $weightsResult;
+	$weights = skinWeightsClear($weights);
+
+	string $text = "";
+	$text = "skinPercent ";
+	string $joint;
+	int $count = 0;
+	for ($joint in $joints)
+		{
+		//$joint = $joints[0];
+		int $numInSource = forInNum($joint, $influencesSource);
+		int $numInMiddle = forInNum($joint, $influencesMiddle);
+		int $numInDestin = forInNum($joint, $influencesDestination);
+		string $destinJoint;
+		if ($numInSource != -1)
+			$destinJoint = $influencesDestination[$numInSource];
+		else if ($numInMiddle != -1)
+			$destinJoint = $joint;
+		else if ($numInDestin != -1)
+			$destinJoint = $influencesSource[$numInDestin];
+		else
+			print "WOW, we can't find joint";
+		$text += ("-tv " + $destinJoint + " " + $weights[$count] + " ");
+		$count ++;
+		}
+	$text += $skinCluster + " " + $vertex;
+	//print $text;
+	skinPercent -pruneWeights 100 -normalize off $skinCluster $vertex;
+	eval $text;
+	$countV++;
+	if ($countV % 10 == 0)
+		{
+		progressText ($countV + " / " + $sizeVertices + " vertices.");
+		progressValue (intToFloat($countV) / $sizeVertices * 100);
+		}
+	if (progressEsc())
+		{
+		EnableAll;
+		progressEnd;
+		currentTime (`currentTime -q`);
+		if ($vertsWasSelected)
+			select $vertices;
+		delete $triangulate;
+		return ("canceled by user " + timerquery());
+		}
+	}
+
+
+for ($vertex in $verticesMiddle)
+	{
+//$vertex = $verticesMiddle[0];
+//$vertex = sel1();
+	string $joints[] = `skinPercent -ib 0.00001 -q -t $skinCluster $vertex`;
+	float $weights[] = `skinPercent -ib 0.00001 -q -v $skinCluster $vertex`;
+//	print ("\nOLD");
+//	print ("\n" + stringArrayToString($joints, "   "));
+//	print ("\n" + stringArrayToString(floatArrayToStringArray($weights), "          ") + "\n");
+
+	string $newJoints[] = {};
+	string $joint;
+	for ($joint in $joints)
+		{
+		//$joint = $joints[0];
+		int $numInSource = forInNum($joint, $influencesSource);
+		int $numInMiddle = forInNum($joint, $influencesMiddle);
+		int $numInDestin = forInNum($joint, $influencesDestination);
+
+		string $mirror = "";
+		if ($numInSource != -1)
+			$mirror = $influencesDestination[$numInSource];
+		else if ($numInDestin != -1)
+			$mirror = $influencesSource[$numInDestin];
+		else if ($numInMiddle == -1)
+			print "WOW, we can't find joint";
+		if ($mirror != "")
+		{
+		int $numJointInJoints = forInNum($joint, $joints);
+		int $numMirrorInJoints = forInNum($mirror, $joints);
+		if ($numMirrorInJoints != -1)
+			{
+			float $weight = $weights[$numJointInJoints];
+			float $weight2 = $weights[$numMirrorInJoints];
+			$weights[$numJointInJoints] = ($weight + $weight2) / 2;
+			$weights[$numMirrorInJoints] = ($weight + $weight2) / 2;
+			}
+		else
+			{
+			float $weight = $weights[$numJointInJoints];
+			$weights[$numJointInJoints] = $weight / 2;
+			$newJoints[`size $newJoints`] = $mirror;
+			$weights[`size $weights`] = $weight / 2;
+			}
+		}
+		}
+	/*
+	print $joints
+	print $newJoints
+	print $weights;
+	*/
+	$joints = stringArrayCatenate($joints, $newJoints);
+	$weights = skinWeightsClear($weights);
+
+	string $text = "";
+	$text = "skinPercent ";
+	string $joint;
+	int $count = 0;
+	for ($joint in $joints)
+		{
+		//$joint = $joints[0];
+		$text += ("-tv " + $joint + " " + $weights[$count] + " ");
+		$count ++;
+		}
+	$text += $skinCluster + " " + $vertex;
+	//print $text;
+	skinPercent -pruneWeights 100 -normalize off $skinCluster $vertex;
+	eval $text;
+	$countV++;
+	if ($countV % 10 == 0)
+		{
+		progressText ($countV + " / " + $sizeVertices + " vertices.");
+		progressValue (intToFloat($countV) / $sizeVertices * 100);
+		}
+	if (progressEsc())
+		{
+		EnableAll;
+		progressEnd;
+		currentTime (`currentTime -q`);
+		if ($vertsWasSelected)
+			select $vertices;
+		delete $triangulate;
+		return ("canceled by user " + timerquery());
+		}
+//	print ("\nNEW");
+//	print ("\n" + stringArrayToString($joints, "   "));
+//	print ("\n" + stringArrayToString(floatArrayToStringArray($weights), "          ") + "\n");
+//	print ("\nMIDDLE " + $countV);
+	}
+delete $triangulate;
+EnableAll;
+if ($vertsWasSelected)
+	select $vertices;
+progressEnd;
+string $des = "";
+currentTime (`currentTime -q`);
+if ($vertDeselected > 0)
+	$des = ($vertDeselected + " vertices was deselected (non-mirror list). ");
+return ($des + "Time: " + (timerquery()));
+}
+
+
+
+
+
+
+
+
+
+global proc mirrorWeightsWindow()
+{
+string $wind = "mirror_weights";
+if (`window -exists $wind`)
+	deleteUI $wind;
+window $wind;
+columnLayout;
+	text -l "           choose destination" -al "center";
+	rowLayout -nc 3 -cw3 55 55 55;
+		button -w 55 -h 30 -l "    + X" -c "mirrorWeights \"+X\"";
+		button -w 55 -h 30 -l "    + Y" -c "mirrorWeights \"+Y\"";
+		button -w 55 -h 30 -l "    + Z" -c "mirrorWeights \"+Z\"";
+		setParent ..;
+	rowLayout -nc 3 -cw3 55 55 55;
+		button -w 55 -h 30 -l "     - X" -c "mirrorWeights \"-X\"";
+		button -w 55 -h 30 -l "     - Y" -c "mirrorWeights \"-Y\"";
+		button -w 55 -h 30 -l "     - Z" -c "mirrorWeights \"-Z\"";
+		setParent ..;
+	separator -st "none" -h 5;
+	text -l "        List of non-mirror vertices";
+	separator -st "none" -h 2;
+	rowLayout -nc 2 -cw2 83 83;
+		button -w 83 -h 20 -l "     add to list" -c "print (mirrorWeightsExList_add())";
+		button -w 82 -h 20 -l "remove from list" -c "mirrorWeightsExList_remove";
+		setParent ..;
+	rowLayout -nc 2 -cw2 83 83;
+		button -w 83 -h 20 -l "     select list" -c "print (mirrorWeightsExList_select())";
+		button -w 82 -h 20 -l "     delete list" -c "mirrorWeightsExList_delete";
+showWindow;
+window -e -w 173 -h 165 $wind;
+//window -q -wh $wind;
+}
+
+
+
+
+
+
+
+
+
+global proc string mirrorWeightsExList_add()
+{
+string $set = "tmpVerticesNotMirrorSkin";
+if (sizeSel() > 0)
+	{
+	if (`objExists $set`)
+		select -add $set;
+	ConvertSelectionToVertices;
+	createSet $set;
+	return "components added to non-mirror list";
+	}
+else
+	return "select some components to add to non-mirror list";
+}
+
+global proc mirrorWeightsExList_remove()
+{
+string $set = "tmpVerticesNotMirrorSkin";
+if (!`objExists $set`)
+	print "non-mirror list not exists";
+else if (sizeSel() > 0)
+	{
+	ConvertSelectionToVertices;
+	string $sel[] = sel();
+	select $set;
+	select -d $sel;
+	createSet $set;
+	print "components removed from non-mirror list";
+	}
+else
+	print "select some components to remove from list";
+}
+
+global proc string mirrorWeightsExList_select()
+{
+string $set = "tmpVerticesNotMirrorSkin";
+if (`objExists $set`)
+	{
+	select $set;
+	return "non-mirror list selected";
+	}
+else
+	return "non-mirror list not exists";
+}
+
+global proc mirrorWeightsExList_delete()
+{
+if (`objExists tmpVerticesNotMirrorSkin`)
+	{
+	delete "tmpVerticesNotMirrorSkin";
+	print "non-mirror list deleted";
+	}
+else
+	print "non-mirror list not exists";
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//UTILS
+global proc string attribute_to_node(string $attr)
+{
+string $array[] = stringToStringArray($attr, ".");
+return $array[0];
+}
+
+global proc BindPoseWithFullDisable()
+{
+int $autoKeyOnAtEnd = 0;
+if (`autoKeyframe -q -st`)
+	{
+	autoKeyframe -st 0;
+	$autoKeyOnAtEnd = 1;
+	}
+$sel = sel();
+string $influences[];
+if (`objectType (sel1())` != "joint")
+	$influences = `skinCluster -q -inf (skinClusterFind(sel1()))`;
+else
+	$influences = sel();
+string $skinArray[] = `connectionInfo -dfs ($influences[0] + ".worldMatrix")`;
+$skinCluster = attribute_to_node($skinArray[0]);
+$influences = `skinCluster -q -inf $skinCluster`;
+string $bindPose[] = `dagPose -q -bp $influences[0]`;
+DisableAll;
+dagPose -r -g -bp $influences[0];
+if ($autoKeyOnAtEnd)
+	autoKeyframe -st 1;
+//EnableAll;
+}
+
+global proc string[] conv(string $itemsForConv[], string $mode)
+{
+$itemsForConv = `ls -fl $itemsForConv`;
+
+string $converted[] = {};
+if ($mode == "v")
+	$converted = `polyListComponentConversion -tv $itemsForConv`;
+else if ($mode == "e")
+	$converted = `polyListComponentConversion -te $itemsForConv`;
+else if ($mode == "f")
+	$converted = `polyListComponentConversion -tf $itemsForConv`;
+else if ($mode == "u")
+	$converted = `polyListComponentConversion -tuv $itemsForConv`;
+else if ($mode == "vf")
+	$converted = `polyListComponentConversion -tvf $itemsForConv`;
+
+else if ($mode == "vi")
+	$converted = `polyListComponentConversion -tv -in $itemsForConv`;
+else if ($mode == "ei")
+	$converted = `polyListComponentConversion -te -in $itemsForConv`;
+else if ($mode == "fi")
+	$converted = `polyListComponentConversion -tf -in $itemsForConv`;
+else if ($mode == "ui")
+	$converted = `polyListComponentConversion -tuv -in $itemsForConv`;
+else if ($mode == "vfi")
+	$converted = `polyListComponentConversion -tvf -in $itemsForConv`;
+else
+	print "wrong argument";
+$converted = `ls -fl $converted`;
+return $converted;
+}
+
+global proc int forInNum(string $item, string $array[])
+{
+//$item = "b";
+//$array = {"a", "b", "c"};
+$c = 0;
+for (; $c < `size $array`; $c++)
+	{
+	if ($array[$c] == $item)
+		break;
+	}
+if ($c == `size $array`)
+	return -1;
+return $c;
+}
+
+global proc string[] intArrayToStringArray (int $intArray[])
+{
+//int $intArray[] = getNumbersOfComponents($findedAll);
+string $stringArray[] = {};
+for ($intItem in $intArray)
+	{
+	$stringArray[`size $stringArray`] = $intItem;
+	}
+return $stringArray;
+}
+
+global proc string keysPressed()
+{
+int $mods = `getModifiers`;
+string $keys = "";
+if (($mods / 1) % 2)
+	{
+	if ($keys == "") 	$keys += ("Shift");
+	else			$keys += (" Shift");
+	}
+if (($mods / 2) % 2)
+	{
+	if ($keys == "") 	$keys += ("CapsLock");
+	else			$keys += (" CapsLock");
+	}
+if (($mods / 4) % 2)
+	{
+	if ($keys == "") 	$keys += ("Ctrl");
+	else			$keys += (" Ctrl");
+	}
+if (($mods / 8) % 2)
+	{
+	if ($keys == "") 	$keys += ("Alt");
+	else			$keys += (" Alt");
+	}
+return $keys;
+}
+
+global proc float maxOf(float $nums[])
+{
+//float $nums[] = {1.0,2.0,3.0,4.0,5.0};
+float $max = max($nums[0], $nums[1]);
+
+for ($num in $nums)
+	{
+	if ($num > $max)
+		$max = $num;
+	}
+return $max;
+}
+
+global proc nearestPointOnMeshCreate (string $objects[])
+{
+//$objects = sel();
+//nearestPointOnMeshLoad;
+string $object;
+int $count = 0;
+for ($object in $objects)
+	{
+//$object = $objects[0];
+	if (!`objExists ("nearestPointOnMesh_" + $object)`)
+		{
+		nearestPointOnMesh -na ("nearestPointOnMesh_" + $object) $object;
+		$count++;
+		}
+	}
+//print ($count + " nodes created from " + `size $objects` + " objects specified.");
+}
+
+global proc float[] nearestPositionAndFace (float $pos[], string $object)
+{
+//string $object = sel1();
+//float $pos[] = `xform -q -ws -t locator1`;
+//nearestPositionAndFace($pos, (sel1()))
+$nearNode = ("nearestPointOnMesh_" + $object);
+setAttr ($nearNode + ".inPosition") $pos[0] $pos[1] $pos[2];
+float $pnt[] = `getAttr ($nearNode + ".position")`;
+int $faceIndex = `getAttr ($nearNode + ".nearestFaceIndex")`;
+return {$pnt[0], $pnt[1], $pnt[2], $faceIndex};
+}
+
+global proc float precision(float $float, float $min)
+{
+//float $float = 4.43564;
+//float $min = 0.001;
+float $multiple = 1.0 / $min;
+int $int = $float * $multiple;
+float $float2 = $int * $min;
+return $float2;
+}
+
+global proc float[] precisionArray(float $floats[], float $min)
+{
+float $floats2[] = {};
+float $float;
+for ($float in $floats)
+	$floats2[`size $floats2`] = precision($float, $min);
+return $floats2;
+}
+
+global proc progressBegin(string $name)
+{
+progressWindow -isInterruptable 1 -t $name -status "" -progress 0 -maxValue 1000;
+}
+
+global proc progressValue(float $value)
+{
+int $intValue = $value * 10;
+progressWindow -edit -progress $intValue;
+}
+
+global proc progressText(string $text)
+{
+progressWindow -edit -status $text;
+}
+
+global proc progressEnd()
+{
+progressWindow -edit -endProgress;
+}
+
+global proc int progressEsc()
+{
+if(`progressWindow -query -isCancelled`)
+	{
+	progressEnd;
+	return 1;
+	}
+return 0;
+}
+
+/*
+progressBegin progressic;
+progressValue 50.0;
+progressText "text";
+progressEsc;
+progressEnd;
+*/
+
+global proc string sel1()
+{
+string $sel[] = `ls -sl -fl`;
+return $sel[0];
+}
+
+global proc string[] sel()
+{
+return `ls -sl -fl`;
+}
+
+global proc string[] selMask(string $mask)
+{
+/*
+Handle  0  
+Nurbs Curves  9  
+Nurbs Surfaces  10  
+Nurbs Curves On Surface  11  
+Polygon  12  
+Locator XYZ  22  
+Orientation Locator  23  
+Locator UV  24  
+Control Vertices (CVs)  28  
+Edit Points  30  
+Polygon Vertices  31  
+Polygon Edges  32  
+Polygon Face  34  
+Polygon UVs  35  
+Subdivision Mesh Points  36  
+Subdivision Mesh Edges  37  
+Subdivision Mesh Faces  38  
+Curve Parameter Points  39  
+Curve Knot  40  
+Surface Parameter Points  41  
+Surface Knot  42  
+Surface Range  43  
+Trim Surface Edge  44  
+Surface Isoparms  45  
+Lattice Points  46  
+Particles  47  
+Scale Pivots  49  
+Rotate Pivots  50  
+Select Handles  51  
+Subdivision Surface  68  
+Polygon Vertex Face  70  
+NURBS Surface Face  72  
+Subdivision Mesh UVs  73  
+
+$mask = "v";
+*/
+int $maskInt;
+if ($mask == "v")
+	$maskInt = 31;
+else if ($mask == "e")
+	$maskInt = 32;
+else if ($mask == "f")
+	$maskInt = 34;
+else if ($mask == "u")
+	$maskInt = 35;
+else if ($mask == "vf")
+	$maskInt = 70;
+else if ($mask == "poly")
+	$maskInt = 12;
+else
+	$maskInt = $mask;
+
+string $sel[] = `filterExpand -sm $maskInt`;
+return $sel;
+}
+
+global proc string selObj()
+{
+$objs = `ls -sl -o`;
+return $objs[0];
+}
+
+global proc string skinClusterFind(string $node)
+{
+//$sel = `ls -l -sl`;
+//$node = $sel[0];
+//$node = "|polySurface1|polySurfaceShape2";
+$objectType = `objectType $node`;
+string $skinCluster = "";
+string $shape;
+int $meshDetected = 0;
+
+if ($objectType == "mesh")
+	{
+	$shape = $node;
+	$meshDetected = 1;
+	}
+else if ($objectType == "transform")
+	{
+	string $shapes[] = `listRelatives -f -s $node`;
+	if (`size $shapes` > 0)
+		{
+		$shape = $shapes[0];
+		$meshDetected = 1;
+		}
+	else
+		$shape = $node;
+	}
+
+//print $meshDetected
+if ($meshDetected)
+	{
+	string $skinClusters[] = `ls -type skinCluster`;
+	string $skin;
+	for ($skin in $skinClusters)
+		{
+	//$skin = $skinClusters[0];
+		string $geometryes[] = `skinCluster -q -g $skin`;
+		$geometryes = `ls -l $geometryes`;
+		for ($geometry in $geometryes)
+			if ($geometry == $shape)
+				$skinCluster = $skin;
+		}
+	}
+else
+	{
+	string $skinClusters[] = `ls -type skinCluster`;
+	string $skin;
+	for ($skin in $skinClusters)
+		{
+	//$skin = $skinClusters[0];
+		$numInList = forInNum($skin, $skinClusters);
+		string $geometryes[] = `skinCluster -q -g $skin`;
+		string $objectSkinned = stringSingle(`listRelatives -p $geometryes[0]`);
+		int $visible = isVisible($objectSkinned);
+		$infs = `skinCluster -q -inf $skin`;
+		$infs = `ls -l $infs`;
+		int $num = forInNum($node, $infs);
+		if ($num != -1 && $visible)
+			{
+			$skinCluster = $skin;
+			break;
+			}
+		else if ($num != -1 && $numInList == (`size $skinClusters` - 1))
+			{
+			$skinCluster = $skin;
+			break;
+			}
+		}
+	}
+//print $skinCluster;
+return $skinCluster;
+}
+
+global proc string stringSingle(string $array[])
+{return $array[0];}
+
+global proc float[] skinWeightsClear(float $weights[])
+{
+//float $weights[] = {0.480, 0.517};
+//floatArraySum($weights)
+float $weightsCut[] = {};
+float $weight;
+for ($weight in $weights)
+	{
+//$weight = $weights[0];
+	int $int = $weight * 1000;
+	float $float = intToFloat($int) / 1000;
+	$weightsCut[`size $weightsCut`] = $float;
+	}
+//print $weightsCut
+float $sumNew = floatArraySum($weightsCut);
+if ($sumNew == 1)
+	return $weightsCut;
+else
+	{
+	float $crit;
+	if ($sumNew < 1)
+		$crit = minOf($weightsCut);
+	else if ($sumNew > 1)
+		$crit = maxOf($weightsCut);
+	int $critNum = forInNumFloat($crit, $weightsCut);
+	float $difference = 1 - $sumNew;
+	$weightsCut[$critNum] += $difference;
+//	print ("\nweight not equal 1 found. Sum: " + $sumNew);
+	return $weightsCut;
+	}
+}
+
+global proc float intToFloat(int $int)
+{
+float $float = $int;
+return $float;
+}
+
+global proc float floatArraySum(float $array[])
+{
+float $sum = 0;
+float $single;
+for ($single in $array)
+	$sum += $single;
+return $sum;
+}
+
+global proc float minOf(float $nums[])
+{
+//float $nums[] = {1.0,2.0,3.0,4.0,5.0};
+float $min = min($nums[0], $nums[1]);
+
+for ($num in $nums)
+	{
+	if ($num < $min)
+		$min = $num;
+	}
+return $min;
+}
+
+global proc float maxOf(float $nums[])
+{
+//float $nums[] = {1.0,2.0,3.0,4.0,5.0};
+float $max = max($nums[0], $nums[1]);
+
+for ($num in $nums)
+	{
+	if ($num > $max)
+		$max = $num;
+	}
+return $max;
+}
+
+global proc int forInNumFloat(float $item, float $array[])
+{
+//$item = 1.0;
+//$array = {1.0, 2.0, 3.0};
+$c = 0;
+for (; $c < `size $array`; $c++)
+	{
+	if ($array[$c] == $item)
+		break;
+	}
+if ($c == `size $array`)
+	return -1;
+return $c;
+}
+
+global proc string stringSingle(string $array[])
+{return $array[0];}
+
+global proc float timerquery()
+{
+global float $GstartTime;
+$totalTime = `timerX -startTime $GstartTime`;
+//hideUvEditor "";
+return $totalTime;
+}
+
+global proc timerstart()
+{
+global float $GstartTime;
+float $GstartTime = `timerX`;
+//hideUvEditor begin;
+}
+
+global proc float twoPointsDistance (float $p1[], float $p2[])
+{
+float $distance = sqrt(pow(($p1[0] - $p2[0]), 2) + pow(($p1[1] - $p2[1]), 2) + pow(($p1[2] - $p2[2]), 2));
+return $distance;
+}
+
+global proc unholdJoints()
+{
+string $joints[] = `ls -sl -type joint`;
+string $skinCluster = skinClusterFind(stringSingle(`ls -l $joints[0]`));
+string $influences[] = `skinCluster -q -inf $skinCluster`;
+
+string $joint;
+for ($joint in $influences)
+	setAttr ($joint + ".lockInfluenceWeights") 0;
+}
+
+global proc int isVisible(string $object)
+{
+//$object = sel1();
+string $layer = objectLayer ($object);
+if ($layer != "defaultLayer")
+	{
+	int $layerVis = `getAttr ($layer + ".v")`;
+	if (!$layerVis)
+		return 0;
+	}
+int $visible = 1;
+string $parent;
+string $currObj = $object;
+int $count = 0;
+for (;;)
+	{
+	int $visCurr = `getAttr ($currObj + ".v")`;
+	if (!$visCurr)
+		{
+		$visible = 0;
+		break;
+		}
+	$parent = stringSingle(`listRelatives -p $currObj`);
+	if ($parent == "")
+		break;
+	else
+		$currObj = $parent;
+	$count++;
+	if ($count > 1000)
+		{
+		warning "LOOP";
+		break;
+		}
+	}
+return $visible;
+}
+
+global proc int sizeSel()
+{
+$size = (size (`ls -sl -fl`));
+return $size;
+}
+
+global proc createSet(string $name)
+{
+if (`objExists $name`)
+	delete $name;
+sets -name $name;
+}

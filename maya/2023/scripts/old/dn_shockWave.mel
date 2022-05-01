@@ -1,0 +1,185 @@
+//------------------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------//
+//	SCRIPT:	dn_shockWave.mel
+//	VERSION: 0.1
+//	AUTHOR:	Maurizio Giglioli
+//		    mng@dneg.com
+//	DATE:         18 06 2011
+//  Last Updated: 18 06 2011
+//
+//
+//	DESCRIPTION:	Make a dynLocator to get jiggle and skin sliding on a specified area
+//                  Can also be sudet to make a prebind sluster                  
+//
+//
+//	INSTRUCTIONS:	source the scrript
+//			        call the procedure dn_dynSkinJiggle_UI()
+//
+//  UPDATE:         
+//                 
+//------------------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------//
+global proc dn_shockWave(){}
+
+
+global proc dn_shokWave_UI()
+{
+    if (` window -ex "dnShokWave" `)
+		deleteUI -window "dnShokWave";
+	
+	window -wh 200 158 "dnShokWave";
+	
+	formLayout dnSW_FR;
+	text -l "name:" dnSW_TX;
+	textField -tx "wave" dnSW_TF;
+	checkBox -l "bake on" -v 1 -onc "checkBox -e -l \"bake on \" dnSJ_CBB" -ofc "checkBox -e -l \"bake off \" dnSJ_CBB" dnSJ_CBB;
+	
+	floatSliderGrp -l "Size  :" -min 0 -max 2 -fmn -100 -fmx 100 -pre 2 -s 1 -f true -cw3 60 50 50 -adj 3 -v 1 dnSW_FSS;
+	floatSliderGrp -l "Force :" -min 0 -max 1 -fmn -100 -fmx 100 -pre 2 -s 1 -f true -cw3 60 50 50 -adj 3 -v 0.15 dnSW_FIT;
+	
+	floatFieldGrp -l "Start :" -cw2 50 50 -adj 1 -nf 1 -v1 (`playbackOptions -q -min`) -cc "floatFieldGrp -e -v1 ((`floatFieldGrp -q -v1 dnSW_FSD`)+12) dnSW_FES" dnSW_FSD;
+	floatFieldGrp -l "End :" -cw2 50 50 -adj 1 -nf 1 -v1 ((`floatFieldGrp -q -v1 dnSW_FSD`)+12) dnSW_FES;
+	
+	button -l "GO" -c "do_dnShokWave" dnSW_BTTm ;
+	
+	formLayout -e
+	
+	-af dnSW_TX "left" 10 -af dnSW_TX "top" 10 -ap dnSW_TX "right" 0 20
+	-ac dnSW_TF "left" 10 dnSW_TX -af dnSW_TF "top" 5 -af dnSW_TF "right" 10
+	
+	-af dnSJ_CBB "left" 100 -ac dnSJ_CBB "top" 5 dnSW_TX -af dnSJ_CBB "right" 10
+	
+	-af dnSW_FSS "left" 10 -ac dnSW_FSS "top" 0 dnSJ_CBB -af dnSW_FSS "right" 10
+	-af dnSW_FIT "left" 10 -ac dnSW_FIT "top" 0 dnSW_FSS -af dnSW_FIT "right" 10
+	
+	-af dnSW_FSD "left" 10 -ac dnSW_FSD "top" 5 dnSW_FIT -ap dnSW_FSD "right" 0 50
+	-ac dnSW_FES "left" 0 dnSW_FSD -ac dnSW_FES "top" 5 dnSW_FIT
+	-af dnSW_BTTm "left" 10 -ac dnSW_BTTm "top" 5 dnSW_FSD -af dnSW_BTTm "right" 10
+
+	dnSW_FR ;
+
+	showWindow dnShokWave;
+    window -e -wh 230 160 dnShokWave;
+    
+}
+
+global proc do_dnShokWave()
+{
+    int $bake = `checkBox -q -v dnSJ_CBB`;
+	string $vtxs[] =`ls -fl -sl`, 
+	       $wave[], $buf[], $grp,
+	       $name = `textField -q -tx dnSW_TF`;
+	       
+	float $pos[3], 
+	      $start = `floatFieldGrp -q -v1 dnSW_FSD`, 
+	      $end = `floatFieldGrp -q -v1 dnSW_FES`,
+	      $size = `floatSliderGrp -q -v dnSW_FSS`,
+	      $force = `floatSliderGrp -q -v dnSW_FIT`,
+	      $s = `playbackOptions -q -min`,
+	      $e = `playbackOptions -q -max`,
+	      $time = `currentTime -q`;
+	      
+    if(size($name)!= 0 )
+    {
+        if(size(`filterExpand -sm 34`) != 0 )
+        {
+            for($v in $vtxs)
+            {
+                string $edges[2] = `findSepaEdg $v`;
+                select -r $edges;
+                string $rv = rivet();
+                select -r $rv;
+                
+                if($bake == 1)
+                {
+                    isolateBake 1;
+                    bakeResults -simulation true -t ($s+":"+$e) -sb 1 -dic true -pok true -sac false -ral false -bol false -cp false -s false {$rv};
+                    isolateBake 0;
+                }
+                
+                delete "rivetCurveFromMeshEdge2";
+                string $s[1] = `listRelatives -s $rv`;
+                delete $s[0];
+                
+                tokenize($v,".",$buf) ;
+                select -r $buf[0] ;
+                $wave = `nonLinear -foc -typ wave -minRadius 0 -maxRadius 2 -amplitude 0 -wavelength 0.5 -dropoff -1 -dropoffPosition 1 -offset 0` ;
+                $pos = `xform -q -ws -t $rv` ;
+                
+                move -a $pos[0] $pos[1] $pos[2] $wave[1] ;
+                setAttr ($wave[1]+".s") $size $size $size;
+    
+                setKeyframe -at "amplitude" -v 0 -t $start $wave[0] ;
+                setKeyframe -at "wavelength" -v 0.5 -t $start $wave[0] ;
+                setKeyframe -at "minRadius" -v 0 -t $start $wave[0] ;
+                setKeyframe -at "maxRadius" -v 2 -t $start $wave[0] ;
+    
+                setKeyframe -at "amplitude" -v $force -t (floor((($end-$start)*0.2)+0.5)+$start) $wave[0] ;
+                setKeyframe -at "wavelength" -v 0.7 -t (floor((($end-$start)*0.2)+0.5)+$start) $wave[0] ;
+    
+                setKeyframe -at "amplitude" -v 0 -t $end $wave[0] ;
+                setKeyframe -at "minRadius" -v 1 -t $end $wave[0] ;
+                setKeyframe -at "maxRadius" -v 4 -t $end $wave[0] ;
+
+                currentTime $time;
+                
+                if(!`objExists "globalShockWaveGRP_null"`)
+                {
+                    group -em -n "globalShockWaveGRP_null";
+                    select -cl;
+                    setAttr -l 1 "globalShockWaveGRP_null.tx";
+                    setAttr -l 1 "globalShockWaveGRP_null.ty";
+                    setAttr -l 1 "globalShockWaveGRP_null.tz";
+                    setAttr -l 1 "globalShockWaveGRP_null.rx";
+                    setAttr -l 1 "globalShockWaveGRP_null.ry";
+                    setAttr -l 1 "globalShockWaveGRP_null.rz";
+                }
+                parent $rv "globalShockWaveGRP_null";
+                setAttr ($wave[1]+".r") 0 0 0;
+                rename $rv ($name+"_Swave_Hnull");
+                group -em -n ($name+"_Swave_null");
+                parent ($name+"_Swave_null") ($name+"_Swave_Hnull");
+                setAttr ($name+"_Swave_null.t") 0 0 0 ;
+                setAttr ($name+"_Swave_null.r") 0 0 0 ;
+                parent $wave[1] ($name+"_Swave_null") ;
+                setAttr ($wave[1]+".t") 0 0 0 ;
+                setAttr ($wave[1]+".r") 0 0 0 ;
+                rename $wave[0] ($name+"_Swave");
+                rename $wave[1] ($name+"_SwaveHandle");
+            }
+        }else{
+            confirmDialog -b "Colio" -t "Bro !!!!" -m "Make sure to select at least a face !!\n" ;
+        }
+    }else{
+        confirmDialog -b "Colio" -t "Bro !!!!" -m "Make sure to introduce your node with a name , it is shy !!\n" ;
+    }
+    currentTime $time;
+}
+
+global proc isolateBake(int $dir)
+{
+    string $panes[] = `getPanel -all`;
+    for($p in $panes)
+    {
+        if(`objectType $p ` == "TmodelPane")
+        {
+            if($dir == 0)
+                isolateSelect -state 0 $p;
+            if($dir == 1 )
+                isolateSelect -state 1 $p;
+        }
+    }
+}
+
+global proc string[] findSepaEdg(string $face)
+{
+    
+    string $idx[];
+    string $mm[] =`polyListComponentConversion -te $face`;
+    string $ed[] = `ls -fl $mm`;
+
+    $idx[0] = $ed[0] ;
+    $idx[1] = $ed[1]; 
+    
+    return $idx;
+}

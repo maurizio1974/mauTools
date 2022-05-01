@@ -1,0 +1,79 @@
+
+
+python ("import maya.cmds as mc");
+python ("import maya.mel as mel");
+
+python ("if '/usr/people/maurizio-g/maya/scripts/utility/' is not (sys.path):sys.path.append('/usr/people/maurizio-g/maya/scripts/utility/')");
+python ("if '/usr/people/maurizio-g/maya/scripts/flipper/' is not (sys.path):sys.path.append('/usr/people/maurizio-g/maya/scripts/flipper/')");
+
+python "import allTirePlot";
+python("reload(allTirePlot)");
+
+
+global proc tireAnim_GUI()
+{
+    if (` window -ex "tireAnim_WIN" `)
+		deleteUI -window "tireAnim_WIN";
+	
+	window -wh 200 100 -t "Bake Asset" "tireAnim_WIN";
+	
+	formLayout tireAnimFR;
+	optionMenu tireAnimOM ; 
+
+    button -l "Plot Tires" -c "python(\"allTirePlot.allTirePlot()\")" tireAnimBTTm ;
+    
+	formLayout -e
+	
+	-af tireAnimOM "left" 10
+	-af tireAnimOM "top" 10 
+	-af tireAnimOM "right" 10
+
+	-af tireAnimBTTm "left" 10
+	-ac tireAnimBTTm "top" 20 tireAnimOM 
+	-af tireAnimBTTm "right" 10
+
+	tireAnimFR;
+
+	omPopulate("tireAnimOM");
+	
+	showWindow tireAnim_WIN;
+    window -e -wh 200 100 tireAnim_WIN;
+}
+
+global proc omPopulate(string $control)
+{
+    string $assets[] =`ls -typ "transform" "|*:*:*:*"`, 
+           $asset, 
+           $rigs[] = {"zenvost1","ZENVOST1auto","ASTON","ASTONauto","FERRARI","FERRARIauto"};
+    
+    for($a in $assets)
+    {
+        for ($r in $rigs)
+        {
+            if(`attributeQuery -n $a -ex "name"`==1)
+            {
+                $asset = ` getAttr -as ($a+".name")`;
+                if($asset == $r)
+                    menuItem -p $control $a;//$asset;
+            }
+        }
+    }
+}
+
+global proc string[] mgGetTire(string $asset)
+{
+    string $hir[] =`ls -dag -typ "transform" $asset`, 
+           $tires[];
+    int $i = 0;
+    for ($a in $hir)
+    {
+        if(`attributeQuery -n $a -ex "mgAutoTire"`==1)
+        {
+            $tires[$i] = $a;
+            print ("There is a good one called "+$a+"\n");
+            $i = $i + 1 ;
+        }
+    }
+    return $tires;
+}
+

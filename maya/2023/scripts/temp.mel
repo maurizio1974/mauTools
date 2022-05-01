@@ -1,0 +1,147 @@
+
+global string $gTextualInputField;
+
+// THIS IS WHAT WE CALL
+global proc mnmSetWild()
+{
+        global string $gTextualInputField;
+        // CHANGE THE DEFAULT MAYA WILDCARD TEXTFIELD COMMAND
+        textField -e -cc ("mnmItemWild(eval(\"textField -q -tx $gTextualInputField\"));quickWildcardSelect") $gTextualInputField;
+        textField -e -ec ("mnmItemWild(eval(\"textField -q -tx $gTextualInputField\"));quickWildcardSelect") $gTextualInputField;
+}
+        
+
+global proc mnmItemWild(string $name)
+{
+        
+        global string $gTextualInputField;
+        //CHECK IF THE POPUPMENU EXISTS IF NOT CREATE IT
+        string $pop[] = `textField -q -pma $gTextualInputField`, $pM, $mI, $items[], $item, $itemN[], $itemR[];
+        int $x = 0;
+        if(size($pop)==0)
+        {
+                $pM = `popupMenu -p $gTextualInputField`;
+                $mI = `menuItem -l $name -p $pM`;
+                menuItem -e -c ("textField -e -tx \""+$name+"\""+$gTextualInputField+";quickWildcardSelect;") $mI;
+        }else{
+                $items = `popupMenu -q -ia $pop[0]`;
+                // CREATE POPUPMENU NEW MENUITEMS ARRAY
+                for($i in $items)
+                {
+                        $item = `menuItem -q -l $i`;
+                        $itemN[$x] = $item;
+                        $x = $x + 1;
+                }
+                 // CLEAN THE POPUP
+                 popupMenu -e -dai $pop[0];
+                 //REPOPULATE POPUPMENU WITH NEW ARRAY
+                $itemN[size($itemN)] = $name;
+                $itemR = stringArrayRemoveDuplicates($itemN);
+                for($iR in $itemR)
+                {
+                        $mI = `menuItem -l $iR -p $pop[0]`;
+                        menuItem -e -c ("textField -e -tx \""+$iR+"\""+$gTextualInputField+";quickWildcardSelect;") $mI;
+                }
+        }
+}
+
+/*
+global proc multyFoll(string $top, string $nurb)
+{
+    string $hi[] =`ls -dag -typ "transform" $top`; // select the hierarchy
+    string $sh[1] =`listRelatives -s $nurb`;
+    for($e in $hi)
+    {
+        string $loc[1]  = `spaceLocator`;
+        parent $loc[0] $e;
+        setAttr ($loc[0]+".t") 0 0 0;
+        setAttr ($loc[0]+".r") 0 0 0;
+        parent -w $loc[0];
+        string $CPOS = `createNode closestPointOnSurface -n "tempCPOS"`;
+        connectAttr ($sh[0]+".worldSpace") ($CPOS+".inputSurface");
+        connectAttr ($loc[0]+".t") ($CPOS+".inPosition");
+        select -add ($nurb+".uv["+(`getAttr ($CPOS+".parameterU")`)+"]["+(`getAttr ($CPOS+".parameterV")`)+"]");
+        rivetFollicle();
+        delete $CPOS $loc;
+    }
+}
+
+multyFoll("locator1","nurbsPlane1");
+
+global proc transFoll(string $nurb)
+{
+	string $fol[] = `ls -sl`;
+	for($e in $fol)
+	{
+		if($e !=  $nurb)
+		{
+			string $sh[1] =`listRelatives -s $e`;
+			string $cons[] = `listConnections -d 1 -s 1 $sh[0]`;
+			string $CPOS =`createNode closestPointOnSurface -n "tempCPOS"`;
+			string $sh1[1] =`listRelatives -s $nurb`;
+			connectAttr ($sh1[0]+".worldSpace") ($CPOS+".inputSurface");
+			float $pos[3] = `xform -q -ws -t $e`;
+			setAttr ($CPOS+".inPosition") $pos[0] $pos[1] $pos[2];
+			float $u = `getAttr ($CPOS+".parameterU")`;
+			float $v = `getAttr ($CPOS+".parameterV")`;
+			connectAttr ($sh1[0]+".local") ($sh[0]+".inputSurface");
+			connectAttr ($sh1[0]+".worldMatrix[0]") ($sh[0]+".inputWorldMatrix");
+		}
+	}
+}
+
+transFoll("clothStrip00_NURB");
+
+
+string $se[] = `ls -sl`;
+for($s in $se)
+{
+    string $at = `createNode "attributeTransfer"`;
+    string $am = `createNode "arrayMapper"`;
+    string $rm = `createNode "ramp"`;
+    string $apc = `createNode "arrayToPointColor"`;
+    string $meshOrig = $s+"ShapeOrig";
+    string $nCloth = `substitute "_FLESH" $s "_nClothShape"`;
+    string $crv = `substitute "_FLESH" $s "_CRV"`;
+    string $sh[] = `listRelatives -s $crv`;
+    string $color[] = `duplicate -rr $s`;
+    string $bb = `createNode "boundingObject"`;
+    string $conn[] =`listRelatives -s -f $color[0]`;
+    
+    connectAttr ($meshOrig+".worldMesh[0]") ($at+".inGeometry");
+    connectAttr ($at+".outWeightPP") ($am+".vCoordPP");
+    connectAttr ($am+".vCoordPP") ($nCloth+".inputAttractPerVertex");
+    connectAttr ($rm+".outColor") ($am+".computeNodeColor");
+    connectAttr ($at+".outGeometry") ($apc+".inGeometry");
+    connectAttr ($bb+".outData") ($at+".boundingObjects[0]");
+    connectAttr ($bb+".outData.outParentMatrix") ($at+".boundingObjects[0].boundParentMatrix");
+    connectAttr ($apc+".outGeometry") (($color[0]+"Shape")+".inMesh");
+    connectAttr ($sh[0]+".worldSpace[0]") ($bb+".inCurveData.inCurve");
+
+
+    setAttr ($bb+".type") 3;
+    setAttr ($bb+".pointRadius") 0.2;
+    removeMultiInstance -break true ($rm+".colorEntryList[1]");
+    setAttr ($rm+".colorEntryList[0].color") -type double3 0 0 0 ;
+    setAttr ($rm+".colorEntryList[2].color") -type double3 1 1 1 ;
+    setAttr ($at+".weight") 1;
+    setAttr ($at+".color") 1;
+    setAttr (($color[0]+"Shape")+".displayColors") 1;
+
+    for($c in $conn)
+    {
+        if(!`gmatch $c "*Shape"`)
+            delete $c;
+        else{
+            setAttr ($c+".intermediateObject") 0;
+            setAttr ($c+".displayColors") 1;
+        }
+    }
+    
+    rename $at (`substitute "_FLESH" $s "_AT"`);
+    rename $am (`substitute "_FLESH" $s "_AM"`);
+    rename $rm (`substitute "_FLESH" $s "_RM"`);
+    rename $apc (`substitute "_FLESH" $s "_APC"`);
+    rename $color[0] (`substitute "_FLESH1" $color[0] "_COLOR"`);
+}
+

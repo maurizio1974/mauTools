@@ -1,0 +1,816 @@
+//	SCRIPT:		cutSkin v1.0
+//	AUTHOR:		Christian Stejnar - Technical Artist
+//	CONTACT:	christian.stejnar@rockstarvienna.com
+//	WEB:		www.8ung.at/stejnar
+//
+//	DATE:		05/01/2006
+//
+//	DESCRIPTION:
+//	The basic idea of cutSkin was to convert a smooth skinnned geometry into a 
+//	separated group of single meshes - each single separated mesh ist parented 
+// 	to its most influencing bone. The result is a "rigid" version of your smooth
+//	skinned mesh - good for playback - easy to animate! Read the readme.txt ;-)
+//
+//	TESTED:
+//	Maya 6.5, Maya 7.0
+//
+//	INTERNAL COUNT: 18
+
+
+//-------------------------------------------------------------
+global proc cutSkin()
+//-------------------------------------------------------------
+{
+	//startup
+	cutSkin_UI;
+}
+
+
+//-------------------------------------------------------------
+global proc cutSkin_UI()
+//-------------------------------------------------------------
+{
+	//build up UI
+	
+	if ( `window -exists parentWeightsUI` ) deleteUI parentWeightsUI;
+	window -title "CutSkinTool" -s 0 -w 209 -h 150 parentWeightsUI;
+	
+	columnLayout cutSkinMainUI;
+	rowColumnLayout -numberOfColumns 1 -columnWidth 1 200;
+	
+	text -l "" ;
+
+	columnLayout cutSkinreduceUI;
+	rowColumnLayout -numberOfColumns 2  -columnWidth 1 130 -columnWidth 2 68;
+	
+	checkBox -label "reduce polycount by %  " -align "left" -onc "cutSkin_reduce_showUI" -ofc "cutSkin_reduce_hideUI" reducePolyCountCheckBox;
+
+ 	floatField -en 0 -minValue 0 -maxValue 99 -precision 0 -value 50 -step 1 polyReduceFloatField;
+	
+	setParent ..;setParent ..;
+	text -l "" ;
+	button -w 100 -h 20 -l "Start" -c "cutSkin_doIt";
+	
+	separator -height 10 -style "double";
+	
+	text -l "Status:" parentWeightsFeedbackline;
+	
+	progressBar -maxValue 10 -w 200 -h 10 parentWeightsProgressbar;
+	
+	showWindow parentWeightsUI;
+}
+
+
+//-------------------------------------------------------------
+global proc cutSkin_doIt()
+//-------------------------------------------------------------
+{
+	//here we go
+	
+	string $jointList[];
+	string $cluster;
+	string $node;
+	
+	//get selection
+	string $selNodes[] = `ls -sl`;
+	
+	//selection check
+	if (`size($selNodes)` != 1 ) error "Select one smooth skinned mesh!";
+	
+	//feedback
+	print "\n+++CutSkin started+++\n";
+	
+	//set cursor to wait
+ 	waitCursor -state 1;
+	
+	//undo OFF
+	undoInfo -state off;
+	
+	//start timer
+	float $startTime = `timerX`;
+	
+	//add the layer we need
+	cutSkin_layerManger_AddLayers;
+	
+	//add the source mesh to our layerset
+	cutSkin_layerManger_AddSourceMesh $selNodes[0];
+	
+	//do the polygon reduction first
+	$node = `cutSkin_reduce_reducePolyCount $selNodes[0]`;
+	
+	//clear selection
+	select -cl;
+	
+	//get vtx list from node
+	$vtxList = `cutSkin_getVtxList $node`;
+	
+	//get skin cluster from selected node
+	$cluster = `cutSkin_getCluster $node`;
+	
+	//get joint list from node and corresponding cluster
+	$jointList = `cutSkin_getJointList $node $cluster`;
+	
+	//build up set list from joint list
+	cutSkin_setManager_buildUpJointSets $jointList;
+	
+	//create joint sets 
+	cutSkin_manageWeightsIntoSetsPerJoint $node $vtxList $jointList $cluster;
+			
+	//now we rebuild the geometry from separated meshes
+	cutSkin_detachFaces $jointList $node $vtxList;
+	
+	//remove joint sets
+	cutSkin_setManager_removeJointSets $jointList;
+	
+	//cleanup polyreduction nodes
+	cutSkin_reduce_removeUnusedSources;
+	
+	//undo ON
+	undoInfo -state on;
+	
+	//end timer
+	float $totalTime = `timerX -startTime $startTime`;
+   	print ("Total calculation time: "+$totalTime+"\n");
+	
+	//some feedback once we are done
+	print ("CutSkin done on mesh: " + $selNodes[0] + "! See Script Editor for details.\n");
+	
+	//unset cursor to wait and clear selection
+ 	waitCursor -state 0;
+ 	select -cl;
+		
+}
+
+
+//------------------------------------------------------------------------------
+global proc cutSkin_reduce_showUI()
+//------------------------------------------------------------------------------
+{
+	floatField -e -en 1 polyReduceFloatField;
+}
+
+
+//------------------------------------------------------------------------------
+global proc cutSkin_reduce_hideUI()
+//------------------------------------------------------------------------------
+{
+	floatField -e -en 0 polyReduceFloatField;	
+}
+
+
+//------------------------------------------------------------------------------
+global proc cutSkin_reduce_removeUnusedSources()
+//------------------------------------------------------------------------------
+{
+	//remove and hide the old unused source meshes
+	
+	if (`objExists "*_reducedMesh"` == 1)
+	{
+		delete 	"*_reducedMesh";
+	}
+	
+	setAttr ("SourceMesh.visibility") 0;
+}
+
+
+
+//------------------------------------------------------------------------------
+global proc string cutSkin_reduce_reducePolyCount(string $node)
+//------------------------------------------------------------------------------
+{
+	//here we reduce the polycount on the given mesh
+	
+	//check UI
+	if (`checkBox -q -v reducePolyCountCheckBox` == 1)
+	{	
+		return `cutSkin_reduce_reducePolyCountReduce $node`;
+	}	
+	
+	//return not untouched node
+	return $node;
+}
+
+
+//------------------------------------------------------------------------------
+global proc string cutSkin_reduce_reducePolyCountReduce(string $node)
+//------------------------------------------------------------------------------
+{
+	//update progressbar
+	progressBar -edit -maxValue 5 parentWeightsProgressbar;
+	
+	//step progressbar
+	progressBar -edit -step 1 parentWeightsProgressbar;
+	text -e -l "1/3: reducing polycount - cleanup..." parentWeightsFeedbackline;
+	
+	//get reduce value from UI
+	float $reduceValue = `floatField -q -v polyReduceFloatField`;
+	
+	//cleanup non manifolds
+	select -r $node;
+	polyCleanupArgList 3 { "0","1","1","0","0","0","0","0","0","0","0","0","0","0","0","1","0" };
+	selectMode -object;
+	
+	//step progressbar
+	progressBar -edit -step 1 parentWeightsProgressbar;
+	text -e -l "1/3: reducing polycount - reduce..." parentWeightsFeedbackline;
+	
+	//do reduce
+	string $polyReduceNode[] = `polyReduce 	
+			-percentage $reduceValue 
+			-uvWeights 0 
+			-colorWeights 0 
+			-keepBorder 0 
+			-keepMapBorder 0 
+			-keepHardEdge 0 
+			-compactness 0 
+			-triangulate 0 
+			-replaceOriginal 1 
+			-ch 1 $node`;
+		
+	//step progressbar
+	progressBar -edit -step 1 parentWeightsProgressbar;
+	text -e -l "1/3: reducing polycount - duplicate mesh..." parentWeightsFeedbackline;
+	
+	//duplicate now the reduced version		
+	string $workMesh[] = `duplicate -rr -renameChildren -ic $node`;
+
+	//step progressbar
+	progressBar -edit -step 1 parentWeightsProgressbar;
+	text -e -l "1/3: reducing polycount - remove history..." parentWeightsFeedbackline;
+
+	//clean history on skinned work mesh	
+	select -r $workMesh[0];
+	cutSkin_helper_deleteHistoryKeepSkinning;
+
+	//step progressbar
+	progressBar -edit -step 1 parentWeightsProgressbar;
+	text -e -l "1/3: reducing polycount - delete tmp data..." parentWeightsFeedbackline;
+	
+	//delete unused polyreduction node
+	if (`objExists $polyReduceNode[0]` == 1) delete $polyReduceNode[0];
+	select -cl;
+	
+	//rename reduced mesh
+	$workMesh[0] = `rename $workMesh[0] ($workMesh[0] + "_reducedMesh")`;
+	
+	//feedback
+	print ("Polygonreduction done on mesh " + $node + " by % " + $reduceValue + "\n");
+		
+	//return the reduced node
+	return $workMesh[0];
+}
+
+
+//------------------------------------------------------------------------------
+global proc cutSkin_manageWeightsIntoSetsPerJoint(string $selNode, string $vtxList[], string $jointList[], string $cluster)
+//------------------------------------------------------------------------------
+{
+	//here we manage all the vtx weights into sets per joint
+	
+	string $jointHoldingMaxWeights;
+	
+	float $weightTmp;
+	float $maxWeights[];
+	
+	//update progressbar
+	progressBar -edit -maxValue `size($vtxList)`  parentWeightsProgressbar;
+	text -e -l "2/3: gathering skinning information..." parentWeightsFeedbackline;
+	
+	//step vtx list	
+	for ($v = 0; $v < size($vtxList); $v++)
+	{
+		//step progressbar
+		progressBar -edit -step 1 parentWeightsProgressbar;
+		
+		//reset max value for new joint iteration
+		$maxWeights[$v] = 0;
+		
+		//step joint list per vtx
+		for ($j = 0; $j < size($jointList); $j++)
+		{ 
+			//get weight from $vtxList[$v] on $jointList[$j]
+			$weightTmp = `skinPercent -t $jointList[$j] -q $cluster $vtxList[$v]`;
+			
+			//filter out all zero weights for current joint
+			if ($weightTmp != 0)
+			{	
+				//check if we found a new max weights vtx		
+				if ($weightTmp > $maxWeights[$v])
+				{
+					$maxWeights[$v] = $weightTmp;
+					$jointHoldingMaxWeights = $jointList[$j];
+				}
+			}
+		}
+
+		//add the max vtx to joint set
+		cutSkin_setManager_addVtxToJointSet $vtxList[$v] $jointHoldingMaxWeights;
+	}
+	
+	//reset progressbar
+	progressBar -edit -pr 0 parentWeightsProgressbar;
+	text -e -l "Status:" parentWeightsFeedbackline;		
+}
+
+
+//------------------------------------------------------------------------------
+global proc cutSkin_setManager_buildUpJointSets(string $jointList[])
+//------------------------------------------------------------------------------
+{
+	//build set list from joint list
+	
+	for ($joint in $jointList)
+	{
+		if (`objExists ($joint + "_jSet")` == 0)
+		{
+			string $jointSetname = `cutSkin_removeDividerFromPath $joint`;
+			
+			sets -n ($jointSetname + "_jSet") -v 1;
+		}
+	}		
+}
+
+
+//------------------------------------------------------------------------------
+global proc cutSkin_setManager_removeJointSets(string $jointList[])
+//------------------------------------------------------------------------------
+{
+	//build set list from joint list
+		
+	for ($joint in $jointList)
+	{
+		string $jointSetname = `cutSkin_removeDividerFromPath $joint`;
+		
+		if (`objExists ($jointSetname + "_jSet")` == 1)
+		{
+			delete ($jointSetname + "_jSet");
+		}
+	}		
+}
+
+
+//------------------------------------------------------------------------------
+global proc cutSkin_setManager_addVtxToJointSet(string $vtx, string $joint)
+//------------------------------------------------------------------------------
+{
+	//add given vtx to joint set
+	
+	sets -addElement (`cutSkin_removeDividerFromPath $joint` + "_jSet") $vtx;
+}
+
+
+//------------------------------------------------------------------------------
+global proc string cutSkin_removeDividerFromPath(string $node)
+//------------------------------------------------------------------------------
+{
+	//here we remove the | dagpath divider from path node
+	
+	return `substituteAllString $node "|" "_"`;
+}
+
+
+//-------------------------------------------------------------
+global proc string cutSkin_getCluster(string $node)
+//-------------------------------------------------------------
+{
+	//simply get the skin cluster of given node
+	
+	string $cluster = `findRelatedSkinCluster $node`;
+	
+	if ($cluster == "") error ("No skinCluster found on node " + $node + "!");
+	
+	return $cluster;
+}
+
+
+//-------------------------------------------------------------
+global proc string[] cutSkin_getVtxList(string $node)
+//-------------------------------------------------------------
+{
+	//get vtx list from $node
+	
+	string $vtxList[] = `polyListComponentConversion -tv $node`; 
+
+	return `ls -fl $vtxList`;
+}
+
+
+//-------------------------------------------------------------
+global proc string[] cutSkin_getJointList(string $node, string $cluster)
+//-------------------------------------------------------------
+{
+	//get joint list from $node
+	
+	return `listConnections -type joint ($cluster + ".matrix")`;
+}
+
+
+//------------------------------------------------------------------------------
+global proc cutSkin_detachFaces(string $jointList[], string $node, string $vtxList[])
+//------------------------------------------------------------------------------
+{
+	//detach faces in given joint set from node
+	
+	string $vtxListForJoint[];
+	string $faceList[];
+	string $sepMesh[];
+	string $jointSetname;
+	string $faceSel;
+	
+	//update progressbar
+	progressBar -edit -maxValue `size($jointList)` parentWeightsProgressbar;
+	text -e -l "3/3: detaching and parenting weights..." parentWeightsFeedbackline;
+	
+	//step joints
+	for ($joint in $jointList)
+	{
+		//print ("detaching on joint: " + $joint + " START\n");
+		
+		//step progressbar
+		progressBar -edit -step 1 parentWeightsProgressbar;
+				
+		//get vtxs from joint set
+		$jointSetname = `cutSkin_removeDividerFromPath $joint`;
+		$vtxListForJoint = `sets -q ($jointSetname + "_jSet")`;
+				
+		//start detacher
+		$faceSel = `cutSkin_extractFaces $node $joint $vtxListForJoint $vtxList`;
+		
+		//parent face meshes to joints
+		cutSkin_parentMeshes $faceSel $joint;
+		
+		//add the new cut skin mesh to layer
+		cutSkin_layerManger_AddCutSkinMeshes $faceSel;
+		
+		//print ("detaching on joint: " + $joint + " END\n");
+	}
+	
+	//reset progressbar
+	progressBar -edit -pr 0 parentWeightsProgressbar;
+	text -e -l "Status:" parentWeightsFeedbackline;
+}
+
+
+//------------------------------------------------------------------------------
+global proc cutSkin_parentMeshes(string $faceSel, string $joint)
+//------------------------------------------------------------------------------
+{
+	//parent face sel meshes to joints
+	
+	//check if exists
+	if (`objExists $faceSel` == 1)
+	{
+
+		setAttr -lock 0 ($faceSel + ".tx");
+		setAttr -lock 0 ($faceSel + ".ty");
+		setAttr -lock 0 ($faceSel + ".tz");
+		setAttr -lock 0 ($faceSel + ".rx");
+		setAttr -lock 0 ($faceSel + ".ry");
+		setAttr -lock 0 ($faceSel + ".rz");
+		setAttr -lock 0 ($faceSel + ".sx");
+		setAttr -lock 0 ($faceSel + ".sy");
+		setAttr -lock 0 ($faceSel + ".sz");
+		
+		//parent to joint
+		parent $faceSel $joint;
+	}
+}
+
+
+//------------------------------------------------------------------------------
+global proc string cutSkin_extractFaces(string $node, string $joint, string $vtxListForJoint[], string $vtxList[])
+//------------------------------------------------------------------------------
+{
+	//detach faces from skin
+	
+	string $faceSel;
+	string $newSel[];
+	string $jointSetname;
+	string $faceListForJoint[];
+	
+	//print ("extracting on joint: " + $joint + " START\n");
+	
+	//check given faces
+	if (`size($vtxListForJoint)` != 0)
+	{	
+		$faceListForJoint = `polyListComponentConversion -fv -tf -in $vtxListForJoint`;
+		$faceListForJoint = `ls -fl $faceListForJoint`;
+		
+		//check if we got at least two faces
+		if (`size($faceListForJoint)` > 1)
+		{
+			//print ("faceListForJoint: " + `size($faceListForJoint)` + "\n");
+			
+			//rename original node to protect from history destruction on skincluster
+			rename $node "tmpnode";
+			
+			//duplicate node
+			duplicate -n $node "tmpnode" ;
+			
+			//get rid of unwanted vtx in node
+			cutSkin_deleteInvertedList $vtxList $faceListForJoint;
+			
+			//rename face mesh to jname
+			$jointSetname = `cutSkin_removeDividerFromPath $joint`;
+			$faceSel = `rename $node ($jointSetname + "_mesh")`;
+			
+			//rename our tmp node back 
+			rename "tmpnode" $node ;
+			
+			//get rid of unwanted skinmesh copies [hack] - TODO: do this better ;-)
+			if (`objExists ($joint + "_meshShape*Orig")` == 1)
+			{
+				delete ($joint + "_meshShape*Orig");
+			} 
+		}
+		else 
+		{
+			print ("Only one face for joint: " + $joint + "\n");	
+		}	
+	}
+	else 
+	{
+		print ("No face list for joint: " + $joint + "\n");	
+	}
+	
+	//print ("extracting on joint: " + $joint + " END\n");
+	
+	return $faceSel;
+}
+
+
+//------------------------------------------------------------------------------
+global proc cutSkin_deleteInvertedList(string $vtxList[], string $faceListForJoint[])
+//------------------------------------------------------------------------------
+{
+	//here we remove the unwanted vtx from node
+		
+	string $faceList[];
+		
+	$faceList = `polyListComponentConversion -fv -tf $vtxList`;
+	$faceList = `ls -fl $faceList`;
+			
+	delete `stringArrayRemove $faceListForJoint $faceList`;
+}
+
+
+//------------------------------------------------------------------------------
+global proc cutSkin_layerManger_AddLayers()
+//------------------------------------------------------------------------------
+{
+	//set the layer for our results
+	
+	if(`layerButton -exists "SourceMesh"` == 0) createDisplayLayer -e -nr -name "SourceMesh";
+	if(`layerButton -exists "CutSkin"` == 0) createDisplayLayer -e -nr -name "CutSkin";
+		
+}
+
+
+//------------------------------------------------------------------------------
+global proc cutSkin_layerManger_AddSourceMesh(string $node)
+//------------------------------------------------------------------------------
+{
+	//set the layer for our results
+	
+	if (`objExists $node` == 1)
+	{
+		editDisplayLayerMembers -nr "SourceMesh" $node;
+	}
+}
+
+
+//------------------------------------------------------------------------------
+global proc cutSkin_layerManger_AddCutSkinMeshes(string $node)
+//------------------------------------------------------------------------------
+{
+	//set the layer for our results
+	
+	if (`objExists $node` == 1)
+	{
+		editDisplayLayerMembers -nr "CutSkin" $node;
+	}
+}
+
+
+//------------------------------------------------------------------------------
+global proc cutSkin_helper_deleteHistoryKeepSkinning()
+//------------------------------------------------------------------------------
+{
+	//taken from deleteHistoryKeepSkinning.mel Alias|Wavefront Script
+	
+	string $influenceDelimiter = "influenceDelimiter";
+	//duplicate input graph
+	
+	//user should select skinned meshes
+	string $originalObjects[] = `ls -l -sl`;
+	
+	//duplicate meshes with skin connections
+	if( size($originalObjects) == 0 )
+	{
+		error "Nothing selected.";
+		return;
+	}
+
+	string $allTempObjects[] = `duplicate -upstreamNodes -renameChildren`;
+	string $tempObjects[] = `ls -l -sl`;
+
+	// build list of existing skinClusters
+	string $originalSkinClusters[];
+	string $originalJoints[];
+	string $originalInfluenceObjects[] ;
+	int $skinCount = 0;
+	for ( $object in $originalObjects )
+	{
+		string $skinCluster = findRelatedSkinCluster($object);
+		if (size($skinCluster) == 0) {
+			// No skin on this object
+			//
+			continue;
+		}
+		$originalSkinClusters[$skinCount] = $skinCluster;
+
+		string $connectedJoints[] = `listConnections -type joint $skinCluster`;
+		$connectedJoints = `stringArrayRemoveDuplicates $connectedJoints`;
+
+		// test if the joints are at the bind pose.
+		int $result = cutSkin_helper_skeletonAtBindPose($connectedJoints);
+		if ($result == 0){
+			warning("Delete Non-Skin History: Skeleton is not in the bind pose and results may be undesirable.");
+		}
+		
+		// Store all of the influence objects into an array
+		// Since MEL doesn't have multi-index arrays all the influence objects
+		// are stored in a single index array separated by element counts and
+		// delimiters
+		//
+		// i.e.
+		// First skinCluster with 3 influence objects:
+		// $originalInfluenceObjects[0] = "3"
+		// $originalInfluenceObjects[1] = "infObj1"
+		// $originalInfluenceObjects[2] = "infObj2"
+		// $originalInfluenceObjects[3] = "infObj3"
+		// $originalInfluenceObjects[4] = "influenceDelimiter"
+		//
+		// Second skinCluster with 2 influence objects:
+		// $originalInfluenceObjects[5] = "infObj1"
+		// $originalInfluenceObjects[6] = "infObj1A"
+		// $originalInfluenceObjects[7] = "infObj2A"
+		// $originalInfluenceObjects[7] = "influenceDelimiter"
+		//
+		string $infObjects[] = `skinCluster -q -influence $originalSkinClusters[ $skinCount ]`;
+		// Store the number of influence objects for this skinCluster
+		$originalInfluenceObjects[`size $originalInfluenceObjects`]  = `size $infObjects`;
+		for ( $inf in $infObjects )
+		{
+			// Store each influence object
+			$originalInfluenceObjects[`size $originalInfluenceObjects`] = $inf;
+		}
+		// Store a delimiter
+		$originalInfluenceObjects[`size $originalInfluenceObjects`] = $influenceDelimiter;
+
+		$originalJoints[$skinCount] = $connectedJoints[0];
+		
+		$skinCount ++;
+	}
+
+	if ( $skinCount == 0 )
+	{
+		delete $allTempObjects;
+		error "Delete Non-Skin History: no skinned objects found.";
+		return;
+	}
+	
+	// build list of duplicated skinClusters
+	string $tempSkinClusters[];
+	$skinCount = 0;
+	for ( $object in $tempObjects )
+	{
+		string $skinCluster = findRelatedSkinCluster($object);
+		if (size($skinCluster) == 0) {
+			// No skin on this object
+			//
+			continue;
+		}
+		$tempSkinClusters[$skinCount] = $skinCluster;
+		$skinCount ++;
+	}
+
+	if ( $skinCount == 0 )
+	{
+		delete $allTempObjects;
+		error "deleteHistoryKeepSkinning failed";
+		return;
+	}
+	
+	//detach skins
+	select -replace $originalObjects;
+	doDetachSkin "2" { "3", "1" };
+	
+	//reskin objects and copy skinning from duplicate to baked original-
+	select -clear;
+	$skinCount = 0;
+	int $influenceIndex = 0;
+	for ($object in $originalObjects){
+		if ( $skinCount >= size( $originalJoints ) )
+		{
+			delete $allTempObjects;
+			error "deleteHistoryKeepSkinning failed";
+			break;
+		}
+
+		if ( `nodeType $object` != "transform" )
+		{
+			continue;
+		}
+
+		//reattach to skeleton
+		string $poses[] = `dagPose -q -bp $originalJoints[$skinCount]`;
+		delete $poses;
+		string $newSkinCluster[] = `skinCluster -maximumInfluences 3 -dropoffRate 4	$originalJoints[$skinCount] $object`;
+		string $currentInfluences[] = `skinCluster -q -influence $newSkinCluster[0]`;
+
+		int $origInfCount = $originalInfluenceObjects[ $influenceIndex ];
+		$influenceIndex++;
+		
+		int $mm;
+		string $origInfsForThisSkin[];
+		for ($mm = 0; $mm < $origInfCount; $mm++, $influenceIndex++) {
+			$origInfsForThisSkin[$mm] = $originalInfluenceObjects[ $influenceIndex ];
+		}
+		$influenceIndex++; // to go past delimiter
+
+		// remove influences that weren't there originally
+		//
+		for ($inf in $currentInfluences) {
+			if (0 == AWNumberOfOccurrencesInStringArray($inf,$origInfsForThisSkin)) {
+				skinCluster -e -removeInfluence $inf $newSkinCluster[0];
+			}
+		}
+
+		// add any influences that were there originally and aren't now
+		//
+		for ($mm = 0; $mm < $origInfCount; $mm++) {
+			$inf = $origInfsForThisSkin[$mm];
+			if (0 == AWNumberOfOccurrencesInStringArray($inf,$currentInfluences)) {
+				skinCluster -e -addInfluence $inf $newSkinCluster[0];
+			}
+		}
+
+		// Reweight
+		copySkinWeights 
+			-sourceSkin $tempSkinClusters[$skinCount]
+			-destinationSkin $newSkinCluster[0]
+//			-smooth    // Comment this option in for spatially smoothed skin weight copy
+			-noMirror;
+		
+		$skinCount ++;
+	}
+	
+	//clean up scene - delete temp objects
+	delete $allTempObjects;
+
+	// re-select the original selection
+	select $originalObjects;
+}
+
+
+//------------------------------------------------------------------------------
+global proc int cutSkin_helper_skeletonAtBindPose(string $joints[])
+//------------------------------------------------------------------------------
+{
+	//Taken from deleteHistoryKeepSkinning.mel Alias|Wavefront Script
+	//This is just to test for a warning if the skeleton isn't near the orgianl bind pose.
+	
+	int $i;
+	int $result = 1;  //true
+	float $precision = 0.00001;  // numerical precision
+	string $j;
+		
+	for ($j in $joints)
+	{
+		string $attr = $j + ".bindPose"; 
+		float $pose[] = `getAttr $attr`;
+		float $curent[] = `xform -q -m -ws $j`;
+		for ($i = 0; $i < 16; $i++)
+		{
+			if ( abs($pose[$i] - $curent[$i] ) > $precision )
+				return 0;
+		}
+			
+	}
+	
+	return $result;
+}
+
+
+//------------------------------------------------------------------------------
+global proc cutSkin_removeRemainingData()
+//------------------------------------------------------------------------------
+{
+	//here we get rid of original mesh stuff
+	
+	if (`objExists "*Orig*"` == 1)
+	{
+		delete "*Orig*";
+	}
+}

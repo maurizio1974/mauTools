@@ -1,0 +1,247 @@
+/*
+
+SCRIPT: ntMuscleCollider
+AUTHOR: Nelson Teixeira
+CONTACT: nelson3d@gmail.com
+VERSION: 1.1 (BETA)
+DATE: 2016-06-06 (YYYY-MM-DD)
+
+DESCRIPTION: Tool to automate collision using the Maya Muscle Collide feature
+             (MAKE SURE "MayaMuscle.mll" plugin is loaded in Plug-In Manager.
+
+INSTALLATION: Unpack and copy to C:\Users\<USER_NAME>\Documents\maya\<MAYA_VERSION>
+              Restart Maya or type "rehash" on command line
+
+              Run "ntMuscleCollider" fom command line.
+
+Please send me some feedback so I can fix any bugs and get it working properly and better!
+
+
+
+*/
+
+
+
+
+global proc ntMuscleCollider()
+{
+    // START UI
+
+    $win = "ntMuscleCollideWin";
+
+    if (`window -exists $win`) deleteUI $win;
+
+    window -t "ntMuscleCollider" $win;
+
+    columnLayout -adj true;
+
+    $iconsDir = "/nfs/dev/software/mimmo/2014/icons/";
+
+    // HEADER LOGO
+
+    symbolButton -i ($iconsDir + "ntMuscleCollider_logo.png");
+
+    separator -h 10 -style "none";
+
+    // SELECT CONTROLLER
+
+    text  "Select a tansform node to be controlled by collision:\n( it will use it´s  pivot )";
+
+    textFieldButtonGrp
+        -columnAlign 1 center
+        -columnWidth 1 270
+        -bl "sel"
+        -bc "mtMC_updateUI ntMC_controlButton"
+        ntMC_controlButton
+        ;
+
+    // SELECT MESH COMPONENT
+
+    text -h 25 "Select a vertex or edge to collide to:";
+
+    textFieldButtonGrp
+        -columnAlign 1 center
+        -columnWidth 1 270
+        -bl "sel"
+        -bc "mtMC_updateUI ntMC_componentButton"
+        ntMC_componentButton
+        ;
+
+    separator -h 10 -style "none";
+
+    // SET COLLISION DIRECTION
+
+    optionMenuGrp
+        -columnAlign 2 "center"
+        -label "Collision Direction:"
+        -columnWidth 2 80
+        -el ""
+        ntMC_optionMenu
+        ;
+
+        menuItem -label "-X";
+        menuItem -label "+X";
+        menuItem -label "-Y";
+        menuItem -label "+Y";
+        menuItem -label "-Z";
+        menuItem -label "+Z";
+
+    optionMenuGrp -e -select 4 ntMC_optionMenu;
+
+    // SET FAT (COLLISION DISTANCE)
+
+    $fat = `floatFieldGrp -l "Fat: (collision distance)" -pre 3 -v1 0.1 fatFloatFieldGrp`  ;
+
+    separator -h 10 -style "none";
+
+    ntMC_checkSelection;
+
+    // CREATE BUTTON
+
+    button -h 50 -l "Create Collider"
+        -c "ntMC_CreateCollider"
+        mtMC_createButton
+        ;
+
+    showWindow $win;
+    window -e -wh 305 358 ntMuscleCollideWin;
+
+}
+
+// END OF UI
+
+
+ntMuscleCollider;
+
+/////////////////////////////////////////
+
+global proc ntMC_CreateCollider ()
+{
+    string $controller = `textFieldGrp -q -tx ntMC_controlButton` ;
+    string $meshComponent = `textFieldGrp -q -tx ntMC_componentButton`;
+    int $direction = `optionMenuGrp -q -select ntMC_optionMenu`;
+    float $fat = `floatFieldGrp -q -v1 fatFloatFieldGrp`;
+
+
+
+// TOKENIZE
+
+    string $buff[];
+
+    tokenize $meshComponent "." $buff;
+
+    string $collisionObj = $buff[0];
+
+// STEP 0) Preparing
+
+    // the controller has to be on a vertex or edge position
+    // to work properly
+    // this is step will put the controller at this position
+    // and will freeze transformation on it
+
+    $pos = `xform -q -ws -t $meshComponent`;
+
+    xform -ws -t $pos[0] $pos[1] $pos[2] $controller;
+
+    makeIdentity -apply true -t 1 -r 1 -s 1 -n 0 -pn 1 $controller;
+
+
+// STEP 1) SET CONTROLLER
+
+    select -r $controller;
+    $cController = `cMuscle_rigKeepOutSel`;
+    // Result:  cMuscleKeepOut1
+    //          cMuscleKeepOutShape1
+    //          cMuscleKeepOut1Driven
+
+    string $cMuscleKeepOut = $cController[0];
+    string $cMuscleKeepOutShape = $cController[1];
+    string $cMuscleKeepOutDriven = $cController[2];
+
+        print "\nCHECKPOINT: setController\n";
+
+
+// STEP 2) SET COLLISION DIRECTION
+
+    // $direction = 5;
+
+    float $collisionDirection[];
+
+    if ($direction == 1) $collisionDirection = {-1, 0, 0};
+    if ($direction == 2) $collisionDirection = { 1, 0, 0};
+    if ($direction == 3) $collisionDirection = { 0,-1, 0};
+    if ($direction == 4) $collisionDirection = { 0, 1, 0};
+    if ($direction == 5) $collisionDirection = { 0, 0,-1};
+    if ($direction == 6) $collisionDirection = { 0, 0, 1};
+
+    print ("\n\n\==================  >>>>>>" + $direction);
+
+
+    setAttr ($cMuscleKeepOutShape + ".inDirection") $collisionDirection[0] $collisionDirection[1] $collisionDirection[2] ;
+
+    print ("\nCHECKPOINT: setCollisionDirection  ===>>> "+ $collisionDirection[0] + " " + $collisionDirection[1] + " " +  $collisionDirection[2] + "\n");
+
+// STEP 3) COLLISION OBJECT (mesh) cube
+
+    select -r $collisionObj;
+    $cCollision = `cMuscle_makeMuscle(0)`;
+    // Result: cMuscleObject_pCube1Shape1 //
+
+    print "\nCHECKPOINT: Collision Object\n";
+
+
+// STEP 4) CONNECT THE cMuscleKeepOut
+//         TO THE MUSCLE OBJECT
+
+    select -r $cMuscleKeepOut $collisionObj;
+    cMuscle_keepOutAddRemMuscle(1);
+
+    print "\nCHECKPOINT: CONNECT THE cMuscleKeepOut \n";
+
+
+// STEP 5) CHANGE THE HIERARCHY TO FINISH SETUP
+
+    parent -w $cMuscleKeepOut;
+
+    parent $controller $cMuscleKeepOutDriven;
+
+    select -r $collisionObj;
+
+    print "\nCONNECT THE cMuscleKeepOut \n";
+
+}
+
+//ntMuscleCollider;
+
+
+global proc ___________________(){}
+
+
+global proc mtMC_updateUI(string $uiButton)
+{
+    string $sel[] = `ls -sl -fl`;
+
+    textFieldButtonGrp -e
+    -text $sel[0]
+    $uiButton
+    ;
+}
+
+global proc ntMC_checkSelection()
+{
+    string $sel[] = `ls -sl -fl`;
+
+    if (`size $sel` == 0)  warning "You need to select a transform and a mesh component!";
+    if (`size $sel` > 2) error "You need to select a transform and a mesh component!";
+
+    if (`size $sel` == 2)
+    {
+        print "\nUpdating UI\n";
+
+        select -r $sel[0]; mtMC_updateUI ntMC_controlButton;
+        select -r $sel[1]; mtMC_updateUI ntMC_componentButton;
+    }
+}
+
+
+

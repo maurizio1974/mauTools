@@ -1,0 +1,14 @@
+global proc AEquadsphereTemplate( string $nodeName ) {
+    editorTemplate -beginScrollLayout;
+        editorTemplate -beginLayout "Quadsphere Settings" -collapse false;
+            editorTemplate -label "Division" -addControl "division";
+            editorTemplate -label "Radius" -addControl "radius";
+            editorTemplate -label "Spherical" -addControl "spherical";
+        editorTemplate -endLayout;
+
+        AEdependNodeTemplate $nodeName;
+
+        editorTemplate -addExtraControls;
+
+    editorTemplate -endScrollLayout;
+}

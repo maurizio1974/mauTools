@@ -1,0 +1,212 @@
+global proc int getIndex( string $win[] )
+{
+    string $myWin[];
+    int $i = 0 ;
+    for($e in $win)
+    {
+        if(`gmatch $e "*modifyWGT_win*"`)
+        {
+            $myWin[$i] = $e ;
+            $i = $i + 1 ;
+        }
+    }
+    return (size($myWin));
+}
+
+global proc modifyWGT_Ui()
+{
+    int $index = 0 ;
+    string $windows[] = `lsUI -wnd` ;
+    if(`window -ex ("modifyWGT_win"+$index)`)
+        $index = getIndex($windows) ;
+    
+    string $name = ("modifyWGT_win"+$index) ;
+	string $win  = `window $name` ;
+
+	string $proj[] = `workspace -q -lfw` ;
+	string $FL   =`formLayout` ;
+	string $TL   =`tabLayout -cr 1` ;
+
+	formLayout -e 
+
+	-af $TL "left" 0
+	-af $TL "top" 0 
+	-af $TL "right" 0
+	-af $TL "bottom" 0
+
+	$FL;
+
+	string $FLL  =`formLayout -p $TL` ;
+	string $tfSL =`textField ` ;
+	string $bSL  =`button -l "Get Node" -c ("modifyWGT_nodeCheck(\""+$tfSL+"\")")` ;
+	string $tfPL =`textField -tx $proj[1]` ;
+	string $bbL  =`button -l "Save Directory" -c ("modifyWGT_fileBrowser(\""+$tfPL+"\" , 1 )")` ;
+	string $goL  =`button -l "Apply" -c ("do_modifyWGT(\""+$tfPL+"\" , \""+$tfSL+"\" , \""+$tfSL+"\" , 1 )")` ;
+
+	formLayout -e 
+
+	-af $tfSL "left" 5
+	-af $tfSL "top" 10
+	-af $tfSL "right" 5
+
+	-af $bSL "left" 5
+	-ac $bSL "top" 0 $tfSL
+	-af $bSL "right" 5
+
+	-af $tfPL "left" 5
+	-ac $tfPL "top" 5 $bSL
+	-af $tfPL "right" 5
+
+	-af $bbL "left" 5
+	-ac $bbL "top" 0 $tfPL
+	-af $bbL "right" 5
+	
+	-af $goL "left" 5
+	-ac $goL "top" 5 $bbL
+	-af $goL "right" 5
+	
+	$FLL ;
+
+	string $FLS  =`formLayout -p $TL` ;
+	string $tfS  =`textField `;	
+	string $tfD  =`textField `;
+	string $bS   =`button -l "Source" -c ("modifyWGT_nodeCheck(\""+$tfS+"\")")`;
+	string $bE   =`button -l "Destination" -c ("modifyWGT_nodeCheck(\""+$tfD+"\")")`;
+	string $tfP  =`textField -tx $proj[1]`;
+	string $bb  =`button -l "Load File" -c ("modifyWGT_fileBrowser(\""+$tfP+"\" , 2 )")`;
+	string $goS  =`button -l "Apply" -c ("do_modifyWGT(\""+$tfP+"\" , \""+$tfS+"\" , \""+$tfD+"\" , 2 )")`;
+
+	formLayout -e 
+
+	-af $tfS "left" 5
+	-af $tfS "top" 10 
+	-ap $tfS "right" 0 50
+
+	-ac $tfD "left" 0 $tfS
+	-af $tfD "top" 10
+	-af $tfD "right" 5
+
+	-af $bS "left" 5
+	-ac $bS "top" 0 $tfS
+	-ap $bS "right" 0 50
+
+	-ac $bE "left" 0 $bS
+	-ac $bE "top" 0 $tfD
+	-af $bE "right" 5
+
+	-af $tfP "left" 5
+	-ac $tfP "top" 5 $bS
+	-af $tfP "right" 5
+	
+	-af $bb "left" 5
+	-ac $bb "top" 0 $tfP
+	-af $bb "right" 5
+	
+	-af $goS "left" 5
+	-ac $goS "top" 5 $bb
+	-af $goS "right" 5
+	
+	$FLS;
+
+	tabLayout -e -tl $FLS "Load" -tl $FLL "Save" $TL;
+	
+	showWindow $win ; 
+	window -e -wh 400 165 $win ; 
+}
+modifyWGT_Ui();
+
+// MODIFY WEIGHTS DNEG PLUG_IN
+global proc do_modifyWGT(string $textF, string $textS, string $textD, int $which)
+{
+    string $nodeS, $nodeD, $path;
+    int $fileCheck;
+    if( $which == 1 )
+    {
+        $nodeS = `textField -q -tx $textS`;
+        if(size($nodeS) != 0)
+        {
+            $path = `textField -q -tx $textF` ;
+            if( ` gmatch $path "*.wgt" ` )
+                modifyWeights -f $path -s $nodeS weights ;
+            else
+                warning "Make sure to select a directory and a file name to be saved";
+        }else{
+            warning "Please make sure to set a deformation node in the Get node field.";
+        }
+    }
+    if( $which == 2 )
+    {
+        $nodeS = `textField -q -tx $textS`;
+        $nodeD = `textField -q -tx $textD`;
+        if(size($nodeS) != 0)
+        {
+            if(size($nodeD) == 0 )
+                $nodeD = $nodeS ;
+            $path = `textField -q -tx $textF`;
+            $fileCheck = `filetest -w $path`;
+            if($fileCheck == 1 )
+            {
+                if( ` gmatch $path "*.wgt" ` )
+                    modifyWeights -f $path -r $nodeS weights $nodeD weights ;
+                else
+                    warning "Make sure to select a valid \"wgt\" file to be read";
+            }else{
+                warning "The selected file doesn't exist";
+            }
+        }else{
+            warning "Please make sure to set at least a deformation node in the Source node field.";
+        }
+    }
+}
+    
+// NODE CHECK
+global proc modifyWGT_nodeCheck(string $textF)
+{
+    string $sl[] = `channelBox -q -hol "mainChannelBox"`;
+    if( size($sl) != 0 )
+    {
+        int $type = modifyWGT_nodeType($sl[0]);
+        if($type == 1)
+            textField -e -tx $sl[0] $textF;
+        else
+            warning "The selected object is not a paintable Deformer";
+    }else{
+        warning "please select something in the channelBox INPUTS field";
+    }
+}
+
+// NODE Type
+global proc int modifyWGT_nodeType(string $node)
+{
+    int $result = 0 ; 
+    string $types[] = { "dnPushNode","dnSculptDeformer","dnSlideDeformer","dnSkinSmoother","dnStrainRelaxer",
+                        "dnSkinSmoother","dnJiggleDeformer","dnPoint2PointDeformer","skinCluster","cluster" } ;
+                      
+    for($each in $types)
+    {
+        if(`nodeType $node` == $each)
+            $result = 1 ;
+    }
+    return $result ;
+}
+
+// FILE BROWSER PROCEDURE
+global proc modifyWGT_fileBrowser(string $textF, int $which)
+{
+    string $path;
+    int $fileCheck;
+    string $proj = `textField -q -tx $textF`;
+    if ($which == 1) // File browser to set the save directory
+    {
+        $path = `fileDialog -m 1 -dm ($proj+"/*.wgt") -t "Weight File"`;
+        if(!`gmatch $path "*.wgt"`)
+            textField -e -tx ($path+".wgt") $textF;
+        else
+            textField -e -tx $path $textF;
+    }
+    if ($which == 2) // File browser to select a file to be read 
+    {
+        $path = `fileDialog -m 1 -dm ($proj+"/*.wgt") -t "Weight Directory"`;
+        textField -e -tx $path $textF;
+    }
+}

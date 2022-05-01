@@ -1,0 +1,214 @@
+global proc shelf_mLookDev () {
+    global string $gBuffStr;
+    global string $gBuffStr0;
+    global string $gBuffStr1;
+
+
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "Fir RenderGlobal Panel" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "deleteUI unifiedRenderGlobalsWindow;\nbuildNewSceneUI;" 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.2 
+        -image "/nfs/dev/software/mimmo/2014/icons/fixRenderPanel.png" 
+        -image1 "/nfs/dev/software/mimmo/2014/icons/fixRenderPanel.png" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "deleteUI unifiedRenderGlobalsWindow;\nbuildNewSceneUI;" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "spReticleLoc" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "spReticleLoc" 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.25 
+        -image "spReticleLoc.xpm" 
+        -image1 "spReticleLoc.xpm" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "///////////////////////////////////////////////////////////////////////////////\n//\n// Copyright (c) 2009, Sony Pictures Imageworks Inc.\n// All rights reserved.\n//\n// Redistribution and use in source and binary forms, with or without\n// modification, are permitted provided that the following conditions\n// are met:\n//\n// Redistributions of source code must retain the above copyright\n// notice, this list of conditions and the following disclaimer.\n// Redistributions in binary form must reproduce the above copyright\n// notice, this list of conditions and the following disclaimer in the\n// documentation and/or other materials provided with the\n// distribution.  Neither the name of Sony Pictures Imageworks nor the\n// names of its contributors may be used to endorse or promote\n// products derived from this software without specific prior written\n// permission.\n//\n// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n// \"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS\n// FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE\n// COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,\n// INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES\n// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR\n// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)\n// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,\n// STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)\n// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED\n// OF THE POSSIBILITY OF SUCH DAMAGE.\n//\n///////////////////////////////////////////////////////////////////////////////\n\n\nglobal proc spReticleLocCreate()\n{\n    string $reticleLoc[] = `ls -type spReticleLoc`;\n\n    if (size($reticleLoc) == 0)\n    {\n        string $reticleTransform = `createNode -n reticle transform`;\n        createNode -n reticleShape -p $reticleTransform spReticleLoc;\n\n        if (objExists(\"temp_master\"))\n        {\n            parent $reticleTransform temp_master;\n        }\n    }\n    else\n    {\n        setAttr ($reticleLoc[0]+\".drawingEnabled\") 1;\n    }\n}\n\nglobal proc spReticleLocSetDefault(string $node, string $tag)\n{\n    if (`objExists $node`)\n    {\n        // Set first aspect ratio\n        setAttr ($node+\".aspectRatios[0].aspectRatio\") 1.85;\n        setAttr ($node+\".aspectRatios[0].displayMode\") 2;\n\n        // Turn on projection mask\n        setAttr ($node+\".displayProjGate\") 1;\n\n        // Set reticle to template mode\n        setAttr ($node+\".template\") 1;\n    }\n}\nspReticleLocCreate;\n\n\n" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "abxRenderLayers" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "abxRenderLayers" 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.2 
+        -image "abxRenderLayers.png" 
+        -image1 "abxRenderLayers.png" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "source \"/nfs/dev/software/mimmo/2014/scripts/abxRenderLayers.mel\";abxRenderLayers();" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "ddoMaterialManager_2013" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "ddoMaterialManager_2013" 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.2 
+        -image "icon_DP.png" 
+        -image1 "icon_DP.png" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "source \"/nfs/dev/software/mimmo/2014/scripts/ddoMaterialManager_2013.mel\";materialManager();" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "Make Highlights on the selected object" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "Make Hilights" 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.25 
+        -image "/nfs/dev/software/mimmo/2014/icons/mkHighLight.png" 
+        -image1 "/nfs/dev/software/mimmo/2014/icons/mkHighLight.png" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "source \"/nfs/dev/software/mimmo/2014/scripts/hiliteMove.1.0.mel\";hiliteMove()" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "BlissLib" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "import BlissLib\nblissUI = BlissLib.buildUI()" 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.5 
+        -image "blissLib.png" 
+        -image1 "blissLib.png" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "import BlissLib\nblissUI = BlissLib.buildUI()" 
+        -sourceType "python" 
+        -commandRepeatable 1
+        -flat 1
+        -mi "--->>> Create Preset   <<<---" ( "from BlissLib import shadingNetworkIO\nshadingNetworkIO.ShadingNetwork.writeNetwork()" )
+        -mip 0
+    ;
+
+} 

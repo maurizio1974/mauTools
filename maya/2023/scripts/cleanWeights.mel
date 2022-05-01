@@ -1,0 +1,67 @@
+//==========================================================
+//======== Procedure to prune deformers membership based on 
+//======== weight values
+// USAGE:
+// cleanWeights(lids_dnSkinSmoother",1);
+// replace deformer with yours
+
+global proc string[] cleanWeights(string $def, int $do)
+{
+
+    string $set[] = `listConnections -type objectSet $def`;
+
+    //=== find geo
+
+    string $nodes[] = `sets -q $set` ;
+    string $names[] ;
+
+    tokenize($nodes[0], ".", $names);
+    string $geo = $names[0];
+
+    string $ref[] =`ls -fl ($geo+".vtx["+"*"+"]")`;
+    string $token[];
+    string $number[];
+    tokenize $ref[0] "[" $token;
+    tokenize $token[1] "]" $number;
+    print $number[0];
+    int $num = size($ref);
+
+    string $NOp[];
+    string $YESp[];
+    float $weight;
+    float $double[];
+
+    string $weightAttr = "weightList[0].weights";
+
+    string $type[] = `ls -st $def`;
+
+    if(`gmatch $type[1] "blendShape"`)
+        $weightAttr = "inputTarget[0].inputTargetGroup[0].targetWeights";
+
+    for($i=0;$i<$num;$i++)
+    {
+        if(size($double)>0)
+        {          
+            if($double[$i] == 0)
+                $NOp[size($NOp)] = ($geo+".vtx["+$i+"]");
+            else
+                $YESp[size($YESp)] = ($geo+".vtx["+$i+"]");
+        }else{
+            $weight = `getAttr ($def+"."+$weightAttr+"["+$i+"]")`;
+
+            if($weight == 0)
+                $NOp[size($NOp)] = ($geo+".vtx["+$i+"]");
+            else
+                $YESp[size($YESp)] = ($geo+".vtx["+$i+"]");
+        }
+
+    }
+
+    if($do>0)
+        sets -rm $set[0] $NOp;
+
+    return $YESp;
+
+}
+
+//==========================================================
