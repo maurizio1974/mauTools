@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Add Vex Snippet Library to Main Menu Bar/Window -->
+<mainMenu>
+    <menuBar>
+        <subMenu id="windows_menu">
+            <modifyItem><insertBefore>help_menu</insertBefore></modifyItem>
+            <scriptItem id="VexSnippetLibrary">
+                <label>Vex Snippet Library</label>
+                <scriptCode><![CDATA[
+hou.ui.curDesktop().createFloatingPanel(hou.paneTabType.PythonPanel, python_panel_interface="VexSnippetLibrary")
+        ]]>
+                </scriptCode>
+            </scriptItem>
+        </subMenu>
+    </menuBar>
+</mainMenu>

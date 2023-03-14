@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mainMenu>
+  <menuBar>
+    <subMenu>
+    <insertBefore>help_menu</insertBefore>
+      <label>Mau Tools</label>
+      <scriptItem id="source_id">
+        <label>Source  Mau Environment</label>
+        <scriptPath>$mt_B/houdini/$HOUDINI_VERSION/$mt_V/scripts/start.py</scriptPath>
+      </scriptItem>
+      <subMenu>
+        <label>Transfer Tools</label>
+        <scriptItem id="scenePack_id">
+          <label>Scene Pack</label>
+          <scriptPath>$mt_B/houdini/$HOUDINI_VERSION/$mt_V/scripts/scenePack.py</scriptPath>
+        </scriptItem>
+        <scriptItem id="exportALL_id">
+          <label>Export /</label>
+          <scriptPath>$mt_B/houdini/$HOUDINI_VERSION/$mt_V/scripts/exportAll.py</scriptPath>
+        </scriptItem>
+        <scriptItem id="importAll_id">
+          <label>Import /</label>
+          <scriptPath>$mt_B/houdini/$HOUDINI_VERSION/$mt_V/scripts/importObj.py</scriptPath>
+        </scriptItem>
+      </subMenu>
+      <scriptMenuStripDynamic id="hdaLoadId">
+          <contentsScriptCode><![CDATA[
+          menu_items = ["import importlib;import houdini_otl_hotload;importlib.reload(houdini_otl_hotload);houdini_otl_hotload.loadHdaLibrary()", "Load HDA of the current Shot"]
+          return menu_items
+          ]]></contentsScriptCode>
+          <scriptCode><![CDATA[
+import sys, hdefereval
+def doIt():
+  selected_token = kwargs["selectedtoken"]
+  exec(selected_token)
+hdefereval.executeDeferred(doIt)
+          ]]></scriptCode>
+      </scriptMenuStripDynamic>
+      <scriptItem id="btcId">
+        <label>Batch texture Converter</label>
+        <scriptCode><![CDATA[
+import batch_convert;batch_convert.runGui()]]>
+        </scriptCode>
+      </scriptItem>
+      <scriptItem id="scId">
+        <label>Shader Converter</label>
+        <scriptCode><![CDATA[
+import shader_conv_echopr as shaderConv;shaderConvWin=shaderConv.ShaderConv();shaderConvWin.resize(360,500);shaderConvWin.show()]]>
+        </scriptCode>
+      </scriptItem>
+    </subMenu>
+  </menuBar>
+</mainMenu>

@@ -1,0 +1,38 @@
+{
+    "path": "$HMAUT",
+    "load_package_once": true,
+    "enable": "houdini_version >= '18.0' and houdini_version < '19.6'",
+    "version": "1.4",
+    "env":[
+        {
+            "HMAUT": "$mt_B/houdini/$HOUDINI_VERSION/$mt_V"
+        },
+        {
+            "PATH": {
+                "value": ["$HMAUT/bin", "$HMAUT/scripts/Vex_Snippet_Library"],
+                "method": "append"
+            },
+            "HOUDINI_PATH" :
+            {
+                "value": ["$HMAUT/scripts/ShaderConverter", "$HMAUT/scripts/Vex_Snippet_Library"],
+                "method": "append",
+            },
+            "ShaderConv_echopr_PATH" :
+            {
+                "value": "$HMAUT/scripts/ShaderConverter",
+                "method": "append",
+            },
+            "VEX_SNIPPET_LIBRARY": {
+                "value": "$HMAUT/scripts/Vex_Snippet_Library",
+                "method": "append",
+            },
+            "PYTHONPATH":
+            {
+                "value": [
+                    "$HMAUT/scripts/Vex_Snippet_Library",
+                    "$HMAUT/scripts/ShaderConverter/python"],
+                "method": "append",
+            },
+        }
+    ]
+}

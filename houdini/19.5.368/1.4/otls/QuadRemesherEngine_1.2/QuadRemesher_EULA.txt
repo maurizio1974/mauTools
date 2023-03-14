@@ -1,0 +1,111 @@
+﻿END-USER LICENSE AGREEMENT FOR QuadRemesher, herein referred to as the "Software"
+
+Copyright © 2012-2019 by EXOSIDE SARL (referred as "EXOSIDE").
+
+--------------------------------------------------------- 
+NOTICE TO THE USER: PLEASE READ THIS CONTRACT CAREFULLY INSTALLING OR USING THE SOFTWARE.
+
+THIS IS A LEGAL AGREEMENT BETWEEN YOU (AN INDIVIDUAL OR ENTITY) AND EXOSIDE SARL (REFERRED TO IN THIS AGREEMENT AS "EXOSIDE") FOR A LICENSE TO "Software" (QuadRemesher), WHICH INCLUDES COMPUTER SOFTWARE AND ANY ACCOMPANYING MEDIA, DOCUMENTATION, PRINTED MATERIALS OR ONLINE MEDIA.  
+
+BY DOWNLOADING OR OTHERWISE USING OR INSTALLING THIS SOFTWARE YOU AGREE TO BE BOUND BY THE TERMS OF THIS AGREEMENT. IF YOU DO NOT AGREE TO THE TERMS OF THIS AGREEMENT, DO NOT USE, INSTALL OR DOWNLOAD THE SOFTWARE.
+
+EXOSIDE RESERVES THE RIGHT TO MAKE CHANGES TO THIS AGREEMENT. 
+--------------------------------------------------------- 
+
+
+1. GRANT OF LICENSE. 
+EXOSIDE grants you a limited, non-exclusive, non-transferable and non-sublicensable license to install and use the "Software" only in accordance with the terms and conditions of this agreement.
+The term "Software" shall also include any upgrades, modified versions, updates, additions, and copies of the Software licensed to you by EXOSIDE, if any.
+
+
+2. PERMITTED LICENSE USES AND RESTRICTIONS.
+You may not, and may not authorize others, to reverse engineer, decompile, disassemble, translate or attempt to learn the source code of the Software. 
+You agree not to copy, modify, create derivative works of, distribute, sell, assign, pledge, sublicense, lease, loan, rent, timeshare, deliver or otherwise transfer the Software. 
+You agree not to use the Software to develop a competing product.
+You agree not to remove, alter or add any copyright, trademarks, trade names, logos, notices, or markings contained on the Software.  
+You agree not to violate, tamper with or circumvent any protection systems or measures.
+You agree not to make the functionality of the Software available to multiple users or third parties through any means, including but not limited to by uploading the Software to a network or file-sharing service or through any hosting, application services provider, service bureau, software-as-a-service (SaaS) or any other type of services.
+You agree not to use or execute the Software, entirely or partially, directly or indirectly, from another computer than the one on which the Software is installed and activated.
+Your license is non-transferable and may not be resold.
+The source code of the Software shall not be made available to you.
+
+2.A. Trial usage. 
+If you have NOT purchased or have not been granted access by EXOSIDE a Single-User-License, you can install and use the Software in a TRIAL mode only. 
+You may NOT use the Software in TRIAL mode for COMMERCIAL, PROFESSIONAL and other for-profit purposes. 
+You may not use the Software in Trial mode to create content for a third party that will use such content in connection with a Commercial activity. 
+You are allowed to use the TRIAL version only within the period starting from the TRIAL activation and ending 30 days after.
+The Software must be uninstalled from the computer at the end of the Trial period.
+
+2.B. Single-User-Indie-License and Single-User-Pro-License.
+The term Single-User-License means either a Single-User-Indie-License or a Single-User-Pro-License.
+If you have purchased or have been granted access by EXOSIDE a Single-User-License, you can use the Software.
+Using the Software requires to activate the installed copy of the Software. The software activation requires the "License Key" which is provided by EXOSIDE during purchase process.
+With a Single-User-License, you may install and activate QuadRemesher on a single computer only.
+You, as the primary user of the computer on which the Software is installed, may also install a second copy of the Software for your exclusive use on either a portable Computer or a Computer located at your home, but not both, provided that the Software on the portable or home Computer is not used at the same time as the Software on the primary Computer.
+Once the purchased license has been activated, you may not be refunded.
+You may NOT use the Software with a Single-User-Indie-License for COMMERCIAL, PROFESSIONAL and other for-profit purposes. 
+A Single-User-Indie-License may not be used to create content for a third party that will use such content in connection with a Commercial activity. 
+Single-User-Indie-License may not be purchase, installed and used by entities, organisation or companies whose gross revenues are greater than US$100,000.
+
+
+3. TERM OF AGREEMENT. 
+This Agreement is effective upon your opening and/or installing the Software package. 
+You may terminate this Agreement at any time by uninstalling all your copies of the Software AND by informing EXOSIDE.  
+The license granted under this Agreement will automatically terminate, with or without notice from EXOSIDE, if you breach any term of this Agreement.
+Upon termination, you must promptly delete and destroy all copies of the Software in your possession or control.
+Termination of this license, either voluntary or involuntary, does not entitle you to a refund of your purchase cost except as provided elsewhere in this License Agreement.
+
+
+4. SOFTWARE MAINTENANCE AND UPDATES. 
+You agree that EXOSIDE is not obligated to provide maintenance, technical support, error corrections or updates to you for the Software provided to you pursuant to this Agreement.
+However, EXOSIDE may, in its sole discretion, provide modifications, upgrades, error corrections or other updates, including automatically-installed modifications, upgrades, error corrections or updates (collectively, "Updates") to the Software, and thus may modify, with or without your knowledge, the Software that you have already installed. These Updates may include changes or improvements to the protection system against the unauthorized copying of the Software. 
+The terms of this license will govern any future Updates of the Software unless an updated license is provided, in which case the newer license will govern.
+
+
+5. YOUR FEEDBACK.
+You may from time to time provide suggestions, comments regarding usability, bug reports or other feedback (referred as "Feedback") to EXOSIDE with respect to the Software. All Feedback is and shall be given entirely voluntarily.
+You agree that EXOSIDE may freely use, disclose, reproduce, license, distribute and otherwise commercialize the Feedback in any of its products, technologies, services, specifications or other documentation.
+
+
+6. OWNERSHIP AND COPYRIGHT.
+The Software is owned by EXOSIDE and is protected by copyright laws, international treaties and other intellectual property laws. The Software may only be used by you in accordance with this Agreement. The "Software" is licensed to you by EXOSIDE, NOT SOLD TO YOU. EXOSIDE retain all rights, title and interest, including all intellectual property rights, in and to the "Software".  
+Any unauthorized redistribution or reproduction of the Software is strictly prohibited and will be prosecuted to the maximum extent permissible under the law.
+The Software may contain open source software that requires EXOSIDE to make available to you certain notices and/or code as well as providing you with license terms governing your rights to any such open source code. 
+Informations on open source code, may be found on EXOSIDE website. (http://www.exoside.com)
+
+
+7. DISCLAIMER OF WARRANTIES.
+EXOSIDE IS PROVIDING YOU THE SOFTWARE ON AN "AS-IS" BASIS WITHOUT WARRANTY OF ANY KIND.
+EXOSIDE DOES NOT WARRANT THAT THE SOFTWARE IS ERROR-FREE OR THAT IT IS SUITABLE FOR YOUR PURPOSES.  
+EXOSIDE DOES NOT WARRANT THE PERFORMANCE OR RESULTS YOU MAY OBTAIN BY USE OF THE SOFTWARE.
+EXOSIDE MAKES NO WARRANTIES OTHER THAN THOSE SET FORTH ABOVE, AND DISCLAIMS ALL OTHER WARRANTIES, WHETHER EXPRESS, IMPLIED OR STATUTORY, WITH RESPECT TO THE SOFTWARE, INCLUDING, WITHOUT LIMITATION, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE OR NONINFRINGEMENT.  NO ORAL OR WRITTEN INFORMATION OR ADVICE GIVEN BY EXOSIDE, ITS RESELLERS, AGENTS OR EMPLOYEES SHALL CREATE A WARRANTY.
+
+
+8. LIMITATION OF LIABILITY. 
+IN NO EVENT SHALL EXOSIDE BE LIABLE FOR ANY LOSS OF PROFITS, LOSS OF DATA OR OTHER INDIRECT, INCIDENTAL, SPECIAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF YOUR USE OR INABILITY TO USE THE SOFTWARE, EVEN IF EXOSIDE HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. 
+YOU AGREE THAT IN NO EVENT WILL EXOSIDE'S AGGREGATE LIABILITY UNDER THIS AGREEMENT EXCEED THE AMOUNT PAID FOR THE SOFTWARE. 
+Some jurisdictions do not allow the exclusions and limitations of certain types of damages, so some of the foregoing may not apply to you.
+
+
+9. ENTIRE AGREEMENT, SEVERABILITY. 
+This Agreement constitutes the complete and exclusive agreement between EXOSIDE and You with respect to the subject matter hereof, and supersedes all prior or contemporaneous oral or written communications, proposals, representations, understandings, or agreements not specifically incorporated herein. If any provision of this Agreement is held to be void, invalid, unenforceable or illegal, the other provisions shall continue in full force and effect.
+
+
+10.   GOVERNING LAW
+This Agreement will be governed by and construed in accordance with the laws of France, without reference to the conflict of laws rules or principles. 
+The United Nations Convention on Contracts for the International Sale of Goods will not apply. 
+
+Any dispute arising out of or in connection with this Agreement, including any disputes regarding the existence, validity or termination thereof, shall be settled by simplified arbitration arranged by French Court.
+
+
+11. Export Law
+You agree to comply fully with all export laws and regulations to ensure that neither the Software nor any technical data related thereto nor any direct product thereof are exported or re-exported directly or indirectly in violation of, or used for any purposes prohibited by, such laws and regulations.
+
+
+
+
+
+
+
+
+

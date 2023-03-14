@@ -1,0 +1,5 @@
+{
+    "label": "split_prim",
+    "context": "Primitives",
+    "data": "int pts[] = primpoints(0, @primnum);\nint npt = len(pts);\nvector centerPos = 0;\nint centerIndex = addpoint(0, centerPos);\n\n\nfor(int i = 0; i < npt; i++)\n{\n    int current = pts[i];\n    int next = pts[(i + 1) % npt];\n    addprim(0, \"poly\", centerIndex, current, next);\n    centerPos += point(0, \"P\", pts[i]);\n}\n\nsetpointattrib(0, \"P\", centerIndex, centerPos / npt);\nremoveprim(0, @primnum, 1);\n"
+}
