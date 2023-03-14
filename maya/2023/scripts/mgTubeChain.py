@@ -113,13 +113,11 @@ def makeChainCtrls(crv):
         # ctrl = cmds.circle(c=(0, 0, 0)nr=(0, 1, 0), sw=360, r=1, d=3, ut=0, tol=0.0001, s=8, ch=True)
 
 
-def pipeChain(res=None, cnt=None, dirct=None):
+def pipeChain(res=None, cnt=None):
     if not res:
         res = 1
     if not cnt:
         cnt = 4
-    if not dirct:
-        dirct = 'u'
     sel = cmds.ls(sl=True)
     for s in sel:
         dup = cmds.duplicate(s, rr=True)
@@ -132,21 +130,17 @@ def pipeChain(res=None, cnt=None, dirct=None):
         cmds.delete(toS[0])
         cur = sn[0] + '_1'
         curs = sn[0] + '_Shape1'
-        u = int(cmds.getAttr(curs + '.minMaxRangeU')[0][1])
-        v = int(cmds.getAttr(curs + '.minMaxRangeV')[0][1])
+        u = cmds.getAttr(curs + '.spansUV')[0][0]
+        v = cmds.getAttr(curs + '.spansUV')[0][1]
         grp = 'curves_TEMP'
         if not cmds.objExists(grp):
             cmds.group(em=True, n=grp)
         # MAKE JOINTS
         jnts = []
-        val = u
-        if dirct == 'v':
-            val = v
-            dirct = 'v'
-        for x in range(0, val + 1, res):
-            cmds.select(cur + '.' + dirct + '[' + str(x) + ']', r=True)
+        for x in range(0, v + 1, res):
+            cmds.select(cur + '.v[' + str(x) + ']', r=True)
             crv = cmds.duplicateCurve(
-                cur + '.' + dirct + '[' + str(x) + ']', ch=0, rn=0, local=0)
+                cur + '.v[' + str(x) + ']', ch=0, rn=0, local=0)
             cmds.select(cl=True)
             jnt = makeJNT(crv[0], x)
             cmds.parent(jnt, grp)

@@ -3,7 +3,8 @@ import sys
 import mWild as mW
 import mSuperCB
 import mFixUndo
-# import mauUtility as mU
+import mauUtility as mU
+from importlib import reload
 from maya import mel, cmds, utils
 
 
@@ -20,19 +21,28 @@ def plugInCheck(plugs=None):
                 continue
 
 
+def setPaths():
+    base = os.path.join(os.getenv('MIMMO_SW'), 'mauTools/WIN', os.getenv('MAYA_VERSION'), os.getenv('mt_V'), 'scripts')
+    # print(base)
+    locs = ['mgT', 'pro', 'extra_Libs']
+    for l in locs:
+        cur = os.path.join(base, l).replace('\\', '/')
+        # print(cur)
+        if cur not in sys.path:
+            os.sys.path.append(cur)
+
+
+
+utils.executeDeferred(plugInCheck)
 utils.executeDeferred(mW.mSetWild)
 # EXTRA CHANNEL BOX TOOLS
 utils.executeDeferred(mSuperCB.superCB)
 # FIX UNDO
-utils.executeDeferred(mFixUndo.check_undo)
+# utils.executeDeferred(mFixUndo.check_undo)
 
 
-'''
-from SEAutoSave import AutoSave, AutoSaveCallback
-utils.executeDeferred(AutoSaveCallback().register)
-'''
-
-
-# print '=' * 500
-# print 'Mau Environment Loaded'
-# print '=' * 500
+# from SEAutoSave import AutoSave, AutoSaveCallback
+# utils.executeDeferred(AutoSaveCallback().register)
+# print('=' * 500)
+# print('Mau Environment Loaded')
+# print('=' * 500)

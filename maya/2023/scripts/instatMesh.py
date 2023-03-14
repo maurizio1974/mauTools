@@ -52,15 +52,11 @@ import tempfile
 import os
 import maya.cmds as cmds
 
+# Instant Mesh app location
+ima = os.path.join(os.getenv('MTOOL_APPS'), 'Instant_Meshes')
 
 
 def process_selected(face_count=None, div=None):
-    # Instant Mesh app location
-    apps = (os.getenv('mt_Apps'))
-    if not apps:
-        cmds.warning('Apps environment path not set')
-        return
-    ima = os.path.join(apps, 'Instant_Meshes')
     if not os.path.exists(ima):
         cmds.warning('Insta Mesh path not found!')
         return
@@ -90,8 +86,7 @@ def process_selected(face_count=None, div=None):
     cmds.file(t_path, force=True, exportSelected=True, type="OBJ")
 
     # run instamesh command on the OBJ
-    s_command = ima + ' -d -D -b -f ' + \
-        str(face_count) + ' ' + t_path + ' -o ' + t_path
+    s_command = ima + ' -d -D -b -f ' + str(face_count) + ' ' + t_path + ' -o ' + t_path
     p = subprocess.Popen(s_command, stdout=subprocess.PIPE, shell=True)
     p.communicate()
     p.wait()

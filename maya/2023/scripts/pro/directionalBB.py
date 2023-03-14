@@ -116,9 +116,11 @@ def do_directionalBB(dir, typ, sel):
             )
 
         if dir == 1:
-                geo = string.split(sel[0], '.')
+                # geo = string.split(sel[0], '.')
+                geo = sel[0].split('.')
                 eigenPivot(loc[0], geo[0])
-        cmds.setAttr(loc[0] + '.s', 1, 1, 1)
+        if cmds.objExists(loc):
+            cmds.setAttr(loc[0] + '.s', 1, 1, 1)
         return loc, eigenvecMau
 
 

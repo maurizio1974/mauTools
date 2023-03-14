@@ -59,7 +59,7 @@ def mSetWild():
     uiP = [
         'mnmWildCB', 'mnmWildCB1', 'mnmWildNSCB', 'mnmWildOM',
         'mnmMauTools', 'mnmSetsManager', 'mnmPK', 'mnmPlugs',
-        'mnmMauRef'
+        'mnmMauRef', 'mnmMauRen'
     ]
     for u in uiP:
         if cmds.checkBox(u, ex=True) == 1:
@@ -116,7 +116,14 @@ def mSetWild():
     cmds.button(
         'mnmMauTools',
         label='Mau', w=33, h=20,
-        c='mel.eval(\'' + cmd + '\')',
+        c='from maya import mel;mel.eval(\'' + cmd + '\')',
+        p=gToolBox
+    )
+    cmds.iconTextButton(
+        'mnmMauRen',
+        label='Set', w=33, h=33,
+        i='rigging_toolkit.png',
+        c='import mauRenamer;import importlib;importlib.reload(mauRenamer);mauRenamer.mauRenamer_UI();',
         p=gToolBox
     )
     cmds.iconTextButton(

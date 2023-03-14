@@ -14,6 +14,75 @@ global proc shelf_mTools () {
         -manage 1
         -visible 1
         -preventOverride 0
+        -annotation "Connect to editor" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "Connect to editor" 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.5 
+        -image "sublime-text.png" 
+        -image1 "sublime-text.png" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "import os, sys\ncmds.commandPort(name=\":7002\", sourceType=\"python\")\ndef setPaths():\n    base = os.path.join(os.getenv('MIMMO_SW'), 'mauTools/WIN', os.getenv('MAYA_VERSION'), os.getenv('mt_V'), 'scripts')\n    print(base)\n    locs = ['mgT', 'pro', 'extra_Libs']\n    for l in locs:\n        cur = os.path.join(base, l).replace('\\\\', '/')\n        print(cur)\n        if cur not in sys.path:\n            os.sys.path.append(cur)\n\nsetPaths()\nimport mWild as mW\nmW.mSetWild()\nimport mSuperCB\nmSuperCB.superCB()" 
+        -sourceType "python" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "Node Editor Plus" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "from node_editor_plus import node_editor_plus\nnep = node_editor_..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -imageOverlayLabel "NE+" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.5 
+        -image "pythonFamily.png" 
+        -image1 "pythonFamily.png" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "from node_editor_plus import node_editor_plus\nnep = node_editor_plus.NodeEditorPlus()\nnep.ui()" 
+        -sourceType "python" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
         -annotation "MMtoKey" 
         -enableBackground 0
         -backgroundColor 0 0 0 
@@ -35,40 +104,6 @@ global proc shelf_mTools () {
         -marginWidth 0
         -marginHeight 1
         -command "import importlib, MMtoKey\nimportlib.reload(MMtoKey)\nMMtoKey.ui()" 
-        -sourceType "python" 
-        -commandRepeatable 1
-        -flat 1
-    ;
-    shelfButton
-        -enableCommandRepeat 1
-        -flexibleWidthType 3
-        -flexibleWidthValue 32
-        -enable 1
-        -width 35
-        -height 34
-        -manage 1
-        -visible 1
-        -preventOverride 0
-        -annotation "Connect to editor" 
-        -enableBackground 0
-        -backgroundColor 0 0 0 
-        -highlightColor 0.321569 0.521569 0.65098 
-        -align "center" 
-        -label "Connect to editor" 
-        -labelOffset 0
-        -rotation 0
-        -flipX 0
-        -flipY 0
-        -useAlpha 1
-        -font "plainLabelFont" 
-        -overlayLabelColor 0.8 0.8 0.8 
-        -overlayLabelBackColor 0 0 0 0.5 
-        -image "sublime-text.png" 
-        -image1 "sublime-text.png" 
-        -style "iconOnly" 
-        -marginWidth 0
-        -marginHeight 1
-        -command "cmds.commandPort(name=\":7002\", sourceType=\"python\")\n" 
         -sourceType "python" 
         -commandRepeatable 1
         -flat 1
@@ -110,6 +145,75 @@ global proc shelf_mTools () {
         -mip 0
         -mi "pw_mGeoExporter" ( "import importlib\nimport pw_mGeoExporter\nimportlib.reload(pw_mGeoExporter)\npw_mGeoExporter.show()" )
         -mip 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "Print Selected List" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "print ('[\\'' + ('\\', \\'').join(cmds.ls(sl=True)) + '\\']')\n" 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -imageOverlayLabel "pList" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.5 
+        -image "pythonFamily.png" 
+        -image1 "pythonFamily.png" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "print ('[\\'' + ('\\', \\'').join(cmds.ls(sl=True)) + '\\']')\n" 
+        -sourceType "python" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "modelChecker" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "from modelChecker import modelChecker_UI\n\nmodelChecker_UI.UI.sho..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.5 
+        -image "modelChecker.png" 
+        -image1 "modelChecker.png" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "from modelChecker import modelChecker_UI\n\nmodelChecker_UI.UI.show_UI()" 
+        -sourceType "python" 
+        -commandRepeatable 1
+        -flat 1
     ;
     shelfButton
         -enableCommandRepeat 1
@@ -536,11 +640,10 @@ global proc shelf_mTools () {
         -flipY 0
         -useAlpha 1
         -font "plainLabelFont" 
-        -imageOverlayLabel "quad" 
         -overlayLabelColor 0.8 0.8 0.8 
         -overlayLabelBackColor 0 0 0 0.5 
-        -image "pythonFamily.png" 
-        -image1 "pythonFamily.png" 
+        -image "quadPatcher_1.png" 
+        -image1 "quadPatcher_1.png" 
         -style "iconOnly" 
         -marginWidth 0
         -marginHeight 1
@@ -573,8 +676,8 @@ global proc shelf_mTools () {
         -font "plainLabelFont" 
         -overlayLabelColor 0.8 0.8 0.8 
         -overlayLabelBackColor 0 0 0 0.5 
-        -image "Instant_Meshes.png" 
-        -image1 "Instant_Meshes.png" 
+        -image "/home/mau/maya/2023/extra/mauTools/1.3/icons/Instant_Meshes.png" 
+        -image1 "/home/mau/maya/2023/extra/mauTools/1.3/icons/Instant_Meshes.png" 
         -style "iconOnly" 
         -marginWidth 0
         -marginHeight 1
@@ -621,7 +724,7 @@ global proc shelf_mTools () {
         -style "iconOnly" 
         -marginWidth 0
         -marginHeight 1
-        -command "import importlib\nimport speedCut1_62\nfrom speedCut1_62 import *\nimportlib.reload(speedCut1_62)\nspeedCut1_62.jwSpeedCutUI()\n" 
+        -command "import importlib\nimport speedCut1_67\nfrom speedCut1_67 import *\nimportlib.reload(speedCut1_67)\nspeedCut1_67.jwSpeedCutUI()\n" 
         -sourceType "python" 
         -commandRepeatable 1
         -flat 1
@@ -1029,41 +1132,6 @@ global proc shelf_mTools () {
         -manage 1
         -visible 1
         -preventOverride 0
-        -annotation "Color Controllers" 
-        -enableBackground 0
-        -backgroundColor 0 0 0 
-        -highlightColor 0.321569 0.521569 0.65098 
-        -align "center" 
-        -label "Color Controllers" 
-        -labelOffset 0
-        -rotation 0
-        -flipX 0
-        -flipY 0
-        -useAlpha 1
-        -font "plainLabelFont" 
-        -imageOverlayLabel "COL" 
-        -overlayLabelColor 0.8 0.8 0.8 
-        -overlayLabelBackColor 0 0 0 0.5 
-        -image "pythonFamily.png" 
-        -image1 "pythonFamily.png" 
-        -style "iconOnly" 
-        -marginWidth 0
-        -marginHeight 1
-        -command "sel = cmds.ls(sl=True)\nfor s in sel:\n    cmds.setAttr(s+'.overrideEnabled', 1)\n    cmds.setAttr(s+\".overrideColor\", 17)\n    if 'L' in s[0]:\n        cmds.setAttr(s+'.overrideEnabled', 1)\n        cmds.setAttr(s+\".overrideColor\", 6)\n    elif 'R' in s[0]:\n        cmds.setAttr(s+'.overrideEnabled', 1)\n        cmds.setAttr(s+\".overrideColor\", 13)" 
-        -sourceType "python" 
-        -commandRepeatable 1
-        -flat 1
-    ;
-    shelfButton
-        -enableCommandRepeat 1
-        -flexibleWidthType 3
-        -flexibleWidthValue 32
-        -enable 1
-        -width 35
-        -height 34
-        -manage 1
-        -visible 1
-        -preventOverride 0
         -annotation "Paint Skin Weights" 
         -enableBackground 0
         -backgroundColor 0 0 0 
@@ -1120,41 +1188,6 @@ global proc shelf_mTools () {
         -marginHeight 1
         -command "source \"MAXSkinWeightTool.mel\";\n" 
         -sourceType "mel" 
-        -commandRepeatable 1
-        -flat 1
-    ;
-    shelfButton
-        -enableCommandRepeat 1
-        -flexibleWidthType 3
-        -flexibleWidthValue 32
-        -enable 1
-        -width 35
-        -height 34
-        -manage 1
-        -visible 1
-        -preventOverride 0
-        -annotation "skinWrangler" 
-        -enableBackground 0
-        -backgroundColor 0 0 0 
-        -highlightColor 0.321569 0.521569 0.65098 
-        -align "center" 
-        -label "skinWrangler" 
-        -labelOffset 0
-        -rotation 0
-        -flipX 0
-        -flipY 0
-        -useAlpha 1
-        -font "plainLabelFont" 
-        -imageOverlayLabel "skinW" 
-        -overlayLabelColor 0.8 0.8 0.8 
-        -overlayLabelBackColor 0 0 0 0.5 
-        -image "pythonFamily.png" 
-        -image1 "pythonFamily.png" 
-        -style "iconOnly" 
-        -marginWidth 0
-        -marginHeight 1
-        -command "from importlib import reload\nimport skinWrangler\nreload(skinWrangler)\nskinWrangler.show()" 
-        -sourceType "python" 
         -commandRepeatable 1
         -flat 1
     ;
@@ -1252,8 +1285,8 @@ global proc shelf_mTools () {
         -font "plainLabelFont" 
         -overlayLabelColor 0.8 0.8 0.8 
         -overlayLabelBackColor 0 0 0 0.5 
-        -image "fari_weigth.png" 
-        -image1 "fari_weigth.png" 
+        -image "/home/mau/maya/2023/extra/mauTools/1.3/icons/fari_weigth.png" 
+        -image1 "/home/mau/maya/2023/extra/mauTools/1.3/icons/fari_weigth.png" 
         -style "iconOnly" 
         -marginWidth 0
         -marginHeight 1
@@ -1317,8 +1350,8 @@ global proc shelf_mTools () {
         -font "plainLabelFont" 
         -overlayLabelColor 0.8 0.8 0.8 
         -overlayLabelBackColor 0 0 0 0.5 
-        -image "paintSkinWeightsCtx.png" 
-        -image1 "paintSkinWeightsCtx.png" 
+        -image "/nfs/dev/software/mauTools/LIN/maya/2022/1.4/scripts/rjSkinningTools/icons/paintSkinWeightsCtx.png" 
+        -image1 "/nfs/dev/software/mauTools/LIN/maya/2022/1.4/scripts/rjSkinningTools/icons/paintSkinWeightsCtx.png" 
         -style "iconOnly" 
         -marginWidth 0
         -marginHeight 1
@@ -1351,8 +1384,8 @@ global proc shelf_mTools () {
         -font "plainLabelFont" 
         -overlayLabelColor 0.8 0.8 0.8 
         -overlayLabelBackColor 0 0 0 0.5 
-        -image "paintSmoothWeightsCtx.png" 
-        -image1 "paintSmoothWeightsCtx.png" 
+        -image "/nfs/dev/software/mauTools/LIN/maya/2022/1.4/scripts/rjSkinningTools/icons/paintSmoothWeightsCtx.png" 
+        -image1 "/nfs/dev/software/mauTools/LIN/maya/2022/1.4/scripts/rjSkinningTools/icons/paintSmoothWeightsCtx.png" 
         -style "iconOnly" 
         -marginWidth 0
         -marginHeight 1
@@ -1385,8 +1418,8 @@ global proc shelf_mTools () {
         -font "plainLabelFont" 
         -overlayLabelColor 0.8 0.8 0.8 
         -overlayLabelBackColor 0 0 0 0.5 
-        -image "paintRemoveInfluenceCtx.png" 
-        -image1 "paintRemoveInfluenceCtx.png" 
+        -image "/nfs/dev/software/mauTools/LIN/maya/2022/1.4/scripts/rjSkinningTools/icons/paintRemoveInfluenceCtx.png" 
+        -image1 "/nfs/dev/software/mauTools/LIN/maya/2022/1.4/scripts/rjSkinningTools/icons/paintRemoveInfluenceCtx.png" 
         -style "iconOnly" 
         -marginWidth 0
         -marginHeight 1
@@ -1419,8 +1452,8 @@ global proc shelf_mTools () {
         -font "plainLabelFont" 
         -overlayLabelColor 0.8 0.8 0.8 
         -overlayLabelBackColor 0 0 0 0.5 
-        -image "tweakVertexWeights.png" 
-        -image1 "tweakVertexWeights.png" 
+        -image "/nfs/dev/software/mauTools/LIN/maya/2022/1.4/scripts/rjSkinningTools/icons/tweakVertexWeights.png" 
+        -image1 "/nfs/dev/software/mauTools/LIN/maya/2022/1.4/scripts/rjSkinningTools/icons/tweakVertexWeights.png" 
         -style "iconOnly" 
         -marginWidth 0
         -marginHeight 1
@@ -1453,8 +1486,8 @@ global proc shelf_mTools () {
         -font "plainLabelFont" 
         -overlayLabelColor 0.8 0.8 0.8 
         -overlayLabelBackColor 0 0 0 0.5 
-        -image "softSelectionToWeights.png" 
-        -image1 "softSelectionToWeights.png" 
+        -image "/nfs/dev/software/mauTools/LIN/maya/2022/1.4/scripts/rjSkinningTools/icons/softSelectionToWeights.png" 
+        -image1 "/nfs/dev/software/mauTools/LIN/maya/2022/1.4/scripts/rjSkinningTools/icons/softSelectionToWeights.png" 
         -style "iconOnly" 
         -marginWidth 0
         -marginHeight 1
@@ -1518,12 +1551,47 @@ global proc shelf_mTools () {
         -font "plainLabelFont" 
         -overlayLabelColor 0.8 0.8 0.8 
         -overlayLabelBackColor 0 0 0 0.5 
-        -image "CTRL_BOX_icon.png" 
-        -image1 "CTRL_BOX_icon.png" 
+        -image "C:/Users/mauri/Documents/maya/extra/2024/mauTools/1.4/icons/rr_CTRL_BOX_icon.png" 
+        -image1 "C:/Users/mauri/Documents/maya/extra/2024/mauTools/1.4/icons/rr_CTRL_BOX_icon.png" 
         -style "iconOnly" 
         -marginWidth 0
         -marginHeight 1
-        -command "import rr_main_curves\nimportlib.reload(rr_main_curves)\nrr_main_curves.window_creation()" 
+        -command "import RigBox3.rr_main_curves\nRigBox3.rr_main_curves.window_creation()" 
+        -sourceType "python" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "Color Controllers" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "Color Controllers" 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -imageOverlayLabel "COL" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.5 
+        -image "pythonFamily.png" 
+        -image1 "pythonFamily.png" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "sel = cmds.ls(sl=True)\nfor s in sel:\n    cmds.setAttr(s+'.overrideEnabled', 1)\n    cmds.setAttr(s+\".overrideColor\", 17)\n    if 'L' in s[0]:\n        cmds.setAttr(s+'.overrideEnabled', 1)\n        cmds.setAttr(s+\".overrideColor\", 6)\n    elif 'R' in s[0]:\n        cmds.setAttr(s+'.overrideEnabled', 1)\n        cmds.setAttr(s+\".overrideColor\", 13)" 
         -sourceType "python" 
         -commandRepeatable 1
         -flat 1
@@ -1628,8 +1696,8 @@ global proc shelf_mTools () {
         -font "plainLabelFont" 
         -overlayLabelColor 0.8 0.8 0.8 
         -overlayLabelBackColor 0 0 0 0.5 
-        -image "UKDP_AutoEyelidsRig_icon.png" 
-        -image1 "UKDP_AutoEyelidsRig_icon.png" 
+        -image "/home/mgiglioli/maya/2018/prefs/icons/UKDP_AutoEyelidsRig_icon.png" 
+        -image1 "/home/mgiglioli/maya/2018/prefs/icons/UKDP_AutoEyelidsRig_icon.png" 
         -style "iconOnly" 
         -marginWidth 0
         -marginHeight 1
@@ -1764,47 +1832,12 @@ global proc shelf_mTools () {
         -font "plainLabelFont" 
         -overlayLabelColor 0.8 0.8 0.8 
         -overlayLabelBackColor 0 0 0 0.5 
-        -image "silhouettepolisher.png" 
-        -image1 "silhouettepolisher.png" 
+        -image "/home/mgiglioli/maya/2018/extra/silhouettepolisher/icons/silhouettepolisher.png" 
+        -image1 "/home/mgiglioli/maya/2018/extra/silhouettepolisher/icons/silhouettepolisher.png" 
         -style "iconOnly" 
         -marginWidth 0
         -marginHeight 1
         -command "import importlib\nimport silhouettepolisher\nimportlib.reload(silhouettepolisher)\nsilhouettepolisher.launch()" 
-        -sourceType "python" 
-        -commandRepeatable 1
-        -flat 1
-    ;
-    shelfButton
-        -enableCommandRepeat 1
-        -flexibleWidthType 3
-        -flexibleWidthValue 32
-        -enable 1
-        -width 35
-        -height 34
-        -manage 1
-        -visible 1
-        -preventOverride 0
-        -annotation "Pose Wrangler" 
-        -enableBackground 0
-        -backgroundColor 0 0 0 
-        -highlightColor 0.321569 0.521569 0.65098 
-        -align "center" 
-        -label "PoseWranglers for Metahuman" 
-        -labelOffset 0
-        -rotation 0
-        -flipX 0
-        -flipY 0
-        -useAlpha 1
-        -font "plainLabelFont" 
-        -imageOverlayLabel "poseW" 
-        -overlayLabelColor 0.8 0.8 0.8 
-        -overlayLabelBackColor 0 0 0 0.5 
-        -image "pythonFamily.png" 
-        -image1 "pythonFamily.png" 
-        -style "iconOnly" 
-        -marginWidth 0
-        -marginHeight 1
-        -command "from importlib import reload\nimport poseWrangler\nreload(poseWrangler)\nimport poseWranglerUI as ui\nreload(ui)\nui.showUI()" 
         -sourceType "python" 
         -commandRepeatable 1
         -flat 1
@@ -2032,8 +2065,8 @@ global proc shelf_mTools () {
         -font "plainLabelFont" 
         -overlayLabelColor 0.8 0.8 0.8 
         -overlayLabelBackColor 0 0 0 0.5 
-        -image "SpringPrevisIcon.png" 
-        -image1 "SpringPrevisIcon.png" 
+        -image "tLMspringFiles/icons/SpringPrevisIcon.png" 
+        -image1 "tLMspringFiles/icons/SpringPrevisIcon.png" 
         -style "iconOnly" 
         -marginWidth 0
         -marginHeight 1
@@ -2197,8 +2230,8 @@ global proc shelf_mTools () {
         -font "plainLabelFont" 
         -overlayLabelColor 0.8 0.8 0.8 
         -overlayLabelBackColor 0 0 0 0.5 
-        -image "xgenToNhair.png" 
-        -image1 "xgenToNhair.png" 
+        -image "/home/mau/maya/2023/extra/test/icons/xgenToNhair.png" 
+        -image1 "/home/mau/maya/2023/extra/test/icons/xgenToNhair.png" 
         -style "iconOnly" 
         -marginWidth 0
         -marginHeight 1
@@ -2231,13 +2264,48 @@ global proc shelf_mTools () {
         -font "plainLabelFont" 
         -overlayLabelColor 0.8 0.8 0.8 
         -overlayLabelBackColor 0 0 0 0.5 
-        -image "prepareMixamo.png" 
-        -image1 "prepareMixamo.png" 
+        -image "/nfs/dev/software/mauTools/LIN/maya/2022/1.4/icons/prepareMixamo.png" 
+        -image1 "/nfs/dev/software/mauTools/LIN/maya/2022/1.4/icons/prepareMixamo.png" 
         -style "iconOnly" 
         -marginWidth 0
         -marginHeight 1
         -command "import prepareMixamo, importlib\nimportlib.reload(prepareMixamo)\nprepareMixamo.mUI()" 
         -sourceType "python" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -flexibleWidthType 3
+        -flexibleWidthValue 32
+        -enable 1
+        -width 35
+        -height 34
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "Delete construction history on the selected object(s)" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "History" 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -imageOverlayLabel "Hist" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.5 
+        -image "menuIconEdit.png" 
+        -image1 "menuIconEdit.png" 
+        -style "iconOnly" 
+        -marginWidth 0
+        -marginHeight 1
+        -command "DeleteHistory" 
+        -sourceType "mel" 
         -commandRepeatable 1
         -flat 1
     ;

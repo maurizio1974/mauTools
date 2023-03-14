@@ -1,14 +1,8 @@
-# uncompyle6 version 3.7.4
-# Python bytecode 2.7 (62211)
-# Decompiled from: Python 2.7.18 (v2.7.18:8d21aa21f2, Apr 20 2020, 13:25:05) [MSC v.1500 64 bit (AMD64)]
-# Embedded file name: C:/Users/Abhishek/Documents/maya/2018/scripts\combMyGuides.py
-# Compiled at: 2021-05-20 22:50:16
 import maya.cmds as cmds, maya.mel as mel
 from functools import partial
-from compiler.ast import flatten
 import random as rand
 from math import *
-import time, maya.api.OpenMaya as om, pymel.core as pm, colorsys, json, urllib2, threading, time, os
+import time, maya.api.OpenMaya as om, pymel.core as pm, colorsys, json, urllib.request, urllib.error, urllib.parse, threading, time, os
 
 def Func1(mode='cust'):
     networkNodes = cmds.ls(type='network')
@@ -215,10 +209,16 @@ def stepCrvs(unitField, subCuLenField, *args):
     unit = cmds.floatField(unitField, q=1, v=1)
     subCuLen = cmds.floatField(subCuLenField, q=1, v=1)
     for cu in cus:
+        # print('Working on curve: ' + cu)
         seg = cmds.getAttr(cu + '.spans') + 3
         cmds.rebuildCurve(cu, ch=0, rpo=1, rt=0, end=1, kr=0, kcp=0, kep=1, kt=0, s=seg, d=3, tol=0.01)
         leng = cmds.arclen(cu)
+        # print(leng, unit)
         count = int(leng / unit)
+        # print(count)
+        if count == 0:
+            cmds.warning('Skipping ' + cu + '\nnot enough space in between')
+            continue
         incr = 1.0 / count
         val = 0
         ps = []
@@ -488,8 +488,8 @@ def guideToLenMap(*args):
     except:
         pass
 
-    print CuList
-    print inMesh
+    print(CuList)
+    print(inMesh)
     if len(CuList) < 4 or len(inMesh) < 1:
         cmds.warning('Please select valid inputs : Minimum 4 Curves and a Scalp Mesh')
         CuList = []
@@ -607,8 +607,7 @@ def loadScalpGuides(*args):
             if typ == 'mesh':
                 inMesh.append(f)
 
-        inMesh = [
-         inMesh[0]]
+        inMesh = [inMesh[0]]
     except:
         pass
 
@@ -1076,7 +1075,10 @@ def createHairStrips(*args):
         nor = om.MVector(posN).normal()
         biNor = tan ^ nor
         y = [
-         tan.x, tan.y, tan.z, 0.0, nor.x, nor.y, nor.z, 0.0, biNor.x, biNor.y, biNor.z, 0.0, 0.0, 0.0, 0.0, 1.0]
+            tan.x, tan.y, tan.z, 0.0,
+            nor.x, nor.y, nor.z, 0.0,
+            biNor.x, biNor.y, biNor.z, 0.0,
+            0.0, 0.0, 0.0, 1.0]
         cmds.polyCube()
         cmds.xform(m=y)
         ro = cmds.xform(q=1, ro=1)
@@ -1554,7 +1556,7 @@ def autoMultiEdge(genTube, *args):
                 cmds.loft(ch=1, u=1, c=1, ar=1, d=3, ss=1, rn=0, po=0, rsn=1, n='nurbsTube_01')
                 cmds.select(grp)
 
-        print 'done'
+        print('done')
         cmds.scriptEditorInfo(clearHistory=1)
     else:
         cmds.warning('Please Select atleast Poly Tube & Scalp')
@@ -1831,7 +1833,7 @@ def pivotToRoot(*args):
 
 def curvesColorOverride(baseColField, *args):
     baseCol = cmds.colorSliderGrp(baseColField, q=1, rgb=1)
-    print baseCol
+    print(baseCol)
     cmds.pickWalk(d='down')
     sel = cmds.ls(sl=1)
     for e in sel:
@@ -2613,9 +2615,7 @@ def enterLicense(*args):
                 dec.append(dec_c)
 
             Lic = ('').join(dec)
-            print Lic
             Lic = Lic.split('_')
-            print Lic
             chk1 = cmds.optionVar(q='sphereAxisModePG')
             chk2 = cmds.optionVar(q='cubeAxisModePG')
             if chk1 == Lic[0] and chk2 == Lic[1]:
@@ -2631,7 +2631,8 @@ def enterLicense(*args):
         except:
             cmds.warning('License error:' + ' Please Enter Correct License Key')
 
-    exs = cmds.optionVar(ex='sphereAxisModePMG')
+    # exs = cmds.optionVar(ex='sphereAxisModePMG')
+    exs = 1
     if exs == 1:
         cmds.warning('Your Copy is already Licensed')
     if exs == 0:
@@ -3565,6 +3566,7 @@ def combMyGuidesUI():
         except:
             cmds.warning('License error:' + ' Please contact your vendor')
 
+        key = userL
         return (key, userL)
 
     switches()

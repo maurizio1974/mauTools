@@ -44,46 +44,42 @@ import maya.cmds as cmds
 import maya.mel as mel
 import shutil as sh
 import subprocess
+import tempfile
 import os
 
 
-# bs = os.getenv('MINI')
-bs = os.getenv('MAYA_LOCATION')
-# ver = os.getenv('MAYA_VERSION')
-ver = '2023'
-# ML = os.path.join(bs + '/apps/autodesk/maya/' + ver + '/bin/maya')
-ML = os.path.join(bs + ver, 'bin/maya')
+bs = os.getenv('MINI')
+ver = os.getenv('MAYA_VERSION')
+ML = os.path.join(bs + '/apps/autodesk/maya/' + ver + '/bin/maya')
 
 
 def getLauncher():
-    allapps = []
-    launchers = ['gnome-terminal', 'mate-terminal', 'terminator']
-    pa = os.getenv('PATH')
-    for p in pa.split(':'):
-        if os.path.isdir(p):
-            apps = os.listdir(p)
-            for a in apps:
-                allapps.append(a)
-    for l in launchers:
-        if l in allapps:
-            return l
+        allapps = []
+        launchers = ['gnome-terminal', 'mate-terminal', 'terminator']
+        pa = os.getenv('PATH')
+        for p in pa.split(':'):
+            if os.path.isdir(p):
+                apps = os.listdir(p)
+                for a in apps:
+                    allapps.append(a)
+        for l in launchers:
+            if l in allapps:
+                return l
 
 
 def session_envs(file_id):
     tmpDir = '/tmp'
     log = os.path.join(tmpDir, file_id + '_environments.cmd')
     EXCLUDE = [
-        'QT_MAC_DONT_OVERRIDE_CTRL_LMB', 'QT_SCALE_FACTOR', 'IMSETTINGS_INTEGRATE_DESKTOP', 'EDITOR', 'GTK_OVERLAY_SCROLLING',
-        'XMODIFIERS', 'DESKTOP_SESSION', 'SSH_AGENT_PID', 'SSH_AUTH_SOCK', 'XDG_SESSION_PATH', 'HISTCONTROL', '   ',
-        'MAIL', 'LS_COLORS', 'TERMINATOR_UUID', 'GTK3_MODULES', 'XDG_DATA_DIRS', 'WF_IMF_CIN_CORRECTION', 'LC_ALL',
-        'QTDIR', 'XDG_RUNTIME_DIR', 'LM_LICENSE_FILE', 'XDG_VTNR', 'XDG_SESSION_ID', 'QT_COMPRESS_TABLET_EVENTS',
-        'QT_IM_MODULE', 'ADE_CONFIG_PATH', 'SHLVL', 'DISPLAY', 'TERM', 'XDG_SESSION_CLASS', 'MOZ_GMP_PATH', 'PWD',
+        'HOME', 'USER', 'USERNAME', 'BASH_FUNC_which%%', 'GDMSESSION', 'WF_IMF_CIN_WHITE_POINT',
         'HOST', 'HOSTNAME', 'LOGNAME', 'OLDPWD', 'DBUS_SESSION_BUS_ADDRESS', 'which_declare', 'BASH_FUNC_which%%',
-        'HISTSIZE', 'COLORTERM', 'WINDOWID', 'SESSION_MANAGER', ', IMSETTINGS_INTEGRATE_DESKTOP', 'MAYA_APP_DIR',
+        'MAIL', 'LS_COLORS', 'TERMINATOR_UUID', 'GTK3_MODULES', 'XDG_DATA_DIRS', 'WF_IMF_CIN_CORRECTION',
+        'QTDIR', 'XDG_RUNTIME_DIR', 'LM_LICENSE_FILE', 'XDG_VTNR', 'XDG_SESSION_ID', 'QT_COMPRESS_TABLET_EVENTS',
+        'QT_IM_MODULE', 'ADE_CONFIG_PATH', 'SHLVL', 'DISPLAY', 'TERM', 'XDG_SESSION_CLASS', 'MOZ_GMP_PATH',
         'IMSETTINGS_MODULE', 'QTINC', 'WF_IMF_SGI_MATTE', 'XDG_SEAT_PATH', 'VTE_VERSION', 'XDG_CURRENT_DESKTOP',
-        'MATE_DESKTOP_SESSION_ID', 'QTLIB', 'QT_FONT_DPI', 'QT_XCB_TABLET_LEGACY_COORDINATES', 'QT_HARFBUZZ',
         'LANG', 'XDG_GREETER_DATA_DIR', 'XAUTHORITY', 'XDG_SESSION_DESKTOP', 'XDG_SESSION_TYPE', 'XDG_SEAT',
-        'HOME', 'USER', 'USERNAME', 'BASH_FUNC_which%%', 'GDMSESSION', 'WF_IMF_CIN_WHITE_POINT', 'LESSOPEN']
+        'XMODIFIERS', 'DESKTOP_SESSION', 'SSH_AGENT_PID', 'SSH_AUTH_SOCK', 'XDG_SESSION_PATH', 'HISTCONTROL', '   ',
+        'HISTSIZE', 'COLORTERM', 'WINDOWID', 'SESSION_MANAGER', ', IMSETTINGS_INTEGRATE_DESKTOP', 'MAYA_APP_DIR']
     envs = []
     user_home = os.path.expanduser('~')
     job = ''
@@ -100,7 +96,11 @@ def session_envs(file_id):
             values = [val.replace('/' + val.split('/')[-1], '')]
         if key == 'MIMMO_PROJECT':
             job = val.split('/')[-1]
-        envs.append('export %s=%s' % (key, os.pathsep.join(values)))
+        envs.append('export %s=%s' % (
+                key,
+                os.pathsep.join(values)
+            )
+        )
     # with open(log, 'r') as f:
     #     data = f.read()
     os.system('touch ' + log)
@@ -108,7 +108,6 @@ def session_envs(file_id):
         envs = '\n'.join(envs)
         f.write(envs)
     return log, job
-
 
 def dampTemp(tempFile):
     tmpDir = os.getenv('TEMP')
@@ -212,18 +211,23 @@ def cacheOut(cacheMesh, evaluate, start, end, settings, type, mode, clean):
     # scene name
     sceneN = cmds.file(q=True, sn=True, shn=True)
     # active directory
-    ws = cmds.workspace(q=True, fn=True)
-    for ex in ['.ma', '.mb']:
-        newScene = scene.replace(ex, '_' + str(settings) + ex)
-        newSceneN = sceneN.replace(ex, '_' + str(settings) + ex)
+    ws = cmds.workspace(q=True, act=True)
+    if '.ma' in sceneN:
+        newScene = scene.replace('.ma', '_' + str(settings) + '.ma')
+        newSceneN = sceneN.replace('.ma', '_' + str(settings) + '.ma')
+    elif '.mb' in sceneN:
+        newScene = scene.replace('.mb', '_' + str(settings) + '.mb')
+        newSceneN = sceneN.replace('.mb', '_' + str(settings) + '.mb')
     # create the command to send to the shell
     if not mode:
         file_id = session_envs(newSceneN.split('.')[0])
         cmd = 'source ' + file_id[0] + ';'
         cmd += ML + ' '
         cmd += r'-batch -file {0} -c "'.format(scene)
+        # cmd += r'python(\"plugInCheck([AbcImport, AbcEmport])\");'
         cmd += r'python(\"plugInCheck()\");'
         cmd += r'python(\"import importlib;import sim;importlib.reload(sim)\");'
+        # cmd += r'python(\"import fx.tools as sim;reload(sim)\");'
     else:
         cmd = 'mel.eval("'
     cmd += (
@@ -251,12 +255,11 @@ def cacheOut(cacheMesh, evaluate, start, end, settings, type, mode, clean):
             title += '- Cache:  "\n\t"' + sceneN.split('.')[0] + '"\n"'
         elif type == 2:
             title += '- Task:  "\n\t"' + 'Alembic Out' + '"\n"'
-            title += '- Cache:  "\n\t"' + \
-                sceneN.split('.')[0] + '.abc' + '"\n"'
+            title += '- Cache:  "\n\t"' + sceneN.split('.')[0] + '.abc' + '"\n"'
         terminal = getLauncher()
         launcher = terminal + ' -x bash -c \'echo '
         launcher += title + '; ' + cmd + '\"; exec $SHELL &\''
-        print(launcher)
+        # print(launcher)
         subprocess.Popen(["/bin/bash", "-c", launcher])
     else:
         cmd += '")'
@@ -272,7 +275,7 @@ def sim(simMesh, evaluate, start, end, settings, mode):
     # scene name
     sceneN = cmds.file(q=True, sn=True, shn=True)
     # active directory
-    ws = cmds.workspace(q=True, fn=True)
+    ws = cmds.workspace(q=True, act=True)
     # some UI checks
     if not simMesh:
         cmds.confirmDialog(t='Not Kick Ass', m='Need some meshes in the UI')
@@ -292,6 +295,7 @@ def sim(simMesh, evaluate, start, end, settings, mode):
         fileT = 'mayaBinary'
     # create the command to send to the shell
     if not mode:
+        # cmd = '/usr/autodesk/maya2014-x64/bin/maya -batch '
         file_id = session_envs(newSceneN.split('.')[0])
         cmd = 'source ' + file_id[0] + ';'
         cmd += ML + ' '
@@ -348,8 +352,7 @@ def sim(simMesh, evaluate, start, end, settings, mode):
 
         # Shoot the command out to the shell
         # title = newSceneN + ' ' + str(start) + ':' + str(end)
-        title = '=' * 100 + '\n\n' + newSceneN + ' ' + \
-            str(start) + ':' + str(end) + '\n\n' + '=' * 100
+        title = '=' * 100 + '\n\n' + newSceneN + ' ' + str(start) + ':' + str(end)+ '\n\n' + '=' * 100
         terminal = getLauncher()
         launcher = terminal + ' -x bash -c \'echo '
         launcher += title + '; ' + cmd + '; exec $SHELL &\''
@@ -371,7 +374,7 @@ def yetiSim(yetiN, samples, start, end, settings, preview, mode):
     # SCENE NAME
     sceneN = cmds.file(q=True, sn=True, shn=True)
     # ACTIVE WORKSPACE
-    ws = cmds.workspace(q=True, fn=True)
+    ws = cmds.workspace(q=True, act=True)
     # NEW MAYA SCENE NAME
     if '.ma' in sceneN:
         newScene = scene.replace('.ma', '_' + str(settings) + '.ma')
@@ -402,8 +405,7 @@ def yetiSim(yetiN, samples, start, end, settings, preview, mode):
         nameNNS = y.split(':')[-1]
         cache = sh.os.path.join(
             ws,
-            'cache/yeti/' +
-            newSceneN.split('.')[0] + '/' + nameNNS + '/' + nameNNS
+            'cache/yeti/' + newSceneN.split('.')[0] + '/' + nameNNS + '/' + nameNNS
         )
         cache = cache + '.%04d.fur'
         cachePath = ''
@@ -424,8 +426,7 @@ def yetiSim(yetiN, samples, start, end, settings, preview, mode):
 
     # CREATE NEW COMMAND TO SEND TO SHELL
     if not mode:
-        cmd = r'/usr/autodesk/maya2014-x64/bin/maya -batch -file {0} -c '.format(
-            scene)
+        cmd = r'/usr/autodesk/maya2014-x64/bin/maya -batch -file {0} -c '.format(scene)
     else:
         cmd = 'mel.eval('
     cmd += (
@@ -468,8 +469,7 @@ def simConnect(ns, sel, uno, due):
             if cmds.attributeQuery('res', n=current, ex=True):
                 try:
                     cmds.connectAttr(current + '.res', s + '.res')
-                    print('Resolution: ' + current +
-                          '.res  --->>>  ' + s + '.res')
+                    print('Resolution: ' + current + '.res  --->>>  ' + s + '.res')
                 except Exception:
                     print('Res attribute missing on this node: ' + current)
         if cmds.objExists(current):
@@ -483,8 +483,7 @@ def simConnect(ns, sel, uno, due):
                     attrI = 'create'
                 bs = current + '_BS'
                 if not cmds.objExists(bs):
-                    cmds.blendShape(obj1, obj2, origin='world',
-                                    w=(0, 1), n=current + '_BS')
+                    cmds.blendShape(obj1, obj2, origin='world', w=(0, 1), n=current + '_BS')
                 print('BlendShape:  {0} --> {1}'.format(obj1, obj2))
                 # cmds.connectAttr(obj1 + '.' + attrO, obj2 + '.' + attrI, f=True)
                 # print 'Direct: {0} --> {1}'.format(obj1 + '.' + attrO, obj2 + '.' + attrI)
@@ -558,8 +557,7 @@ def simPose(topNode, lenght, still, ext, eAttr=None):
     an = cmds.ls(typ='animLayer')
     for a in an:
         cmds.animLayer(a, e=True, l=True)
-    print('Simpose done for ' + topNode + ' in ' +
-          str(cmds.timerX(startTime=start)))
+    print('Simpose done for ' + topNode + ' in ' + str(cmds.timerX(startTime=start)))
 
 
 def simpleSimPose(node, lenght, still):
@@ -756,8 +754,7 @@ def mSimUI(parent):
     cmds.checkBoxGrp(cbS, e=True, onc=cmdon, ofc=cmdoff)
     cmds.textScrollList(
         ts, e=True,
-        dcc='cmds.select(cmds.textScrollList("{0}", q=True, si=True)[0])'.format(
-            ts)
+        dcc='cmds.select(cmds.textScrollList("{0}", q=True, si=True)[0])'.format(ts)
     )
     # preset for TSL
     prst = ['append', 'remove', 'clean', 'select']
@@ -768,8 +765,7 @@ def mSimUI(parent):
     )
     cmds.menuItem(
         l=prst[1], p=ppss,
-        c='cmds.textScrollList("{0}", e=True, ri=cmds.textScrollList("{0}", q=True, si=True))'.format(
-            ts)
+        c='cmds.textScrollList("{0}", e=True, ri=cmds.textScrollList("{0}", q=True, si=True))'.format(ts)
     )
     cmds.menuItem(
         l=prst[2], p=ppss,
@@ -777,8 +773,7 @@ def mSimUI(parent):
     )
     cmds.menuItem(
         l=prst[3], p=ppss,
-        c='cmds.select(cmds.textScrollList("{0}", q=True, si=True)[0])'.format(
-            ts)
+        c='cmds.select(cmds.textScrollList("{0}", q=True, si=True)[0])'.format(ts)
     )
     # preset for start and end frame
     prst = [
@@ -807,8 +802,7 @@ def mSimUI(parent):
                         c="cmds.floatField("
                         "'{0}', "
                         "e=True, "
-                        "v={1})".format(
-                            u, 'cmds.playbackOptions(q=True, min=True)')
+                        "v={1})".format(u, 'cmds.playbackOptions(q=True, min=True)')
                     )
                 else:
                     cmds.menuItem(
@@ -817,8 +811,7 @@ def mSimUI(parent):
                         c="cmds.floatField("
                         "'{0}', "
                         "e=True, "
-                        "v={1})".format(
-                            u, 'cmds.playbackOptions(q=True, max=True)')
+                        "v={1})".format(u, 'cmds.playbackOptions(q=True, max=True)')
                     )
     # preset for iterations
     prst = [
@@ -981,8 +974,7 @@ def mYetiSimUI(parent):
                         c="cmds.floatField("
                         "'{0}', "
                         "e=True, "
-                        "v={1})".format(
-                            u, 'cmds.playbackOptions(q=True, min=True)')
+                        "v={1})".format(u, 'cmds.playbackOptions(q=True, min=True)')
                     )
                 else:
                     cmds.menuItem(
@@ -991,8 +983,7 @@ def mYetiSimUI(parent):
                         c="cmds.floatField("
                         "'{0}', "
                         "e=True, "
-                        "v={1})".format(
-                            u, 'cmds.playbackOptions(q=True, max=True)')
+                        "v={1})".format(u, 'cmds.playbackOptions(q=True, max=True)')
                     )
     # preset for iterations
     prst = [
@@ -1145,8 +1136,7 @@ def mCacheUI(parent):
                         c="cmds.floatField("
                         "'{0}', "
                         "e=True, "
-                        "v={1})".format(
-                            u, 'cmds.playbackOptions(q=True, min=True)')
+                        "v={1})".format(u, 'cmds.playbackOptions(q=True, min=True)')
                     )
                 else:
                     cmds.menuItem(
@@ -1155,8 +1145,7 @@ def mCacheUI(parent):
                         c="cmds.floatField("
                         "'{0}', "
                         "e=True, "
-                        "v={1})".format(
-                            u, 'cmds.playbackOptions(q=True, max=True)')
+                        "v={1})".format(u, 'cmds.playbackOptions(q=True, max=True)')
                     )
     # preset for iterations
     prst = ['1.0', '0.75', '0.5', '0.25', '0.1']

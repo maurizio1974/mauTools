@@ -48,7 +48,7 @@ def newOutliner():
     for s in os.getenv('MAYA_MODULE_PATH').split(':'):
         if '/nfs/dev/software/' in s:
             if 'MayaBonusTools' not in s and 'minimo' not in s:
-                print s
+                print(s)
 
 
 def newBuildUI(ui):
@@ -169,7 +169,7 @@ def newOutIsolate(outliner):
     # Clean existing Filters
     if cmds.itemFilter(outliner + '_tempObjectFilter', q=True, ex=True):
         cmds.delete(outliner + '_tempObjectFilter')
-        print 'deleted ' + outliner + '_tempObjectFilter'
+        print('deleted ' + outliner + '_tempObjectFilter')
     # Get All the UI values
     buttons = newGetUI(outliner)[0]
     shState = newGetUI(outliner)[1]

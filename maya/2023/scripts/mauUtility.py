@@ -3,7 +3,7 @@ import maya.mel as mel
 import smtplib
 import email
 import shutil as sh
-import pymel.core as pm
+# import pymel.core as pm
 
 
 # MESH INTERSECT GEO CREATION
@@ -51,7 +51,7 @@ def mgIntersectGeo(surfs):
 def rmSkinInf():
     skc = cmds.ls(type='skinCluster')
     if not skc:
-        print 'No skinCLuster in the scene'
+        print('No skinCLuster in the scene')
         return
     for s in skc:
         # ALL INFLUENCES
@@ -89,8 +89,8 @@ def rmSkinInf():
         # CHECK NUMBER OF INFLUENCES
         all = cmds.skinCluster(s, q=True, inf=True)
 
-        print 'Old influence Number: ' + str(allInf)
-        print 'New Influence Number: ' + str(len(all))
+        print( 'Old influence Number: ' + str(allInf))
+        print( 'New Influence Number: ' + str(len(all)))
 
 
 # FIND AND FIX DUPLICATE NAMES ------------------------------------------------
@@ -105,7 +105,7 @@ def mCheckDupNames():
                 number = len(cmds.ls(a.split('|')[-1]))
                 cmds.rename(a, a.split('|')[-1] + str(number))
     if stop == 1:
-        print 'Restart'
+        print( 'Restart')
         mCheckDupNames()
     cmds.confirmDialog(
         t='Ole\'',
@@ -124,7 +124,7 @@ def mRefSwapper_UI():
     omt = cmds.optionMenu(l='Discipline', w=100)
     omd = cmds.optionMenu(l='Type    ', w=95)
     oms = cmds.optionMenu(l='', w=70, en=False)
-    print omd, oms
+    print( omd, oms)
     bt1 = cmds.button(
         l="swap",
         c='mU.mSwapRefs(["' + omc + '","' + omn + '","' + omt + '"])'
@@ -200,7 +200,7 @@ def mRefPopulateUI(ui, items):
                     )
     else:
         mi = cmds.optionMenu(ui[0], q=True, ils=True)
-        print mi
+        print( mi)
         if mi:
             for m in mi:
                 cmds.deleteUI(m)
@@ -233,7 +233,7 @@ def mSwapRefs(ui):
     for s in data.split('\n'):
         if current:
             if current in s:  # check is the reference is there
-                print s+'  ---->  '+s.replace(current, latest)
+                print( s+'  ---->  '+s.replace(current, latest))
     f.close()
     '''
 
@@ -291,12 +291,12 @@ def mGetAsset(path, discipline):
         for aa in sa:
             if '.ma' in aa and aa != '.mayaSwatches':
                 models.append(sh.os.path.join(path, aa))
-    # print models
+    # print( models)
     mod = [(sh.os.path.getmtime(x), x) for x in models]
     mod.sort()
     # latest = [mod[-1][1], mod[-2][1], mod[-3][1]]
     if len(mod) > 0:
-        # print mod
+        # print( mod)
         return mod[-1][1]
 
 
@@ -470,7 +470,7 @@ def mGetWrap():
         for h in history:
             if cmds.attributeQuery('mWrap', n=h, ex=True):
                 node = cmds.listConnections(h + '.mWrap', s=True, d=False)
-                print h, node[0]
+                print( h, node[0])
     if node:
         cmds.select(node)
     else:
@@ -544,16 +544,16 @@ def mStoreAttr(ns):
                 'float3' not in tipo
             ]
             if all(conditions):  # check for unwanted types
-                print a + '  ' + tipo
+                print( a + '  ' + tipo)
                 value = cmds.getAttr(s + '.' + a)
                 conditions = [
                     not cmds.listConnections(s + '.' + a, s=1, d=0),
                     not cmds.getAttr(s + '.' + a, l=True)
                 ]
                 if all(conditions):  # Check Connections and lock state
-                    if ns is 1:  # with nameSpace
+                    if ns == 1:  # with nameSpace
                         node = s + '.' + a
-                    elif ns is 0:  # without nameSpace
+                    elif ns == 0:  # without nameSpace
                         nsp = s.split(':')[0].replace('|', '')
                         node = s.replace(nsp + ':', '')
                     if tipo in 'string':
@@ -577,9 +577,9 @@ def mGetAttr():
     f.close()
     temp = info.split('\n')
     for t in temp:
-        exec t
-        print 'done this: ' + t
-    print 'Attrubute transfered'
+        exec(t)
+        print( 'done this: ' + t)
+    print( 'Attrubute transfered')
 
 def mBrowser(mode):
     filter = "Maya ASCII (*.ma);;Maya Binary (*.mb)"
@@ -608,9 +608,9 @@ def mEmail(subject, body):
     s.quit()
 
 def mProjects():
-    if pm.menu('mauProjectsMenu', ex=True):
-        pm.deleteUI('mauProjectsMenu')
-    mMenu = pm.menu('mimmoProjectsMenu', l="@Mau Prjs", p='MayaWindow')
+    if cmds.menu('mauProjectsMenu', ex=True):
+        cmds.deleteUI('mauProjectsMenu')
+    mMenu = cmds.menu('mimmoProjectsMenu', l="@Mau Prjs", p='MayaWindow')
     disciplines = [
         'fx',
         'rigFX',
@@ -700,7 +700,7 @@ def mirrorCtrl(dir):
             # cmds.setAttr(shN + '.controlPoints[' + str(x) + '].xValue', pos[0])
             # cmds.setAttr(shN + '.controlPoints[' + str(x) + '].yValue', pos[1])
             # cmds.setAttr(shN + '.controlPoints[' + str(x) + '].zValue', pos[2])
-            # print pos
+            # print( pos)
 
 
 '''

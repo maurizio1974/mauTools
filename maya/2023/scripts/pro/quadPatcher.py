@@ -405,7 +405,7 @@ def initiate(edges):
                     currentEdge = mItEdge.index()
                     checkedEdge.append(int(mItEdge.index()))
                     break
-            next(mItEdge)
+            mItEdge.next()
         mItEdge.reset()
     return orderedList
     
