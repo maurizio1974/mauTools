@@ -1,0 +1,256 @@
+//******************************************************
+//  Author : KAF Procduction
+//
+//  Written by Kim Byoung soo
+//  jinrowing@empas.com
+//
+//  Creation Date:  2010 05 07
+//
+//  Last Updated:  2010 07 09   스케일 속성 DataType(vector , float)에 따라 자동으로 스케일이 적용하게 수정
+//        
+//  Description:
+//      Instancer Object bake
+//
+//  Procedure Name:
+//      KAF_Uninstancer
+//
+//  Input Arguments:
+//      None.
+//
+//  Return Value:
+//      None.
+//******************************************************
+
+global proc KAF_Uninstancer()
+{
+    string $sel[] = `ls -sl`;
+    
+    int $start= `playbackOptions -q -min`;
+    int $end = `playbackOptions -q -max` + 1;
+    
+    undoInfo -state off;
+
+    for($getInstancer in $sel)
+    {
+        //timer -s -n "outerLoop";
+        
+        int $pcount =  0;
+        int $prePcount = 0;
+        
+        int $j;
+        for($j=$start; $j<$end; $j++)
+        {
+            if ( `progressWindow -query -isCancelled` ) break;
+            
+            currentTime $j;
+            
+            string $groupName = ("GROUP_" + $getInstancer);
+            string $particle[];
+            
+            if (! `objExists $groupName`)
+            {
+                group -em -n $groupName;
+            }
+                
+            $particle = `listConnections ($getInstancer + ".inputPoints")`;
+
+            for($getParticle in $particle)
+            {
+                string $getParticleShape[];
+                string $instancedObj[];
+                string $indexAttr;
+                string $visibilityAttr;
+                string $positionAttr;
+                string $scaleAttr;
+                string $rotAttr;
+                
+                if($j == $start)
+                {
+                    $getParticleShape = `listRelatives -s $getParticle`;
+                    $instancedObj = `listConnections ($getInstancer + ".inputHierarchy")`;
+                    $indexAttr = `particleInstancer -name $getInstancer -q -objectIndex $getParticleShape[0]`;
+                    $visibilityAttr = `particleInstancer -name $getInstancer -q -visibility $getParticleShape[0]`;
+                    $positionAttr = `particleInstancer -name $getInstancer -q -position $getParticleShape[0]`;
+                    $scaleAttr = `particleInstancer -name $getInstancer -q -scale $getParticleShape[0]`;
+                    $rotAttr = `particleInstancer -name $getInstancer -q -rotation $getParticleShape[0]`;
+                }
+
+                //instanced Object index id
+                float $index[];
+                int $indexAttrExists = ($indexAttr!="");
+                if($indexAttrExists)
+                {
+                    $index = `getParticleAttr -array true -attribute $indexAttr $getParticleShape[0]`;
+                }
+                
+                //particle Visibility
+                float $visibility[];
+                int $visibilityAttrExists = ($visibilityAttr!="");
+                if($visibilityAttrExists)
+                {
+                    $visibility = `getParticleAttr -array true -attribute $visibilityAttr $getParticleShape[0]`;
+                }
+                
+                //particle Id
+                float $id[];
+                $id = `getParticleAttr -array true -attribute id $getParticleShape[0]`;
+
+                //particle world Positions
+                vector $pwp[];
+                $pwp =`getParticleAttr -array true -attribute $positionAttr $getParticleShape[0]`;
+                $prePcount = $pcount;
+                $pcount =`size $pwp`;
+
+                //particle Scale
+                vector $pspV[];
+                float $pspF[];
+                int $scaleAttrExists = ($scaleAttr!="");
+                if($scaleAttrExists)
+                {
+                    $pspF = `getParticleAttr -array true -attribute $scaleAttr $getParticleShape[0]`;
+                }
+                string $scaleDataType = `getAttr -typ ($getParticleShape[0] + "." + $scaleAttr)`;
+                if($scaleDataType == "vectorArray")
+                {
+                    $pspV = `getParticleAttr -array true -attribute $scaleAttr $getParticleShape[0]`;//$pspF;
+                }             
+                
+                //particle Rotation
+                vector $prp[];
+                int $rotAttrExists = ($rotAttr!="");
+                if($rotAttrExists)
+                {
+                    $prp = `getParticleAttr -array true -attribute $rotAttr $getParticleShape[0]`;
+                }
+        
+                if($pcount)
+                {
+                    int $i;
+                    for($i=0; $i<$pcount; $i++)
+                    {
+                        string $sourceObj;
+                        string $dupObj;
+                        
+                        if($indexAttrExists)
+                        {
+                            if(`size($instancedObj)` > 1)
+                            {
+                                $sourceObj = $instancedObj[int($index[$i])];
+                                $dupObj= ($instancedObj[int($index[$i])] + "_" + $getInstancer + "_" + $id[$i]);
+                            }
+                            else
+                            {
+                                $sourceObj = $instancedObj[0];
+                                $dupObj= ($instancedObj[0] + "_" + $getInstancer + "_" + $id[$i]);
+                            }
+                        }
+                        else
+                        {
+                            $sourceObj = $instancedObj[0];
+                            $dupObj= ($instancedObj[0] + "_" + $getInstancer + "_" + $id[$i]);
+                        }
+                        
+                        if($i > $prePcount-1)
+                        {
+                            if(! `objExists ($groupName+ "|" + $dupObj)`)
+                            {
+                                //if(`objExists $sourceObj`)
+                                //{
+                                    duplicate -rr -n $dupObj $sourceObj;
+                                    if(! $visibilityAttrExists)
+                                    {
+                                        setKeyframe -t ($j-1) -at visibility -v 0 $dupObj;
+                                        setKeyframe -t ($j) -at visibility -v 1 $dupObj;
+                                    }
+                                    parent $dupObj $groupName;
+                                //}
+                                //else
+                                //{
+                                //    confirmDialog -title "Error" -message ($sourceObj + "\n" + "Instanced Objects가 없습니다" + "\n" + "Object Index를 확인바랍니다.");
+                                //    break;
+                                //}
+                            }
+                        }
+                        
+                        vector $pt=$pwp[$i];
+                        vector $sc;
+                        if($scaleDataType == "vectorArray")
+                        {
+                            $sc=$pspV[$i];
+                        }
+                        if($scaleDataType == "doubleArray")
+                        {
+                            $sc=<<$pspF[$i] , $pspF[$i] , $pspF[$i]>>;
+                        }
+                        vector $ro=$prp[$i];
+                        
+                        move -absolute ($pt.x) ($pt.y) ($pt.z) $dupObj;
+                        setKeyframe -at "translate"  $dupObj;
+
+                        if($scaleAttrExists)
+                        {
+                            scale ($sc.x) ($sc.y) ($sc.z) $dupObj;
+                            setKeyframe -at "scale" $dupObj;
+                        }
+
+                        if($rotAttrExists)
+                        {
+                            rotate ($ro.x) ($ro.y) ($ro.z) $dupObj;
+                            setKeyframe -at "rotate" $dupObj;
+                        }
+                        
+                        if($visibilityAttrExists)
+                        {
+                            setKeyframe -at visibility -v $visibility[$i] $dupObj;
+                        }
+                    }
+                }
+            }
+            // Percentage for the progress window
+			$amount = ceil(($j-$start)*100/($end-$start));
+			progressWindow -e -progress $amount -status ("Bake: "+$amount+"%");
+        }
+        //$lapTime = `timer -e -n "outerLoop"`;
+        //print( "\n" + $getInstancer + " : Bake timing was " + $lapTime + "\n" + "\n");
+    }
+    undoInfo -state on -infinity on;
+}
+
+global proc KAF_Uninstancer_Progress()
+{
+    string $sel[] = `ls -sl`;
+    
+    if(`size($sel)`)
+    {
+        for($tmp in $sel)
+        {
+            if(`nodeType $tmp` != "instancer")
+            {
+                confirmDialog -title "Error" -message "인스탄스 오브젝트를 선택해 주세요";
+                return;
+            }
+        }
+    }
+    else
+    {
+        confirmDialog -title "Error" -message "인스탄스 오브젝트를 선택해 주세요";
+        return;
+    }
+    
+	int $amount = 0;
+	
+	progressWindow -title "KAF_Uninstancer" -progress $amount -status "Sleeping: 0%" -isInterruptable true;
+	
+    if(catch(`KAF_Uninstancer`))
+    {
+        //timer -e -n "outerLoop";
+    }
+    else
+    {
+        //continue on as usual...
+    }
+
+	progressWindow -endProgress;
+}
+
+KAF_Uninstancer_Progress;

@@ -1,0 +1,315 @@
+// --MAYA-----------------------------------------------------------
+//
+//      Copyright   (c)   2003    Lucas   Digital   Ltd.
+//      All rights reserved.    Used under authorization.
+//      This  material  contains   the  confidential  and
+//      proprietary information of Lucas Digital Ltd. and
+//      may not be copied in whole or in part without the
+//      express written permission of  Lucas Digital Ltd.
+//      This copyright notice does not imply publication.
+//                              
+//                      -James R. Tooley  Aug 21, 2003
+// -----------------------------------------------------------------
+//  Description:
+//		Vector math utilities.
+//
+//  Modifications:  
+//		Duplicated vector math function as
+//		float array math functions.
+//			-James R. Tooley  Aug 26, 2003
+//
+//		Vector addition and subtraction.
+//			-James R. Tooley  Sep 1, 2003
+// -----------------------------------------------------------------
+
+
+// -----------------------------------------------------------------
+// VECTOR FUNCTIONS	(vctr)
+// -----------------------------------------------------------------
+
+// PRINT A FORMATED VECTOR
+global proc vctrPrint(
+  vector $a
+)
+{
+  print($a.x+" "+$a.y+" "+$a.z+"\n");
+}
+
+// -----------------------------------------------------------------
+
+global proc float vctrDot(
+  vector $a,
+  vector $b
+)
+{
+  float $dot = $a.x * $b.x + $a.y * $b.y + $a.z * $b.z;
+  return $dot;
+}
+// -----------------------------------------------------------------
+
+// MANHATTEN DISTANCE
+global proc float vctrLength(
+  vector $a
+)
+{
+  float $mag = $a.x * $a.x + $a.y * $a.y + $a.z * $a.z;
+  return $mag;
+}
+
+// -----------------------------------------------------------------
+
+// MAGNITUDE (ABSOLUTE VALUED) LENGTH OF A VECTOR
+global proc float vctrMag(
+  vector $a
+)
+{
+  float $length = vctrLength($a);
+  float $mag = sqrt($length);
+  return $mag;
+}
+
+// -----------------------------------------------------------------
+
+// RETURNS A UNIT LENGTHED VECTOR IN THE DIRECTION OF THE INPUT VECTOR
+global proc vector vctrNorm(
+  vector $a
+)
+{
+  float $mag = vctrMag($a);
+  vector $b;
+  if ($mag > 0.0) {
+    $b = << $a.x / $mag, $a.y / $mag, $a.z / $mag >>;
+  } else {
+    $b = << 1.0, 0.0, 0.0 >>;
+  }
+  return $b;
+}
+
+// -----------------------------------------------------------------
+
+// RETURNS THE RIGHT HANDED CROSS PRODUCT OF TWO VECTORS
+global proc vector vctrCross(
+  vector $a,
+  vector $b
+)
+{
+  float $x, $y, $z;
+  $x = $a.y * $b.z - $a.z * $b.y;
+  $y = $a.z * $b.x - $a.x * $b.z;
+  $z = $a.x * $b.y - $a.y * $b.x;
+  return <<$x, $y, $z>>;
+}
+
+// RETURNS THE PORTION OF VECTOR v THAT IS PROJECTED ONTO u
+global proc vector vctrProj(
+  vector $v,
+  vector $u
+)
+{
+  float $uDotV = vctrDot($u, $v); 
+  float $uDotU = vctrDot($u, $u);
+  float $ratio = $uDotV / $uDotU;
+  vector $result = vctrScale($u, $ratio);
+  return $result;
+}
+
+//-----------------------------------------------------------------
+
+// LINEARLY INTERPOLATES TWO VECTORS
+global proc vector vctrInterp(
+  vector $a,
+  vector $b,
+  float $val)
+{
+  float $x, $y, $z;
+  $x = (1.0 - $val) * $a.x + $val * $b.x;
+  $y = (1.0 - $val) * $a.y + $val * $b.y;
+  $z = (1.0 - $val) * $a.z + $val * $b.z;
+  return <<$x, $y, $z>>;
+}
+
+//------------------------------------------------------------------
+
+// ADD TWO VECTORS
+global proc vector vctrAdd( vector $a, vector $b )
+{
+  float $x, $y, $z;
+  $x = $a.x + $b.x;
+  $y = $a.y + $b.y;
+  $z = $a.z + $b.z;
+  return <<$x, $y, $z>>;
+}
+
+//------------------------------------------------------------------
+
+// SUBTRACT TWO VECTORS
+global proc vector vctrSub(
+  vector $a,
+  vector $b
+)
+{
+  float $x, $y, $z;
+  $x = $a.x - $b.x;
+  $y = $a.y - $b.y;
+  $z = $a.z - $b.z;
+  return <<$x, $y, $z>>;
+}
+
+//------------------------------------------------------------------
+
+// SCALE THE COMPONENTS OF A VECTOR BY A SCALAR
+global proc vector vctrScale( vector $a, float $b )
+{
+    float $x, $y, $z;
+    $x = $a.x * $b;
+    $y = $a.y * $b;
+    $z = $a.z * $b;
+    return <<$x, $y, $z>>;
+}
+//------------------------------------------------------------------
+
+
+
+
+//------------------------------------------------------------------
+// FLOAT ARRAY VERSIONS OF THE VECTOR FUNCTIONS (fltArry)
+//------------------------------------------------------------------
+
+// PRINT A FORMATED VECTOR
+global proc fltArryPrint(
+  float $a[]
+)
+{
+  print($a[0]+" "+$a[1]+" "+$a[2]+"\n");
+}
+
+// -----------------------------------------------------------------
+
+global proc float fltArryDot(
+  float $a[],
+  float $b[]
+)
+{
+  float $dot = $a[0] * $b[0] + $a[1] * $b[1] + $a[2] * $b[2];
+  return $dot;
+}
+
+// -----------------------------------------------------------------
+
+// MANHATTEN DISTANCE
+global proc float fltArryLength(
+  float $a[]
+)
+{
+  float $mag = $a[0] * $a[0] + $a[1] * $a[1] + $a[2] * $a[2];
+  return $mag;
+}
+
+// -----------------------------------------------------------------
+
+// MAGNITUDE (ABSOLUTE VALUED) LENGTH OF A VECTOR
+global proc float fltArryMag(
+  float $a[]
+)
+{
+  float $length = fltArryLength($a);
+  float $mag = sqrt($length);
+  return $mag;
+}
+
+// -----------------------------------------------------------------
+
+// RETURNS A UNIT LENGTHED VECTOR IN THE DIRECTION OF THE INPUT VECTOR
+global proc float[] fltArryNorm(
+  float $a[]
+)
+{
+  float $mag = fltArryMag($a);
+  float $b[];
+  if ($mag > 0.0) {
+    $b[0] = $a[0] / $mag;
+    $b[1] = $a[1] / $mag;
+    $b[2] = $a[2] / $mag;
+  } else {
+    $b[0] = 1.0;
+    $b[1] = 0.0;
+    $b[2] = 0.0;
+  }
+  return $b;
+}
+
+// -----------------------------------------------------------------
+
+// RETURNS THE RIGHT HANDED CROSS PRODUCT OF TWO VECTORS
+global proc float[] fltArryCross(
+  float $a[],
+  float $b[]
+)
+{
+  float $ret[];
+  $ret[0] = $a[1] * $b[2] - $a[2] * $b[1];
+  $ret[1] = $a[2] * $b[0] - $a[0] * $b[2];
+  $ret[2] = $a[0] * $b[1] - $a[1] * $b[0];
+  return $ret;
+}
+
+//-----------------------------------------------------------------
+
+// LINEARLY INTERPOLATES TWO VECTORS
+global proc float[] fltArryInterp(
+  float $a[],
+  float $b[],
+  float $val
+)
+{
+  float $ret[];
+  $ret[0] = (1.0 - $val) * $a[0] + $val * $b[0];
+  $ret[1] = (1.0 - $val) * $a[1] + $val * $b[1];
+  $ret[2] = (1.0 - $val) * $a[2] + $val * $b[2];
+  return $ret;
+}
+
+//------------------------------------------------------------------
+
+// ADD TWO VECTORS
+global proc float[] fltArryAdd(
+  float $a[],
+  float $b[]
+)
+{
+  float $ret[];
+  $ret[0] = $a[0] + $b[0];
+  $ret[1] = $a[1] + $b[1];
+  $ret[2] = $a[2] + $b[2];
+  return $ret;
+}
+
+//------------------------------------------------------------------
+
+// SUBTRACT TWO VECTORS
+global proc float[] fltArrySub(
+  float $a[],
+  float $b[]
+)
+{
+  float $ret[];
+  $ret[0] = $a[0] - $b[0];
+  $ret[1] = $a[1] - $b[1];
+  $ret[2] = $a[2] - $b[2];
+  return $ret;
+}
+
+//------------------------------------------------------------------
+
+// SCALE THE COMPONENTS OF A VECTOR BY A SCALAR
+global proc float[] fltArryScale(
+  float $a[],
+  float $b
+)
+{
+  float $ret[];
+  $ret[0] = $a[0] * $b;
+  $ret[1] = $a[1] * $b;
+  $ret[2] = $a[2] * $b;
+  return $ret;
+}

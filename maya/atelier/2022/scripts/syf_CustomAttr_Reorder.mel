@@ -1,0 +1,179 @@
+//Created by sunyefei 20190507 wechat:Yefei_Tim
+global proc syf_modify_attribut_position()
+{
+if (`window -exists SYF_Attribut_Position`) deleteUI SYF_Attribut_Position;
+	if(`windowPref -exists SYF_Attribut_Position`==1)
+        windowPref -r SYF_Attribut_Position;
+window
+	-rtf 1
+	-s 1
+	-wh 400 100
+	-title "SYF Custom Attribute Reorder"
+SYF_Attribut_Position;
+
+
+columnLayout -adjustableColumn true	-columnAlign "center";	button -l "up" -h 60 -c "syf_modify_attribut_position_up()";
+	button -l "down" -h 60  -c "syf_modify_attribut_position_down()";
+	showWindow;
+}
+//
+
+global proc syf_modify_attribut_position_up()
+{
+    string $sel[]=`ls -sl`;//获得物体名字
+    int $cca = catchQuiet(`listAttr -ud -sa`);//
+    
+    string $sel_attr[]=`channelBox -q -selectedMainAttributes mainChannelBox`;//select attr name 
+    string $user_attribut[]=`listAttr -ud -sa`;//full list
+    int $found = stringArrayContains($sel_attr[0], $user_attribut);//
+    
+
+    
+    if( (`size $sel`>0)&& ($cca==0) && ($found==1)   )//
+    {
+        string $user_attribut[]=`listAttr -ud -sa`;//full list
+        //
+        int $allattr_size = `size $user_attribut`;//
+        int $allattr_i=0;
+        string $fixedList[]={};
+        for(;$allattr_i<$allattr_size;$allattr_i++)//
+        {
+            string $vector_parents[] = `attributeQuery -node $sel[0] -lp -attributeType $user_attribut[$allattr_i]`;//return attr's parent
+            if(`size $vector_parents`>0)$fixedList[$allattr_i] = $vector_parents[0];
+            else $fixedList[$allattr_i] = $user_attribut[$allattr_i];
+        }
+    //print $fixedList 
+    
+        $user_attribut = stringArrayRemoveDuplicates($fixedList);// print $user_attribut   
+           
+        int $list_attr_size=`size $user_attribut`;//full count
+        
+        
+        string $sel_attr[]=`channelBox -q -selectedMainAttributes mainChannelBox`;//select attr name 
+         string $selAttr_parents[] = `attributeQuery -node $sel[0] -lp -attributeType $sel_attr[0]`;//return attr's parent 
+        if(`size $selAttr_parents`>0)$sel_attr = $selAttr_parents;//
+        if(`size $sel_attr`>0)
+        {
+            int $attri_position=syf_modify_attr_position_array_indexx($user_attribut,$sel_attr[0]);//select attr index  
+            if($attri_position>0)
+            {
+                int $i=$attri_position-1;
+                string $delete_order[]={};
+                for(;$i<$list_attr_size;$i++)
+                {
+                    stringArrayInsertAtIndex(500000, $delete_order, $user_attribut[$i]);
+                
+                }
+                //
+                //if(`size $delete_order`>2)//   print $list_attr_size   print $attri_position
+                
+                string $temp = $delete_order[0];
+                $delete_order[0] = $delete_order[1];
+                $delete_order[1] = $temp;      
+                //
+                //print $delete_order;
+                string $del="";
+                for($del in $delete_order)
+                {
+                    string $vector_parents[] = `attributeQuery -node $sel[0] -lp -attributeType $del`;//return attr's parent
+                    if(`size $vector_parents`>0)deleteAttr -attribute $vector_parents[0] $sel[0];
+                    else deleteAttr -attribute $del $sel[0];
+                    //deleteAttr -attribute "vector2" a;
+                    undo;
+                    print " ";
+                }
+                //
+            }
+        }
+        
+        
+        
+    }
+    
+    
+    
+    
+}
+
+global proc syf_modify_attribut_position_down()
+{
+string $sel[]=`ls -sl`;//
+int $cca = catchQuiet(`listAttr -ud -sa`); //
+
+string $sel_attr[]=`channelBox -q -selectedMainAttributes mainChannelBox`;//select attr name 
+string $user_attribut[]=`listAttr -ud -sa`;//full list
+int $found = stringArrayContains($sel_attr[0], $user_attribut);//
+
+if( (`size $sel`>0)&& ($cca==0) && ($found==1)   ) //
+{   
+    string $user_attribut[]=`listAttr -ud -sa`;//full list 
+    //
+    int $allattr_size = `size $user_attribut`;//
+    int $allattr_i=0;
+    string $fixedList[]={};
+    for(;$allattr_i<$allattr_size;$allattr_i++)
+    {
+        string $vector_parents[] = `attributeQuery -node $sel[0] -lp -attributeType $user_attribut[$allattr_i]`;//return attr's parent
+        if(`size $vector_parents`>0)$fixedList[$allattr_i] = $vector_parents[0];
+        else $fixedList[$allattr_i] = $user_attribut[$allattr_i];
+    }//
+    //print $fixedList
+    $user_attribut = stringArrayRemoveDuplicates($fixedList);//
+    int $list_attr_size=`size $user_attribut`;//full count
+    string $sel[]=`ls -sl`;//obj name
+    string $sel_attr[]=`channelBox -q -selectedMainAttributes mainChannelBox`;//select attr 
+    string $selAttr_parents[] = `attributeQuery -node $sel[0] -lp -attributeType $sel_attr[0]`;//return attr's parent 
+    if(`size $selAttr_parents`>0)$sel_attr = $selAttr_parents;//
+    if(`size $sel_attr`>0)
+    {
+        int $attri_position=syf_modify_attr_position_array_indexx($user_attribut,$sel_attr[0]);//select attr index  print $user_attribut 
+        if(($attri_position+1)<$list_attr_size)
+        {
+            int $i=$attri_position;
+            string $delete_order[]={};
+            for(;$i<$list_attr_size;$i++)
+            {
+                stringArrayInsertAtIndex(500000, $delete_order, $user_attribut[$i]);
+            
+            }
+            //
+            //if(`size $delete_order`>2)//   print $list_attr_size   print $attri_position
+            {
+                string $temp = $delete_order[0];
+                $delete_order[0] = $delete_order[1];
+                $delete_order[1] = $temp;      
+            }//
+            print $delete_order;
+            string $del="";
+            for($del in $delete_order)
+            {
+                string $vector_parents[] = `attributeQuery -node $sel[0] -lp -attributeType $del`;//return attr's parent
+                if(`size $vector_parents`>0)deleteAttr -attribute $vector_parents[0] $sel[0];
+                else deleteAttr -attribute $del $sel[0];
+                undo;
+                print " ";
+            }//
+        }
+        
+    }
+}
+
+
+}
+global proc int syf_modify_attr_position_array_indexx(string $arrays[],string $str)//
+{
+	int $i=0;
+	int $j=0;
+	int $size=`size $arrays`;
+	if(  (`size $arrays`>0)&& (`size $str`>0)          )
+	for(;$i<$size;$i++)
+	{
+		if($arrays[$i]==$str)return $j;
+		$j++;
+	}
+};
+syf_modify_attribut_position();
+
+
+
+

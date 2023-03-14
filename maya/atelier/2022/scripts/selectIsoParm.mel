@@ -1,0 +1,41 @@
+global proc selectIsoParm(string $sel)
+{
+   select $sel;
+   pickWalk -d down;
+   string $cleanSel[1]=`ls -sl`;
+   
+   string $sele[]=`ls -fl ($cleanSel[0]+".u[*][*]")`;
+   
+   // Two tokenize command to get what we ned to get a loop for the selection
+   string $buffer[];
+   tokenize($sele[0],":",$buffer);
+   
+   string $buffer1[];
+   tokenize($buffer[1],"]",$buffer1);
+   
+   string $buffer2[];
+   tokenize($buffer[2],"]",$buffer2);
+
+   int $nurb1=$buffer1[0];
+   int $nurb2=$buffer2[0]+1;
+   
+   int $i;
+   int $nurbX;
+   string $dir;
+   select -cl;
+   
+   if($nurb1>$nurb2)
+   {
+      $nurbX=$nurb1;
+      $dir="u";
+   }else{
+      $nurbX=$nurb2;
+      $dir="v";
+   }
+   
+   // Loop trou all the isoparms and select them
+   for($i=0;$i<$nurbX;$i++)
+   {
+      select -add ($cleanSel[0]+"."+$dir+"["+$i+"]");
+   }
+}

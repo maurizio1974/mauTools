@@ -1,0 +1,45 @@
+// -------------------------------------------------------------------------
+// Mel script
+//
+// Author :
+//          Maurizio Giglioli
+//
+// Date :
+//          03/05/2010
+//
+// Notes :
+//          This script fixes local space values on selected transform node.s
+//
+// Usage :
+//          Just select the needed offecding trasnform and call the script.
+//
+//
+// --------------------------------------------------------------------------
+
+// MAIN PROCEDURE
+global proc fixLocSpace()
+{
+    string $sel[] =`ls -typ "transform" -sl`;
+
+    if( size($sel) != 0 ){
+        for($eS in $sel){
+            string $f[1] =`listRelatives -p $eS`;
+            if( size($f)!=0 ){
+                parent -w -a $eS;
+                makeIdentity -apply true -t 1 -r 0 -s 1 -n 0 $eS;}
+            makeIdentity -apply true -t 1 -r 0 -s 1 -n 0 $eS;
+            float $piv[] =`getAttr ($eS+".scalePivot")`;
+            setAttr ($eS+".t") (- $piv[0]) (- $piv[1]) (- $piv[2]);
+            select $eS;
+            makeIdentity -apply true -t 1 -r 0 -s 1 -n 0;
+            setAttr ($eS+".t") $piv[0] $piv[1] $piv[2];
+
+            if( size($f)!=0 ){
+                parent $eS $f[0];}
+            //setAttr ($eS+".r") 0 0 0;
+            print("Local space values firx for "+$eS+"\n");}
+    }else{
+          warning "Please select a trasnform to fix";}
+    headsUpMessage -time 5.0 "Local Space Values fixed.";
+}
+fixLocSpace();

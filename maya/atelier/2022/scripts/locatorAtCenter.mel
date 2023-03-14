@@ -1,0 +1,63 @@
+global proc locatorAtCenter(int $dir)
+{
+	string $seleziones[] = `ls -sl`;
+    string $pre[] = {"env","jnt","null","Handle","ctrl","joint","offSet","OffSet","offset","OffSet","FK","locator","CON","foll"};
+	string $clean, $suff, $loc[1];
+    
+    if( size( $seleziones ) == 0 )
+	{
+        $loc = `spaceLocator`;
+    }else{
+        for($each in $seleziones)
+        {
+            for($eP in $pre)
+            {
+                if( `gmatch $each ("*"+$eP)` )
+                    renameSuff $eP $each $dir;
+            }
+        }
+    }
+}
+
+// PROCEDURE TO CLEAN THE NAME FROM SUFFIXES
+global proc renameSuff ( string $suff , string $name , int $dir)
+{
+    string $clean = ` substitute $suff $name "" `;
+    makeLocatorAtCenter $clean $suff $name $dir;
+}
+
+// PROCEDURE TO MAKE THE ACTUAL LOCATOR
+global proc makeLocatorAtCenter ( string $clean , string $suff , string $locAt , int $dir)
+{
+    string $loc[1]=`spaceLocator -n ($clean+"offSet_null")`;
+
+    string $pConst[1]=`pointConstraint $locAt $loc[0]`;
+    string $oConst[1]=`orientConstraint $locAt $loc[0]`;
+    string $sConst[1]=`scaleConstraint $locAt $loc[0]`;
+    delete $pConst[0] $oConst[0] $sConst[0];
+
+    if( $dir == 1) // Point and Ori Constraint the selection to a locator 
+    {
+        pointConstraint $loc[0] $locAt;
+        orientConstraint $loc[0] $locAt;
+        scaleConstraint $loc[0] $locAt;
+    }
+    if( $dir == 2) // Point and Ori Constraint a locator to the selection
+    {
+        pointConstraint $locAt $loc[0];
+        orientConstraint $locAt $loc[0];
+        scaleConstraint $locAt $loc[0];
+    }
+    if( $dir == 3) // Point Constraint the selection to a locator
+        pointConstraint $loc[0] $locAt;
+    if( $dir == 4) // Point Constraint a locator to the selection
+        pointConstraint $locAt $loc[0];
+    if( $dir == 5) // Ori Constraint the selection to a locator
+        orientConstraint $loc[0] $locAt;
+    if( $dir == 6) // Ori Constraint a locator to the selection
+        orientConstraint $locAt $loc[0];
+    if( $dir == 7) // Scale Constraint the selection to a locator
+        pointConstraint $loc[0] $locAt;
+    if( $dir == 8) // Scale Constraint a locator to the selection
+        orientConstraint $locAt $loc[0];
+}

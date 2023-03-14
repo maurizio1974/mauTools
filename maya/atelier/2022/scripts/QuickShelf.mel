@@ -1,0 +1,252 @@
+///////////////////////////////////////////
+//                                      //
+//    Quick Shelf 2.0                  //
+//                                    //
+///////////////////////////////////////
+global int $quickShelfWidth = 720;
+
+global proc QuickShelf() {
+    global int $quickShelfWidth;
+    global string $quickShelfWindow;
+    global int $quickShelfHeight;
+    global string $gShelfTopLevel;
+    global string $currentShelves[];
+
+    //Set shelves on first run
+    if ($quickShelfWindow == "") {
+        string $filePath = `whatIs QuickShelf`;
+        $filePath = fromNativePath(`substitute "Mel procedure found in: " $filePath ""`) + "userData.txt";
+        if (`filetest -f $filePath`) {
+            int $fileID = `fopen $filePath "r"`;
+            $currentShelves = freadAllLines($filePath);
+            fclose $fileID;
+        }
+        QuickShelfSet($currentShelves);        
+    }
+    
+    if ($currentShelves[0]=="") {
+        string $curShelf = `shelfTabLayout -q -st $gShelfTopLevel`;
+        $currentShelves = {$curShelf};
+        QuickShelfSet($currentShelves); 
+    }
+
+    
+    //toggle window vis
+    if (`window -q -vis $quickShelfWindow`) {
+        $quickShelfWidth = `window -q -w $quickShelfWindow`;
+        $quickShelfHeight = `window -q -h $quickShelfWindow`;        
+        window -e -vis 0 $quickShelfWindow;
+        
+        }
+
+    else {
+        
+        int $cursorX = `python "from PySide2.QtGui import QCursor; QCursor.pos().x()"`;
+        int $cursorY = `python "QCursor.pos().y()"`;
+        int $ver = `about -version`;
+
+        if ($ver < 2023) {
+        	// This method of showing the window looks better where 'showWindow' sometimes causes the window to flicker before being moved.
+        	// Unfortunately this is broken in Maya 2023 so showWindow must be used.
+        	window -e -vis 1 $quickShelfWindow;
+        } else {
+    		showWindow($quickShelfWindow);
+    	}
+    	
+        window -e -widthHeight $quickShelfWidth $quickShelfHeight -tlc (($cursorY-($quickShelfHeight/2))-20) ($cursorX-($quickShelfWidth/2)) $quickShelfWindow;
+        }
+    
+}
+
+global proc QuickShelfSet(string $argShelves[]) {
+    
+    global string $gShelfTopLevel;
+    saveAllShelves $gShelfTopLevel;
+
+    //Collect variables
+    global string $currentShelves[];
+    global string $quickShelfWindow;
+    global int $quickShelfHeight;
+    
+    $currentShelves = $argShelves;
+    
+    //    How many rows to display for each shelf    //////////////////////////////////////////////
+    int $rowsPerShelf = 1;
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    
+    //Calculate window height
+    $quickShelfHeight = 54 * size($argShelves) * $rowsPerShelf; 
+    
+    //delete current window
+    if ($quickShelfWindow != "") {
+        deleteUI -window $quickShelfWindow;
+    }
+
+    //Create parent shelf window
+    $quickShelfWindow = `window -ret -tlc -500 0 -tlb 1 -title "Quick Shelf" "QuickShelfWindow"`;
+    paneLayout -configuration "horizontal4";
+    
+    int $shelfID = 0;
+    
+    for ($shelf in $currentShelves) {
+        
+        //Get shelf contents
+        string $shelfPath = getenv("MAYA_APP_DIR") + "/" + `about -v` + "/prefs/shelves/shelf_" + $shelf + ".mel";
+        string $shelfLines[] = freadAllLines($shelfPath);
+        string $shelfButtons = ("shelfButton -enableCommandRepeat 1 -flexibleWidthType 2 -flexibleWidthValue 9 -enable 1 -width 9 -height 32 -manage 1 -visible 1 -preventOverride 0 -enableBackground 0 -backgroundColor 0 0 0 -highlightColor 0.321569 0.521569 0.65098 -align \"center\" -useAlpha 1 -font \"plainLabelFont\" -overlayLabelColor 0.8 0.8 0.8 -overlayLabelBackColor 0 0 0 0.5 -image \"" + getenv("MAYA_APP_DIR") + "/2020/prefs/shelves/icons/quickShelf_refresh.png" + "\" -style \"iconOnly\" -marginWidth 1 -marginHeight 1 -command \"QuickShelfUpdate(\\\"replace\\\", "+$shelfID+");\" -sourceType \"mel\" -commandRepeatable 1 -flat 1 -doubleClickCommand \"QuickShelfUpdate(\\\"reload\\\",0)\" -mi \"+ Shelf\" ( \"QuickShelfUpdate(\\\"add\\\", 0)\" ) -mi \"- Shelf\" ( \"QuickShelfUpdate(\\\"remove\\\", "+$shelfID+")\" );\n");
+                
+        for ($i=6; $i<(size($shelfLines)-2); $i++) {
+            
+            $shelfButtons = $shelfButtons + $shelfLines[$i] + "\n";
+            
+        }
+
+        //Add shelf
+        string $shelf = `shelfLayout`;
+        eval ($shelfButtons);
+        setParent ..;
+        $shelfID++;
+            
+    }
+    
+    //Save current shelves
+    
+    string $filePath = `whatIs QuickShelf`;
+    $filePath = fromNativePath(`substitute "Mel procedure found in: " $filePath ""`) + "userData.txt";
+    int $fileID = `fopen $filePath "w"`;
+    
+    for ($shelf in $currentShelves) {
+        fprint $fileID ($shelf + "\n");
+    }
+    
+    fclose $fileID;
+    
+}
+
+global proc QuickShelfUpdate(string $mode, int $shelfID) {
+    
+    global string $gShelfTopLevel;
+    global string $currentShelves[];
+    QuickShelf();
+    
+    string $activeShelf = `tabLayout -q -selectTab $gShelfTopLevel`;
+    
+    if ($mode == "replace") {
+        
+        $currentShelves[$shelfID] = $activeShelf;
+        
+    }
+    
+    if ($mode == "remove") {
+        
+        stringArrayRemoveAtIndex($shelfID, $currentShelves);
+        
+    }
+    if ($mode == "add") {
+        
+        $numShelves = size($currentShelves);
+        
+        if ($numShelves<4) {
+            $currentShelves[$numShelves] = $activeShelf;
+        }
+        
+    }
+    
+    if ($mode == "reload") {
+        
+    }
+    
+    evalDeferred "QuickShelfSet($currentShelves)";
+    evalDeferred "QuickShelf()";
+    
+}
+
+
+//    Maya native procedure overrides    ///////////////////////////////////////////////////////////////////////////////////
+
+global proc shelfButtonPMO (string $popupMenu,
+							int $wantPython,
+							string $shelfButton,
+							string $shelfMagicString)
+{
+	// Check if the button is on UV Editor shelf
+	if(`shelfLayout -ex textureCustomShelf`)
+	{
+		$uvShelf = `shelfLayout -q -fpn textureCustomShelf`;
+		if(`shelfButton -q -p $shelfButton` == $uvShelf)
+		{
+		    textureWindowShelfButtonPMO($popupMenu, $shelfButton, $shelfMagicString);
+	        return;
+		}
+	}
+	setParent -m $popupMenu;
+
+	// Default menu items: labels, commands, and annotation strings
+	//
+	
+	global string $quickShelfWindow;	
+	string $defaultItemLabels[];
+	
+	if (`window -q -vis $quickShelfWindow`!=1) {
+	    
+	    $defaultItemLabels = {
+		  (uiRes("m_shelfButtonPMO.kOpenMenuItem"))
+		, (uiRes("m_shelfButtonPMO.kEditMenuItem"))
+		, (uiRes("m_shelfButtonPMO.kEditPopupMenuItem"))
+		, (uiRes("m_shelfButtonPMO.kDeleteMenuItem"))
+		};
+		
+	}
+	
+	string $defaultItemCommands[] = {
+		 $shelfMagicString +
+		"python(\"import maya.app.general.shelfEditorWindow as myTempSEW\\nmyTempSEW.doIt(selectedShelfButton='" +
+		$shelfButton + "',selectedTabIndex=1)\\ndel myTempSEW\")"
+		, $shelfMagicString +
+		"python(\"import maya.app.general.shelfEditorWindow as myTempSEW\\nmyTempSEW.doIt(selectedShelfButton='"
+		+ $shelfButton + "')\\ndel myTempSEW\")"
+		, $shelfMagicString +
+		"python(\"import maya.app.general.shelfEditorWindow as myTempSEW\\nmyTempSEW.doIt(selectedShelfButton='" +
+		$shelfButton + "',selectedTabIndex=4)\\ndel myTempSEW\")"
+		, $shelfMagicString + "evalDeferred( \"deleteUI -control "
+		+ $shelfButton + ";shelfTabRefresh\")"
+	};
+
+	string $defaultItemAnnots[] = {
+		(uiRes("m_shelfButtonPMO.kOpenMenuItemAnnot"))
+		, (uiRes("m_shelfButtonPMO.kEditMenuItemAnnot"))
+		, (uiRes("m_shelfButtonPMO.kEditPopupMenuItemAnnot"))
+		, (uiRes("m_shelfButtonPMO.kDeleteMenuItemAnnot"))
+		};
+
+	// Skip Open and Edit, and Edit Popup if we don't have Python, that is,
+    // start at the last item
+	//
+	int $numDefaultItems = size($defaultItemLabels);
+	int $firstItem = $wantPython?0:$numDefaultItems;
+
+	if( `popupMenu -q -ni $popupMenu` > 0 ){
+		// Need to insert the default items ahead of the existing ones
+		//
+		menuItem -divider true -ia "";
+		int $i = $numDefaultItems;
+		while( $i > $firstItem ){
+			$i--;
+			// Add a default item
+			//
+			menuItem -l $defaultItemLabels[$i] -c $defaultItemCommands[$i]
+					-ann $defaultItemAnnots[$i] -ia "";
+		}
+	} else {
+		// These are the only items
+		//
+		int $i = $firstItem;
+		while( $i < $numDefaultItems ){
+			// Add a default item
+			//
+			menuItem -l $defaultItemLabels[$i] -c $defaultItemCommands[$i]
+					-ann $defaultItemAnnots[$i];
+			$i++;
+		}
+	}
+}

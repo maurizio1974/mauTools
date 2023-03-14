@@ -1,0 +1,233 @@
+//--------------------------------------------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------------------------------------//
+//	SCRIPT:	readWriteVtxData.mel
+//	VERSION: 0.1
+//	AUTHOR:	Maurizio Giglioli
+//		    maurizio1974@gmail.com
+//	DATE:         09 18 2010
+//  Last Updated: 10 9 2012
+//
+//
+//	DESCRIPTION:	Save vertex data of ncloth nodes
+//
+//
+//	INSTRUCTIONS:	source the script
+//                  select a nCloth node and run writeVtxData() to save the informations on disc
+//			         select a nCloth node and run readVtxData() to load the saved informations on the selected node
+//
+//  UPDATE:         REMOVED COMPATIBILITY WITH dNeg NODES
+//
+//  LIMITATIONS:    not all the node working with it yet
+//
+//--------------------------------------------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------------------------------------//
+
+
+// PROC TO SAVE THE VERTEX DATA OF AN NCLOTH NODE OR DNEG NODE
+global proc writeVtxData( string $node, string $path)
+{
+    string $sel[1] =`ls -sl`, $mm[], $nn[], $ss[], $CND, $attrs[], $sh[1], $CMD;
+    float $hi[];
+
+    if(size($node) == 0 )
+        $node = $sel[0];
+
+    if( size($node) > 0 )
+    {
+        if(size($path) == 0)
+            $exampleFileName = ( `internalVar -userTmpDir` + "vtxNodeData.tmp" ) ;
+        else
+            $exampleFileName = ( $path + $node + ".vdt" ) ;
+
+	    $fileId=`fopen $exampleFileName "w"`;
+
+        $sh =`listRelatives -s $sel[0]`;
+        if(size($sh) == 1)
+            $attrs = nodeVtxType($sh[0]);
+        else
+            $attrs = nodeVtxType($node);
+        for($each in $attrs)
+        {
+            $hi = `getAttr ($node+"."+$each)` ;
+            $CMD = ($each +" "+ size($hi)) ;
+            for ($aVal in $hi)
+                $CMD+= (" " + $aVal);
+            fprint $fileId ($CMD+"\n");
+        }
+        fclose $fileId;
+        print("Vertex Data of "+$node+" written on disc in \""+$exampleFileName+"\".\n");
+    }else{
+        warning "Please select one node only and of this kind (\'Cluster\",\'ncloth\").\n";
+    }
+}
+
+// PROC TO READ THE VERTEX DATA OF AN NCLOTH NODE OR DEFORMER NODE SAVED ON DISC
+global proc readVtxData( string $node, string $path)
+{
+    string $sel[1] =`ls -sl`, $s, $sh[], $clean[], $values[],$fileName, $buf[];
+    int $val_int, $i = 0, $x = 0;
+
+    if(size($node) == 0 )
+        warning "please select a deformer node or a nCloth one \n";
+
+
+    if(size($node) > 0)
+    {
+        if (size($path) == 0 )
+            $fileName = ( `internalVar -userTmpDir` + "vtxNodeData.tmp" );
+        else{
+            $fileName = ($path + $node + ".vdt");
+            /*
+            tokenize($path,"/",$buf);
+            for($x=0;$x<size($buf);$x++)
+                if ($x < size($buf)-1)
+                    $fileName += ($buf[$x]+"\\"+"\\");
+                else
+                    $fileName = $fileName + $buf[$x];
+            */
+        }
+        $fileId = `fopen $fileName "r"`;
+
+        $s =`system("vim "+$fileName)`;
+
+        tokenize($s,"\n",$clean);
+        tokenize($s," ",$values);
+
+        $sh =`listRelatives -s $node`;
+
+        if(size($sh) == 0)
+        {
+            if(size($clean) == 1)
+            {
+                if( `nodeType $node` == "cluster" )
+                {
+                    $val_int = $values[1];
+                    for($i=0;$i<$val_int;$i++)
+                    {
+                        eval ("setAttr "+$node+"."+$values[0]+"["+$i+"] "+$values[2+$i]);
+                        print ("setAttr "+$node+"."+$values[0]+"["+$i+"] "+$values[2+$i]);
+                    }
+                }else{
+                    warning "Please make sure to select a deformer node !\n";
+                }
+            }else{
+                warning " The data saved on the disc is for nCloth Nodes !\n";
+            }
+        }
+        if(size($sh) == 1)
+        {
+            if(size($clean) > 1)
+            {
+                if(`nodeType $sh[0] ` == "nCloth")
+                {
+                    for($eC in $clean){
+                        print "FFFFFFFFFFFFF\n";
+                        // print ($eC + "\n");
+                        // eval ("setAttr -type doubleArray "+$sh[0]+"."+$eC+"\n");
+                        print ("setAttr -type doubleArray " + $sh[0] + "." + $eC + "\n");
+                    }
+                }else{
+                    warning "Please make sure to select a nCloth Node !\n";
+                }
+            }else{
+                warning "The data saved on the disc is for Deformers !\n";
+            }
+        }
+        fclose $fileId;
+    }else{
+        warning "Please select one node only and of this kind (\'ncloth\",\"cluster\").\n";
+    }
+}
+
+// PROCEDURE TO GET THE RIGHT ATTRIBUTE TO SAVE DEPENDING ON THE NODE SELECTION
+global proc string[] nodeVtxType(string $node)
+{
+    string $attrs[];
+    if(`nodeType $node` == "nCloth")
+        $attrs = {"thicknessPerVertex","bouncePerVertex","frictionPerVertex","dampPerVertex","stickinessPerVertex",
+                  "massPerVertex","fieldMagnitudePerVertex","stretchPerVertex","bendPerVertex","rigidityPerVertex",
+                  "deformPerVertex","inputAttractPerVertex","wrinklePerVertex"};
+
+    if( `nodeType $node` == "cluster" )
+        $attrs = {"weightList[0].weights"};
+
+    return $attrs;
+}
+
+
+// MIRROR VERTEX DATA OF A MESH
+// NEEDS THE NODE TO MIRROR DATA FROM , THE DESTINATION NODE, THE VERTEX EITHER SELECTED OR PASSED IN ARRAY AND THE DIRECTION
+global proc mirrorVtxData(string $node, string $nodeM, int $axis)
+{
+    global string $gMainProgressBar;
+    string $cpm, $cpm1, $buf[], $sh[1], $vtx[], $reverse, $mesh[], $vertex[];
+    float $value, $pos[3];
+    int $vtx1;
+
+
+    if(size($vertex) == 0)
+        $mesh = `ls -fl -sl`;
+	else
+	    $mesh = $vertex;
+
+	if( size($mesh) != 0 )
+	{
+	    if(size($nodeM) == 0)
+	        $nodeM = $node;
+
+	    //progressBar -e -bp -ii true -st ("Mirroring \""+$node+"\" on the \""+$axis+"\" axis ...") -max (size($mesh)) $gMainProgressBar;
+	    tokenize($mesh[0],".",$buf);
+
+        $sh = `listRelatives -s $buf[0]`;
+	    $cpm = ` createNode closestPointOnMesh -n "tempCPM" `;
+        connectAttr ($sh[0]+".outMesh") ($cpm+".inMesh") ;
+
+	    for($e in $mesh)
+	    {
+	        if(`gmatch $e "*.vtx*" `)
+	        {
+	            //Example:
+	            //$value = `closestPointOnMesh -ip $pos[0] $pos[1] $pos[2] -q -u -v -f $sh[0] `;
+
+                tokenize($e,"[*]",$vtx);
+                $pos = `pointPosition $e`;
+                $value = `getAttr ($node+".weightList[0].weights["+$vtx[1]+"]")`;
+
+                if ($axis == 3)
+                    setAttr ($cpm+".inPosition") ( -1 * $pos[0] ) $pos[1] $pos[2] ;
+                else if ($axis == 2)
+                    setAttr ($cpm+".inPosition") $pos[0] ( -1 * $pos[1] ) $pos[2] ;
+                else if ($axis == 1)
+                    setAttr ($cpm+".inPosition") $pos[0] $pos[1] ( -1 * $pos[2] );
+
+                $vtx1 = `getAttr ($cpm+".closestVertexIndex")`;
+                if((`getAttr ($cpm+".inPositionX")`)>0)
+                    print ((`getAttr ($cpm+".inPositionX")`)+"\n");
+
+                setAttr ($nodeM+".weightList[0].weights["+$vtx1+"]") $value ;
+
+                //progressBar -e -s 1 $gMainProgressBar;
+
+                //print ("Mirrored weight of "+$node+" from "+$vtx[1]+" of "+$value+" to "+$nodeM+" ofmesh "+$mesh[0]+" vertex "+$vtx1+"\n");
+            }else{
+                print "Make sure to select only vertex of a mesh object\n";
+            }
+        }
+        delete $cpm ;
+        //progressBar -e -ep $gMainProgressBar;
+    }else{
+        print "please select one or more vertex of a mesh to mirror.\n";
+    }
+}
+
+
+
+// COPY PASTE VERTEX DATA
+global proc copyPasteVtxData(string $nodeS, string $nodeD)
+{
+    float $values[] = `getAttr ($nodeS+".weightList[0].weights")`;
+    for($i=0;$i<size($values);$i++)
+        eval ("setAttr "+$nodeD+".weightList[0].weights["+$i+"] "+$values[$i]);
+
+    print ($nodeS+" has been copied to "+$nodeD+"\n");
+}

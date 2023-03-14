@@ -1,0 +1,335 @@
+
+// THE VISIBILITY TAB 
+
+global proc string flipperDisplayTabUI(int $lato, string $win, string $presets[], string $currentPanel, string $panelType)
+{
+    
+    string $mauUtyFLvis     =    `formLayout -p $win`;
+    // COMMON BUTTON
+    string $aniMSetBttn     =       `button` ;
+    string $polyMSetBttn    =       `button` ;
+    string $surfMSetBttn    =       `button` ;
+    string $dynMSetBttn     =       `button` ;
+    string $renMSetBttn     =       `button` ;
+    string $nCMSetBttn      =       `button` ;
+    string $glFR            =       `frameLayout`;
+    string $glFL            =           `formLayout`;
+    string $templeButt      =               `button`;
+    string $showOnBtt       =               `button`;
+    string $xRayButt        =               `button`;
+    string $xRayResButt     =               `button`;
+    string $isolateButt     =               `button`;
+    string $addIsolateButt  =               `button`;
+    string $remIsolateButt  =               `button`;
+                                            setParent..;
+                                        setParent..;
+    string $sepaJNT         =       `separator`;
+    string $showFL          =       `frameLayout`;
+    string $showFR          =           `formLayout`;
+    string $radioAll        =               `checkBox`;
+    string $radioNone       =               `checkBox`;
+    string $sepaSH01        =               `separator`;
+    string $radioNurbs      =               `checkBox`;
+    string $radioSurfaces   =               `checkBox`;
+    string $radiosubD       =               `checkBox`;
+    string $radioPolygons   =               `checkBox`;
+    string $radioPlanes     =               `checkBox`;
+    string $radioLights     =               `checkBox`;
+    string $radioJoints     =               `checkBox`;
+    string $radioikHandles  =               `checkBox`;
+    string $radioDynamics   =               `checkBox`;
+    string $radioDynConstr  =               `checkBox`;
+    string $radioFluids     =               `checkBox`;
+    string $radioHair       =               `checkBox`;
+    string $radioFollicle   =               `checkBox`;
+    string $radionCloths    =               `checkBox`;
+    string $radionRigids    =               `checkBox`;
+    string $radioDeformers  =               `checkBox`;
+    string $radioLocators   =               `checkBox`;
+    string $radioDistance   =               `checkBox`;
+    string $radioPivots     =               `checkBox`;
+    string $radioHandles    =               `checkBox`;
+    string $radioTextures   =               `checkBox`;
+    string $radioStrokes    =               `checkBox`;
+    string $radioManips     =               `checkBox`;
+    string $radioCameras    =               `checkBox`;
+    string $radioNurbsCV    =               `checkBox`;
+    string $radioNurbsHulls =               `checkBox`;
+    string $radioGrid       =               `checkBox`;
+    string $radioHUD        =               `checkBox`;
+    string $radioSelection  =               `checkBox`;
+                                             setParent..;
+                                         setParent..; 
+                                     setParent..;
+                                 setParent..;
+                                 
+    //----------------------------------------------------------------------------------------------------------------------------
+    // THIS WE START THE SHOW TAB
+    //----------------------------------------------------------------------------------------------------------------------------
+
+    frameLayout -e -w $lato -cll true -cl 1 -l "openGL" $glFR;
+        formLayout -e $glFL;
+            button -e -l "anim"       -c ( "workingMode animationMenuSet") $aniMSetBttn;
+            button -e -l "poly"       -c ( "workingMode polygonsMenuSet") $polyMSetBttn;
+            button -e -l "surf"       -c ( "workingMode surfacesMenuSet") $surfMSetBttn;
+            button -e -l "dyn"        -c ( "workingMode dynamicsMenuSet") $dynMSetBttn;
+            button -e -l "render"     -c ( "workingMode renderingMenuSet") $renMSetBttn;
+            button -e -l "nDyn"     -c ( "workingMode nDynamicsMenuSet") $nCMSetBttn;
+            
+            button -e -l "Template it" -c templetaizer $templeButt;
+            button -e -l "Toggle Shape"  -c ("python(\"shapeVis.shapeVis()\")") $showOnBtt;
+            button -e -l "Tg xRay it" -c ("python(\"xrayer.xrayer(1)\")") $xRayButt;
+            button -e -l "Reset xRay" -c ("python(\"xrayer.xrayer(2)\")") $xRayResButt;
+            button -e -l "Toggle Isolate" -c ("python(\"isolateMG.isolateMG(0)\")") $isolateButt;
+            button -e -l "Add Isolate" -c ("python(\"isolateMG.isolateMG(1)\")") $addIsolateButt;
+            button -e -l "Rem Isolate" -c ("python(\"isolateMG.isolateMG(2)\")") $remIsolateButt;
+            formLayout -e
+
+                -af $templeButt "left" 0
+                -af $templeButt "top" 0
+                -ap $templeButt "right" 0 50
+    
+                -ac $showOnBtt "left" 0 $templeButt
+                -af $showOnBtt "top" 0
+                -af $showOnBtt "right" 0
+    
+                -af $xRayButt "left" 0
+                -ac $xRayButt "top" 0 $showOnBtt
+                -ap $xRayButt "right" 0 50
+    
+                -ac $xRayResButt "left" 0 $xRayButt
+                -ac $xRayResButt "top" 0 $showOnBtt
+                -af $xRayResButt "right" 0
+    
+                -af $isolateButt "left" 0
+                -ac $isolateButt "top" 0 $xRayButt
+                -af $isolateButt "right" 0
+    
+                -af $addIsolateButt "left" 0
+                -ac $addIsolateButt "top" 0 $isolateButt
+                -ap $addIsolateButt "right" 0 50
+                
+                -ac $remIsolateButt "left" 0 $addIsolateButt
+                -ac $remIsolateButt "top" 0 $isolateButt
+                -af $remIsolateButt "right" 0
+
+            $glFL;
+
+    int $viewValue;
+    string $uiComponent[] = { ($radioNurbs+"\","), ("\""+$radioSurfaces+"\","), ("\""+$radiosubD+"\","), ("\""+$radioPolygons+"\","), ("\""+$radioPlanes+"\","), ("\""+$radioLights+"\","), ("\""+$radioJoints+"\","), ("\""+$radioikHandles+"\","),
+                            ("\""+$radioDynamics+"\","), ("\""+$radioDynConstr+"\","), ("\""+$radioFluids+"\","), ("\""+$radioHair+"\","), ("\""+$radioFollicle+"\","), ("\""+$radionCloths+"\","), ("\""+$radionRigids+"\","), ("\""+$radioDeformers+"\","),
+                            ("\""+$radioLocators+"\","), ("\""+$radioDistance+"\","), ("\""+$radioPivots+"\","), ("\""+$radioHandles+"\","), ("\""+$radioTextures+"\","), ("\""+$radioStrokes+"\","), ("\""+$radioManips+"\","), ("\""+$radioCameras+"\","),
+                            ("\""+$radioNurbsCV+"\","), ("\""+$radioNurbsHulls+"\","), ("\""+$radioGrid+"\","), ("\""+$radioHUD+"\","), ("\""+$radioSelection) };
+    string $components = stringArrayToString($uiComponent, " ");
+    frameLayout -e -w $lato -cll true -cl 1 -l "Show" 
+                /*-cc ("showMode (\"check\",0, \""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" });window -e -w "+$lato+" \""+$win+"\"")  
+                -ec ("showMode (\"check\",0, \""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" });window -e -w "+$lato+" \""+$win+"\"")*/ 
+                $showFL;
+        formLayout -e $showFR;
+        checkBox -e -al "left" -l "All" -v 0 -onc ("showMode (\"-allObjects\",1, \""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-allObjects\",0, \""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioAll;
+        checkBox -e -al "left" -l "None" -v 0 -onc ("showMode (\"-allObjects\",0, \""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-allObjects\",1, \""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioNone;
+        separator -e -w 80 -h 5 -st "in" $sepaSH01;
+        
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-nurbsCurves" $currentPanel`;
+    checkBox -e -al "left" -l "Nurbs" -v $viewValue -onc ("showMode (\"-nurbsCurves\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-nurbsCurves\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioNurbs ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-nurbsSurfaces" $currentPanel`;
+    checkBox -e -al "left" -l "Surfaces" -v $viewValue -onc ("showMode (\"-nurbsSurfaces\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-nurbsSurfaces\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioSurfaces ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-subdivSurfaces" $currentPanel`;
+    checkBox -e -al "left" -l "subD" -v $viewValue -onc ("showMode (\"-subdivSurfaces\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-subdivSurfaces\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radiosubD ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-polymeshes" $currentPanel`;
+    checkBox -e -al "left" -l "Polygons" -v $viewValue -onc ("showMode (\"-polymeshes\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-polymeshes\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioPolygons ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-planes" $currentPanel`;
+    checkBox -e -al "left" -l "Planes" -v $viewValue -onc ("showMode (\"-planes\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-planes\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioPlanes ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-lights" $currentPanel`;
+    checkBox -e -al "left" -l "Lights" -v $viewValue -onc ("showMode (\"-lights\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-lights\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioLights ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-joints" $currentPanel`;
+    checkBox -e -al "left" -l "Joints" -v $viewValue -onc ("showMode (\"-joints\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-joints\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioJoints ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-ikHandles" $currentPanel`;
+    checkBox -e -al "left" -l "ikHandles" -v $viewValue -onc ("showMode (\"-ikHandles\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-ikHandles\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioikHandles ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-deformers" $currentPanel`;
+    checkBox -e -al "left" -l "Deformers" -v $viewValue -onc ("showMode (\"-deformers\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-deformers\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioDynamics ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-dynamics" $currentPanel`;
+    checkBox -e -al "left" -l "Dynamics" -v $viewValue -onc ("showMode (\"-dynamics\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-dynamics\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioDynConstr ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-fluids" $currentPanel`;
+    checkBox -e -al "left" -l "Fluids" -v $viewValue -onc ("showMode (\"-fluids\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-fluids\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioFluids ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-hairSystems" $currentPanel`;
+    checkBox -e -al "left" -l "Hair" -v $viewValue -onc ("showMode (\"-hairSystems\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-hairSystems\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioHair ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-follicles" $currentPanel`;
+    checkBox -e -al "left" -l "Follicles" -v $viewValue -onc ("showMode (\"-follicles\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-follicles\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioFollicle ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-nCloths" $currentPanel`;
+    checkBox -e -al "left" -l "nCloths" -v $viewValue -onc ("showMode (\"-nCloths\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-nCloths\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radionCloths ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-nRigids" $currentPanel`;
+    checkBox -e -al "left" -l "nRigids" -v $viewValue -onc ("showMode (\"-nRigids\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-nRigids\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radionRigids ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-dynamicConstraints" $currentPanel`;
+    checkBox -e -al "left" -l "DynConstr" -v $viewValue -onc ("showMode (\"-dynamicConstraints\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-dynamicConstraints\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioDeformers ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-locators" $currentPanel`;
+    checkBox -e -al "left" -l "Locators" -v $viewValue -onc ("showMode (\"-locators\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-locators\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioLocators ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-dimensions" $currentPanel`;
+    checkBox -e -al "left" -l "Distance" -v $viewValue -onc ("showMode (\"-dimensions\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-dimensions\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioDistance ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-pivots" $currentPanel`;
+    checkBox -e -al "left" -l "Pivots" -v $viewValue -onc ("showMode (\"-pivots\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-pivots\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioPivots ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-handles" $currentPanel`;
+    checkBox -e -al "left" -l "Handles" -v $viewValue -onc ("showMode (\"-handles\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-handles\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioHandles ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-textures" $currentPanel`;
+    checkBox -e -al "left" -l "Textures" -v $viewValue -onc ("showMode (\"-textures\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-textures\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioTextures ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-strokes" $currentPanel`;
+    checkBox -e -al "left" -l "Strokes" -v $viewValue -onc ("showMode (\"-strokes\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-strokes\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioStrokes ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-manipulators" $currentPanel`;
+    checkBox -e -al "left" -l "Manipulators" -v $viewValue -onc ("showMode (\"-manipulators\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-manipulators\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioManips ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-cameras" $currentPanel`;
+    checkBox -e -al "left" -l "Cameras" -v $viewValue -onc ("showMode (\"-cameras\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-cameras\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioCameras ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-cv" $currentPanel`;
+    checkBox -e -al "left" -l "NurbsCV" -v $viewValue -onc ("showMode (\"-cv\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-cv\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioNurbsCV ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-hulls" $currentPanel`;
+    checkBox -e -al "left" -l "NurbsHulls" -v $viewValue -onc ("showMode (\"-hulls\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-hulls\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioNurbsHulls ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-grid" $currentPanel`;
+    checkBox -e -al "left" -l "Grid" -v $viewValue -onc ("showMode (\"-grid\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-grid\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioGrid ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-hud" $currentPanel`;
+    checkBox -e -al "left" -l "HUD" -v $viewValue -onc ("showMode (\"-hud\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-hud\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioHUD ;
+    if ( $panelType == "modelPanel" )$viewValue = `modelEditor -q "-sel" $currentPanel`;
+    checkBox -e -al "left" -l "Selection" -v $viewValue -onc ("showMode (\"-sel\",1,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") -ofc ("showMode (\"-sel\",0,\""+$showFR+"\", \""+$radioAll+"\", \""+$radioNone+"\", {\""+$components+"\" })") $radioSelection ;
+
+    formLayout -e
+
+        -af $radioAll "top" 0
+        -af $radioAll "left" 5
+
+        -af $radioNone "top" 0
+        -ap $radioNone "left" 5 50
+
+        -ac $sepaSH01 "top" 5 $radioAll
+        -af $sepaSH01 "left" 5
+        -af $sepaSH01 "right" 5
+
+        -ac $radioNurbs "top" 5 $sepaSH01
+        -af $radioNurbs "left" 5
+
+        -ac $radioSurfaces "top" 5 $sepaSH01
+        -ap $radioSurfaces "left" 5 50
+
+        -ac $radiosubD "top" 0 $radioNurbs
+        -af $radiosubD "left" 5
+
+        -ac $radioPolygons "top" 0 $radioSurfaces
+        -ap $radioPolygons "left" 5 50
+
+        -ac $radioPlanes "top" 0 $radiosubD
+        -af $radioPlanes "left" 5
+
+        -ac $radioLights "top" 0 $radioPolygons
+        -ap $radioLights "left" 5 50
+
+        -ac $radioJoints "top" 0 $radioPlanes
+        -af $radioJoints "left" 5
+
+        -ac $radioikHandles "top" 0 $radioPlanes
+        -ap $radioikHandles "left" 5 50
+
+        -ac $radioDynamics "top" 0 $radioJoints
+        -af $radioDynamics "left" 5
+
+        -ac $radioDynConstr "top" 0 $radioikHandles
+        -ap $radioDynConstr "left" 5 50
+
+        -ac $radioFluids "top" 0 $radioDynamics
+        -af $radioFluids "left" 5
+
+        -ac $radioHair "top" 0 $radioDynConstr
+        -ap $radioHair "left" 5 50
+
+        -ac $radioFollicle "top" 0 $radioFluids
+        -af $radioFollicle "left" 5
+
+        -ac $radionCloths "top" 0 $radioHair
+        -ap $radionCloths "left" 5 50
+
+        -ac $radionRigids "top" 0 $radioFollicle
+        -af $radionRigids "left" 5
+
+        -ac $radioDeformers "top" 0 $radionCloths
+        -ap $radioDeformers "left" 5 50
+
+        -ac $radioLocators  "top" 0 $radionRigids
+        -af $radioLocators  "left" 5
+
+        -ac $radioPivots "top" 0 $radioDeformers
+        -ap $radioPivots "left" 5 50
+
+        -ac $radioHandles  "top" 0 $radioLocators
+        -af $radioHandles  "left" 5
+
+        -ac $radioDistance "top" 0 $radioPivots
+        -ap $radioDistance "left" 5 50
+
+        -ac $radioCameras "top" 0 $radioHandles
+        -af $radioCameras "left" 5
+
+        -ac $radioTextures "top" 0 $radioDistance
+        -ap $radioTextures "left" 5 50
+
+        -ac $radioStrokes "top" 0 $radioCameras
+        -af $radioStrokes "left" 5
+
+        -ac $radioManips "top" 0 $radioTextures
+        -ap $radioManips "left" 5 50
+
+        -ac $radioNurbsCV "top" 0 $radioStrokes
+        -af $radioNurbsCV "left" 5
+
+        -ac $radioNurbsHulls "top" 0 $radioManips
+        -ap $radioNurbsHulls "left" 5 50
+
+        -ac $radioHUD "top" 0 $radioNurbsCV
+        -af $radioHUD "left" 5
+
+        -ac $radioGrid "top" 0 $radioNurbsHulls
+        -ap $radioGrid "left" 5 50
+
+        -ac $radioSelection "top" 0 $radioHUD
+        -af $radioSelection "left" 5
+
+    $showFR;
+
+    // ARRANGEMENT FOR THE SHOW TAB
+    formLayout -e
+
+        -af $aniMSetBttn "top" 5
+        -af $aniMSetBttn "left" 5
+        -ap $aniMSetBttn "right" 0 15
+        
+        -ac $polyMSetBttn "left" 0 $aniMSetBttn
+        -af $polyMSetBttn "top" 5
+        -ap $polyMSetBttn "right" 0 30
+        
+        -af $surfMSetBttn "top" 5
+        -ac $surfMSetBttn "left" 0 $polyMSetBttn
+        -ap $surfMSetBttn "right" 0 45
+        
+        -ac $dynMSetBttn "left" 0 $surfMSetBttn
+        -af $dynMSetBttn "top" 5
+        -ap $dynMSetBttn "right" 0 60
+        
+        -af $renMSetBttn "top" 5
+        -ac $renMSetBttn "left" 0 $dynMSetBttn
+        -ap $renMSetBttn "right" 0 80
+        
+        -af $nCMSetBttn "top" 5
+        -ac $nCMSetBttn "left" 0 $renMSetBttn
+        -af $nCMSetBttn "right" 5
+        
+        -af $glFR "left" 5
+        -af $glFR "right" 5
+        -ac $glFR "top" 5 $aniMSetBttn
+    
+        -af $sepaJNT "left" 0
+        -ac $sepaJNT "top" 5 $glFR
+        -af $sepaJNT "right" 0
+    
+        -af $showFL "left" 5
+        -af $showFL "right" 5
+        -ac $showFL "top" 5 $sepaJNT
+
+    $mauUtyFLvis;
+    
+    return $mauUtyFLvis;
+}

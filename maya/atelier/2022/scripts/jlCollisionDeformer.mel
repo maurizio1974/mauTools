@@ -1,0 +1,60 @@
+/*
+             jlCollisionDeformer.mel 
+
+             Version 0.9.1 , last modified 2010-09-30
+ 
+             Copyright (C) 2010  Jan Lachauer
+             
+             Email: janlachauer@googlemail.com
+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ See http://www.gnu.org/licenses/gpl.html for a copy of the GNU General 
+ Public License.
+
+ 
+
+
+ I N S T A L L A T I O N:
+
+  Copy the "jlCollisionDeformer.py" to your Maya plugins directory
+  e.g. "Program Files\Autodesk\MayaXXXX\bin\plug-ins\"
+
+  Copy the "jlCollisionDeformer.mel" to your Maya scripts directory
+  e.g. "..\My Documents\maya\<version>\scripts"
+
+  For better bulge control, you need to copy the "AEjlCollisionDeformerTemplate.mel" 
+  file into your "Program Files\Autodesk\MayaXXXX\scripts\AETemplates\" dirtectory 
+
+
+ U S A G E:
+ 
+  First load the plugin via Window->Settings/Prefs->Plug-in Manager
+  Then select the collidermesh followed by the mesh that should be deformed.
+  Finally execute following mel command:
+    jlCollisionDeformer()
+
+
+ For bugreports/questions/suggestions please don't hesitate 
+ to contact me: janlachauer@googlemail.com
+*/
+
+global proc jlCollisionDeformer()
+{
+    string $sel[] = `ls -sl -tr`;
+    string $collider = $sel[0];
+    string $target = $sel[1];
+    string $collidershape[] = `listRelatives -s $collider`;
+    string $collisiondeformer[] = `deformer -typ "jlCollisionDeformer" -n "collisionDeformer" $target`;
+    connectAttr -f ($collidershape[0]+".worldMesh[0]") ($collisiondeformer[0]+".collider");
+    connectAttr -f ($collider+".worldMatrix[0]") ($collisiondeformer[0]+".colliderMatrix");
+    connectAttr -f ($collider+".boundingBox.boundingBoxSize") ($collisiondeformer[0]+".colliderBBoxSize");
+}

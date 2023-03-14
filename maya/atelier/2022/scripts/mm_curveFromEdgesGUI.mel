@@ -1,0 +1,209 @@
+/* This file downloaded from Highend3d.com
+''  
+''  Highend3d.com File Information:
+''  
+''    Script Name: Extract Curve From Edges
+''    Author:  
+''    Last Updated: Jul 01, 2009
+''    Update/Change this file at:
+''    http://Highend3d.com/maya/downloads/mel_scripts/modeling/curve_tools/4714.html
+''  
+''  Please do not alter any information above this line
+''  it is generated dynamically by Highend3d.com and will
+''  be changed automatically on any updates.
+*/
+//
+//mm_curveFromEdges v0.1.1 by Mihai Militaru (mihai.militaru@gmx.com)
+//
+// This script "extracts" a curve from a countiguous selection of polygon
+//edges, the curve will have a CV for every vertex of the selection.
+// For a linear curve, a selection of at least 2 edges (3 for a closed curve)
+//is required and at least 3 for a cubic curve (4 for a closed one).
+// Usage:
+//  -run "mm_curveFromEdgesGUI;" to initialize the GUI;
+//  -choose the degree of the new curve;
+//  -press the "Apply" button to create the curve or "Extract"
+//to create it and close the window.
+//
+// for suggestions, bugs, etc, please write me an e-mail
+
+global proc string[] mm_curveFromEdges()
+{
+	string $sel[] = `selectedNodes`;
+	if(size($sel)!=1)
+		error "Select some continuous edges, on one poly object";
+	string $edges[] = `filterExpand -sm 32`;
+	int $len = size($edges);
+	if(!$len)
+		error "Select some continuous edges";
+	string $infoVerts[];
+	string $fVerts[], $lVerts[];
+	int $position[], $sticks[], $firstHeadPos, $headsNr;
+	for($i=0; $i<$len; $i++)
+	{
+		$infoVerts = `polyInfo -ev $edges[$i]`;
+		$infoVerts = `stringToStringArray $infoVerts[0] " "`;
+		$fVerts[$i] = $infoVerts[2];
+		$lVerts[$i] = $infoVerts[3];
+	}
+	for($i=0; $i<$len; $i++)
+	{
+		$sticks[$i] = 0;
+		for($j=0; $j<$len; $j++)
+		{
+			if(($j!=$i))
+			{
+				if(($fVerts[$i]==$fVerts[$j]) || ($lVerts[$i]==$lVerts[$j]) || ($fVerts[$i]==$lVerts[$j]) || ($lVerts[$i]==$fVerts[$j]))
+					$sticks[$i]+=1;
+			}
+		}
+		if(($sticks[$i]<1) || ($sticks[$i]>2))
+			error "Select some continuous edges";
+	}
+	$firstHeadPos = 0;
+	$headsNr = 0;
+	for($i=0; $i<$len; $i++)
+	{
+		if($sticks[$i] == 1)
+		{
+			$headsNr++;
+			if($headsNr>2)
+				error "Select some continuous edges";
+			$firstHeadPos = $i;
+		}
+	}
+	int $orderedEdgesIDs[];
+	$orderedEdgesIDs[0] = $firstHeadPos;
+	int $currentEdgePos = $firstHeadPos;
+	int $jump = 0, $counter = 0, $max = size($edges)*size($edges);
+	while(size($orderedEdgesIDs)<$len)
+	{
+		for($i=0; $i<$len; $i++)
+		{
+			for($j=0; $j<size($orderedEdgesIDs); $j++)
+				if($orderedEdgesIDs[$j] == $i)
+				{
+					$jump = 1;
+					break;
+				}
+			if(!$jump)
+			{
+				if(($fVerts[$i]==$fVerts[$currentEdgePos]) || ($lVerts[$i]==$lVerts[$currentEdgePos]) || ($fVerts[$i]==$lVerts[$currentEdgePos]) || ($lVerts[$i]==$fVerts[$currentEdgePos]))
+				{
+					$currentEdgePos = $i;
+					$orderedEdgesIDs[size($orderedEdgesIDs)] = $i;
+				}
+			}
+			$jump = 0;
+			$counter++;
+		}
+		if($counter>=$max)
+			break;
+	}
+	int $forstOrLast = 0, $orderedVerts[], $oeLen = size($orderedEdgesIDs);
+	
+	if(($fVerts[$orderedEdgesIDs[0]] == $fVerts[$orderedEdgesIDs[1]]) || ($fVerts[$orderedEdgesIDs[0]] == $lVerts[$orderedEdgesIDs[1]]))
+		$orderedVerts[0] = $lVerts[$orderedEdgesIDs[0]];
+	else if(($lVerts[$orderedEdgesIDs[0]] == $fVerts[$orderedEdgesIDs[1]]) || ($lVerts[$orderedEdgesIDs[0]] == $lVerts[$orderedEdgesIDs[1]]))
+		$orderedVerts[0] = $fVerts[$orderedEdgesIDs[0]];
+		
+	for($i=0; $i<$oeLen-1; $i++)
+	{
+		if(($fVerts[$orderedEdgesIDs[$i]] == $fVerts[$orderedEdgesIDs[$i+1]]) || ($fVerts[$orderedEdgesIDs[$i]] == $lVerts[$orderedEdgesIDs[$i+1]]))
+			$orderedVerts[size($orderedVerts)] = $fVerts[$orderedEdgesIDs[$i]];
+		else if(($lVerts[$orderedEdgesIDs[$i]] == $fVerts[$orderedEdgesIDs[$i+1]]) || ($lVerts[$orderedEdgesIDs[$i]] == $lVerts[$orderedEdgesIDs[$i+1]]))
+			$orderedVerts[size($orderedVerts)] = $lVerts[$orderedEdgesIDs[$i]];
+	}
+	int $ovLen = size($orderedVerts);
+	if($fVerts[$orderedEdgesIDs[$oeLen-1]] == $orderedVerts[$ovLen-1])
+	{
+		$orderedVerts[$ovLen] = $lVerts[$orderedEdgesIDs[$oeLen-1]];
+		$ovLen++;
+	}
+	else if($lVerts[$orderedEdgesIDs[$oeLen-1]] == $orderedVerts[$ovLen-1])
+	{
+		$orderedVerts[$ovLen] = $fVerts[$orderedEdgesIDs[$oeLen-1]];
+		$ovLen++;
+	}
+	string $ret[];
+	
+	float $vertPos[] = `xform -a -ws -q -t ($sel[0]+".vtx["+$orderedVerts[0]+"]")`;
+	$curve = `curve -d 1 -p $vertPos[0] $vertPos[1] $vertPos[2]`;
+	if($orderedVerts[0] != $orderedVerts[$ovLen-1])
+	{
+		for($i=1; $i<$ovLen; $i++)
+		{
+			$vertPos = `xform -a -ws -q -t ($sel[0]+".vtx["+$orderedVerts[$i]+"]")`;
+			curve -a -p $vertPos[0] $vertPos[1] $vertPos[2] $curve;
+		}
+		$ret[1] = "open";
+	}
+	else
+	{
+		for($i=1; $i<$ovLen-1; $i++)
+		{
+			$vertPos = `xform -a -ws -q -t ($sel[0]+".vtx["+$orderedVerts[$i]+"]")`;
+			curve -a -p $vertPos[0] $vertPos[1] $vertPos[2] $curve;
+		}
+		closeCurve -ch 0 -ps 0 -rpo 1 -bb 0.5 -bki 0 -p 0.1 $curve;
+		$ret[1] = "closed";
+	}
+	$ret[0] = $curve;
+	return $ret;
+}
+
+global proc string mm_extractCurveFromEdges(int $degree)
+{
+	string $curve[] = `mm_curveFromEdges`;
+	if($degree == 1)
+	{
+		select -r $curve[0];
+		return $curve[0];
+	}
+	else if($degree == 3)
+	{
+		if($curve[1] == "open")
+			rebuildCurve -ch 1 -rpo 1 -rt 0 -end 1 -kr 0 -kcp 1 -kep 1 -kt 0 -s 4 -d 3 -tol 0 $curve[0];
+		if($curve[1] == "closed")
+		{
+			closeCurve -ch 1 -ps 0 -rpo 1 -bb 0.5 -bki 0 -p 0.1 $curve[0];
+			rebuildCurve -ch 1 -rpo 1 -rt 0 -end 1 -kr 0 -kcp 1 -kep 1 -kt 0 -s 4 -d 3 -tol 0 $curve[0];
+			closeCurve -ch 1 -ps 0 -rpo 1 -bb 0.5 -bki 0 -p 0.1 $curve[0];
+		}
+		select -r $curve[0];
+		return $curve[0];
+	}
+	else
+		error ("Degree not suported: "+$degree+". Use only 1 or 3.");
+}
+//mm_extractCurveFromEdges 3;
+
+global proc mm_curveFromEdgesGUI()
+{
+	if(`window -ex "mm_extCrvEdg_win"`)
+		deleteUI "mm_extCrvEdg_win";
+	window "mm_extCrvEdg_win";
+	columnLayout "mm_extCrvEdg_cLay1";
+	radioButtonGrp -nrb 2 -l "Degree" -l1 "Linear" -l2 "Cubic" -sl 1 -cw3 60 60 60 -p "mm_extCrvEdg_cLay1" "mm_extCrvEdg_rdb1";
+	rowLayout -nc 3 "mm_extCrvEdg_cLay1";
+	button -p "mm_extCrvEdg_cLay1" -l "Extract" -c "mm_extractCurveFromEdgesChooser `radioButtonGrp -q -sl \"mm_extCrvEdg_rdb1\"`; deleteUI \"mm_extCrvEdg_win\";" "mm_extCrvEdg_btn1";
+	button -p "mm_extCrvEdg_cLay1" -l "Apply" -c "mm_extractCurveFromEdgesChooser `radioButtonGrp -q -sl \"mm_extCrvEdg_rdb1\"`;" "mm_extCrvEdg_btn2";
+	button -p "mm_extCrvEdg_cLay1" -l "Close" -c "deleteUI \"mm_extCrvEdg_win\";" "mm_extCrvEdg_btn3";
+	window -e -wh 245 47 "mm_extCrvEdg_win";
+	showWindow "mm_extCrvEdg_win";
+}
+
+global proc mm_extractCurveFromEdgesChooser(int $degrSel)
+{
+	switch($degrSel)
+	{
+		case 1:
+			mm_extractCurveFromEdges 1;
+			break;
+		case 2:
+			mm_extractCurveFromEdges 3;
+			break;
+		default:
+	}
+}
+mm_curveFromEdges;

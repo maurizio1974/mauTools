@@ -1,0 +1,70 @@
+// ---------------------------------------------------------------------------------------------------------------------
+//
+// script by Maurizio Giglioli 14/05/2012
+// USAGE :
+//          give the proceduree a pfxnode if exists or leave it empty.
+//          select the geo that you want to interact and
+//          mgIntersectGeo({""}) without pfxnode specified
+//          mgIntersectGeo({"pfxNodeToon1"}) with pfxnode specified
+//
+// ---------------------------------------------------------------------------------------------------------------------
+
+global proc mgIntersectGeo(string $toonNode)
+{
+    string $surfSH[], $surfSHS[], $mesh, $sel[], $toonNodeS[1], $s[1], $conn[];
+    int $i = 0, $x;
+    
+    $sel = `ls -sl`;
+    if(size($toonNode)!=0)
+        $toonNodeS = `listRelatives -s $toonNode`;
+    
+    // CREATE THE PFX NODE IF ONE ISN'T SPECIFIED
+    if(size($toonNode)==0)
+    {
+        $toonNode = `createNode pfxToon`;
+        setAttr ($toonNode+".displayInViewport") 0;
+        setAttr ($toonNode+".creaseLines") 0;
+        setAttr ($toonNode+".intersectionLines") 1;
+        setAttr ($toonNode+".lineWidth") 0.05;
+        setAttr ($toonNode+".profileLines") 0;
+        setAttr ($toonNode+".borderLines") 0;
+        setAttr ($toonNode+".meshQuadOutput") 1;
+    }else{
+        if(`nodeType $toonNodeS`=="pfxToon")// Get the plugID of the selected PFX node
+        {
+            $s = `listRelatives -s $toonNode`;
+            $conn =`listConnections -s 1 -d 0 $s[0]`;
+    
+            $i = (size($conn)/2)+1;
+            print ("Next free plug is "+$i+"\n");
+        }
+        else
+            warning "Make sure to select a pfxToon node !\n";
+    }
+       
+    // CREATE AN ARRAY WITH THE SHAPE NODES OF THE GEOMETRY
+    for($sh in $sel)
+    {
+        $surfSH = `listRelatives -s $sh`;
+        $surfSHS[$x] = $surfSH[0];
+        $x = $x+1;
+    }
+    // CONNECT ALL THE SHAPES TO THE PFX NODE
+    for($sur in $surfSHS)
+    {
+        connectAttr -f ($sur+".outMesh") ($toonNode+".inputSurface["+$i+"].surface");
+        connectAttr -f ($sur+".worldMatrix[0]") ($toonNode+".inputSurface["+$i+"].inputWorldMatrix");
+        $i = $i+1;
+    }
+    
+    // CONNECT THE PFX NODE TO A GEOMETRY NODE
+    string $m[] =`ls -type "transform" "ringGeo_*_mesh"`;
+    $i = 0;
+    for($e in $m)
+        $i = $i + 1 ;
+    if(!`objExists ("ringGeo_"+$i+"_mesh")`)
+    {
+        $mesh =`createNode mesh -n ("ringGeo_"+$i+"_meshShape") `;
+        connectAttr ($toonNode+".worldMainMesh[0]") ($mesh+".inMesh");
+    }
+}

@@ -1,0 +1,194 @@
+//This script creates a flock of "bugs" (similar to the gnats.mel script)
+//of density and over a range you choose.
+//You can also animate a path for them to follow.
+//Additionally, this script allows you to set a per-particle influence
+//that lets the "bugs" see each other.  Setting the influence to 0
+//makes this script the same as the gnats.mel script.  Setting it
+//to 1 makes the particles influence each other fully.
+//The Min distance setting lets you adjust when bugs are too close
+//to each other (they will then take steps to move away from each other)
+//or too far away from each other (they will then try to move back toward
+//each other).  Note that the min and max distances are _not_ as far 
+//away (or close) as each particle can go to its neighbors--it
+//is when they _begin_ to correct their motion paths.  Therefore
+//you should set these numbers smaller (higher) than the maximum (minimum)
+//distance you'd like the "bugs" to ever get from each other.
+//
+//Note:  the per particle max distance is a max distance from
+//a particle's nearest neighbor, not from the center of the 
+//group (this is what the range slider is for).  The per particle
+//max distance sets how far from its nearest neighbor a particle can
+//get before it tries to return toward that neighbor--it's a kind 
+//of aversion to being alone!  The min distance works in the same way,
+//but inverse--it's a kind of aversion to closeness.
+//
+//Place this script in your scripts directory, or
+//source this script, then type gnats in the command line.  In the resultant window,
+//the Grid size window determines how big the original grid of "bugs" will be,
+//the Density window determines how densely the grid will be filled with bugs 
+//(the bigger the number, the _less_ dense the grid!)
+//and the Swarm Range slider determines how large an area the swarm will range over.
+//Click the Build it! button to build the swarm.
+//Animate the locator handle (selected after the script runs, for your convenience)
+//to animate a path for the bugs to follow.
+//Copyright 1999 by John L. Kundert-Gibbs
+//jkundert@unca.edu
+//Anyone can use and modify this script, as long as credit is given to the author for the original script.
+//Last Modified 7/23/99
+//Use and modify at your own risk.
+
+proc check (string $theName)
+{
+string $theName;
+
+if (`window -exists $theName`)
+	{
+	deleteUI $theName;
+	}
+}
+
+proc deleteIt ()
+{
+if (`objExists particle1`)
+	{
+	select -r particle1;
+	delete;
+	}
+if (`objExists locator1`)
+	{
+	select -r locator1;
+	delete;
+	}
+} //end proc deleteIt
+
+proc buildSwarm ()
+{
+global float $gridSize;
+float $grSize = $gridSize;
+global float $density;
+float $dens = $density;
+global float $swarmSize;
+global float $swarmSpeed;
+global float $maxDist;
+global float $minDist;
+global float $influence;
+float $grStart = $grSize / (-2.0);
+float $grEnd = $grSize / 2.0;
+//print ("grid " + $grSize);
+//print "\n";
+//print ("density " + $dens);
+//print "\n";
+//print ("swarm " + $swSize);
+
+if ($minDist >= $maxDist)
+	$minDist = $maxDist - 0.001;
+particle -ll $grStart $grStart $grStart -ur $grEnd $grEnd $grEnd -grs $dens -c 1 ;
+createPrimitive nullObject;
+expression -s "global float $swarmSpeed;\r\nparticle1.tx = $swarmSpeed * noise(time);\r\nparticle1.ty = 0.5 * $swarmSpeed * noise(2*time);\r\nparticle1.tz = 1.5 * $swarmSpeed * noise(time);";  //-o particle1 -ae 1 -uc all ;
+dynExpression -s "global int $countIDs;\r\nglobal vector $otherPos[];\r\n\r\n$otherPos[$countIDs] = particleShape1.position;\r\n$countIDs++;\r\n\r\n//print (($countIDs-1) + \" \\t \" + $otherPos[$countIDs-1] + \"\\n\");" -c particleShape1;
+
+dynExpression -s "global float $swarmSize;\r\nglobal float $swarmSpeed;\r\nglobal float $minDist;\r\nglobal float $maxDist;\r\nglobal float $influence;\r\nvector $locPos;\r\nvector $difference;\r\nglobal vector $otherPos[];\r\nglobal int $countIDs;\r\nint $partSize = particleShape1.count;\r\nint $i;\r\nvector $minDiff = <<100 * $maxDist, 100 * $maxDist, 100 * $maxDist>>;\r\nvector $maxDiff = <<$minDist, $minDist, $minDist>>;\r\nvector $temp;\r\nvector $tempUnit;\r\nfloat $tempMag;\r\nfloat $tempX;\r\nfloat $tempY;\r\nfloat $tempZ;\r\n\r\nfloat $tv;\r\nvector $uv;\r\n\r\n$locPos = <<locator1.translateX, locator1.translateY, locator1.translateZ>>;\r\nif (abs(particleShape1.position - $locPos) < <<$swarmSize, $swarmSize, $swarmSize>>)\r\n	particleShape1.acceleration = $swarmSpeed * sphrand ($swarmSize);\r\nelse\r\n	{\r\n	$tv = mag(particleShape1.position - $locPos);\r\n	$tv = $tv - $swarmSize;\r\n	$uv = unit(particleShape1.position - $locPos);\r\n	particleShape1.acceleration = particleShape1.acceleration - (0.5 * $swarmSpeed * $tv * $uv);\r\n	}\r\n\r\nfor ($i=0; $i<$partSize; $i++)\r\n	{\r\n	if (particleShape1.position != $otherPos[$i])\r\n		{\r\n		$difference = particleShape1.position - $otherPos[$i];\r\n//		if (abs($difference) < <<$minDist, $minDist, $minDist>>)\r\n//			{\r\n//			if (abs($difference) < $maxDiff)\r\n//				$maxDiff = $difference;\r\n//			}\r\n		if (abs($difference) < $minDiff)\r\n			{\r\n				$minDiff = $difference;\r\n			}\r\n		}\r\n	}\r\nif (abs($minDiff) < <<$minDist, $minDist, $minDist>>)\r\n	{\r\n//	$temp = <<$minDist, $minDist, $minDist>> / ($minDiff + 0.00001);\r\n	$tempMag = mag ($minDiff);\r\n	$tempUnit = unit ($minDiff);\r\n//	print $tempMag;\r\n//	print \"\\n\";\r\n	$tempMag = `pow $tempMag -0.5`;\r\n//	print $tempMag;\r\n//	print \"\\n\";\r\n//	$tempX = $temp.x;\r\n//	$tempY = $temp.y;\r\n//	$tempZ = $temp.z;\r\n//	print $tempX;\r\n//	$tempX = sign ($tempX) * (pow (abs($tempX)) -0.1);\r\n//	$tempY = sign ($tempY) * (pow (abs($tempY)) -0.1);\r\n//	$tempZ = sign ($tempZ) * (pow (abs($tempZ)) -0.1);\r\n//	$temp = <<$tempX, $tempY, $tempZ>>;\r\n	$temp = $tempUnit * $tempMag;\r\n	particleShape1.acceleration = particleShape1.acceleration + $influence * $temp;\r\n	}\r\n\r\nif ($minDiff < <<100 * $maxDist, 100 * $maxDist, 100 * $maxDist>> && abs($minDiff) > <<$maxDist, $maxDist, $maxDist>>)\r\n	particleShape1.acceleration = particleShape1.acceleration + $influence * (-5 * $minDiff);\r\n\r\nif ($countIDs >= $partSize)\r\n	$countIDs = 0;\r\nelse\r\n	{\r\n	$countIDs++;\r\n	$otherPos[$countIDs] = particleShape1.position;\r\n	}\r" -r particleShape1;
+
+//dynExpression -s "global float $swarmSize;\r\nglobal float $swarmSpeed;\r\nglobal float $minDist;\r\nglobal float $maxDist;\r\nglobal float $influence;\r\nvector $locPos;\r\nvector $difference;\r\nglobal vector $otherPos[];\r\nglobal int $countIDs;\r\nint $partSize = particleShape1.count;\r\nint $i;\r\nvector $minDiff = <<100 * $maxDist, 100 * $maxDist, 100 * $maxDist>>;\r\nvector $maxDiff = <<$minDist, $minDist, $minDist>>;\r\nvector $temp;\r\nvector $tempUnit;\r\nfloat $tempMag;\r\nfloat $tempX;\r\nfloat $tempY;\r\nfloat $tempZ;\r\n\r\n$locPos = <<locator1.translateX, locator1.translateY, locator1.translateZ>>;\r\nif (abs(particleShape1.position - $locPos) < <<$swarmSize, $swarmSize, $swarmSize>>)\r\n	particleShape1.acceleration = $swarmSpeed * sphrand ($swarmSize);\r\nelse \r\n	particleShape1.acceleration = -0.5 * $swarmSpeed * (particleShape1.position - $locPos);\r\n\r\nfor ($i=0; $i<$partSize; $i++)\r\n	{\r\n	if (particleShape1.position != $otherPos[$i])\r\n		{\r\n		$difference = particleShape1.positio//n - $otherPos[$i];\r\n//		if (abs($difference) < <<$minDist, $minDist, $minDist>>)\r\n//			{\r\n//			if (abs($difference) < $maxDiff)\r\n//				$maxDiff = $difference;\r\n//			}\r\n		if (abs($difference) < $minDiff)\r\n			{\r\n				$minDiff = $difference;\r\n			}\r\n		}\r\n	}\r\nif (abs($minDiff) < <<$minDist, $minDist, $minDist>>)\r\n	{\r\n//	$temp = <<$minDist, $minDist, $minDist>> / ($minDiff + 0.00001);\r\n	$tempMag = mag ($minDiff);\r\n	$tempUnit = unit ($minDiff);\r\n//	print $tempMag;\r\n//	print \"\\n\";\r\n	$tempMag = `pow $tempMag -0.5`;\r\n//	print $tempMag;\r\n//	print \"\\n\";\r\n//	$tempX = $temp.x;\r\n//	$tempY = $temp.y;\r\n//	$tempZ = $temp.z;\r\n//	print $tempX;\r\n//	$tempX = sign ($tempX) * (pow (abs($tempX)) -0.1);\r\n//	$tempY = sign ($tempY) * (pow (abs($tempY)) -0.1);\r\n//	$tempZ = sign ($tempZ) * (pow (abs($tempZ)) -0.1);\r\n//	$temp = <<$tempX, $tempY, $tempZ>>;\r\n	$temp = $tempUnit * $tempMag;\r\n	particleShape1.acceleration = particleShape1.acceleration + $influence * $temp;\r\n	//}\r\n\r\nif ($minDiff < <<100 * $maxDist, 100 * $maxDist, 100 * $maxDist>> && abs($minDiff) > <<$maxDist, $maxDist, $maxDist>>)\r\n	particleShape1.acceleration = particleShape1.acceleration + $influence * (-5 * $minDiff);\r\n\r\nif ($countIDs >= $partSize)\r\n	$countIDs = 0;\r\nelse\r\n	{\r\n	$countIDs++;\r\n	$otherPos[$countIDs] = particleShape1.position;\r\n	}\r" -r particleShape1;
+
+//dynExpression -s "global float $swarmSize;\r\nglobal float $swarmSpeed;\r\nglobal float $minDist;\r\nglobal float $maxDist;\r\nglobal float $influence;\r\nvector $locPos;\r\nvector $difference;\r\nglobal vector $otherPos[];\r\nglobal int $countIDs;\r\nint $partSize = particleShape1.count;\r\nint $i;\r\nvector $minDiff = <<100 * $maxDist, 100 * $maxDist, 100 * $maxDist>>;\r\nvector $maxDiff = <<$minDist, $minDist, $minDist>>;\r\nvector $temp;\r\nvector $tempUnit;\r\nfloat $tempMag;\r\nfloat $tempX;\r\nfloat $tempY;\r\nfloat $tempZ;\r\n\r\n$locPos = <<locator1.translateX, locator1.translateY, locator1.translateZ>>;\r\nif (abs(particleShape1.position - $locPos) < <<$swarmSize, $swarmSize, $swarmSize>>)\r\n	particleShape1.acceleration = $swarmSpeed * sphrand ($swarmSize);\r\nelse \r\n	particleShape1.acceleration = -0.5 * $swarmSpeed * (particleShape1.position - $locPos);\r\n\r\nfor ($i=0; $i<$partSize; $i++)\r\n	{\r\n	if (particleShape1.position != $otherPos[$i])\r\n		{\r\n		$difference = particleShape1.positio//n - $otherPos[$i];\r\n//		if (abs($difference) < <<$minDist, $minDist, $minDist>>)\r\n//			{\r\n//			if (abs($difference) < $maxDiff)\r\n//				$maxDiff = $difference;\r\n//			}\r\n		if (abs($difference) < $minDiff)\r\n			{\r\n				$minDiff = $difference;\r\n			}\r\n		}\r\n	}\r\nif (abs($minDiff) < <<$minDist, $minDist, $minDist>>)\r\n	{\r\n	$temp = <<$minDist, $minDist, $minDist>> / ($minDiff + 0.00001);\r\n	$tempMag = mag ($temp);\r\n	$tempUnit = unit ($temp);\r\n	$tempMag = `pow $tempMag -0.001`;\r\n//	$tempX = $temp.x;\r\n//	$tempY = $temp.y;\r\n//	$tempZ = $temp.z;\r\n//	print $tempX;\r\n//	$tempX = sign ($tempX) * (pow (abs($tempX)) -0.1);\r\n//	$tempY = sign ($tempY) * (pow (abs($tempY)) -0.1);\r\n//	$tempZ = sign ($tempZ) * (pow (abs($tempZ)) -0.1);\r\n//	$temp = <<$tempX, $tempY, $tempZ>>;\r\n	$temp = $tempUnit * $tempMag;\r\n	particleShape1.acceleration = particleShape1.acceleration + $influence * $temp;\r\n	}\r\n\r\nif ($minDiff < <<100 * $maxDist, 100 * $maxDist, 100 * $maxDist>> && abs($minDiff) //> <<$maxDist, $maxDist, $maxDist>>)\r\n	particleShape1.acceleration = particleShape1.acceleration + $influence * (-5 * $minDiff);\r\n\r\nif ($countIDs >= $partSize)\r\n	$countIDs = 0;\r\nelse\r\n	{\r\n	$countIDs++;\r\n	$otherPos[$countIDs] = particleShape1.position;\r\n	}\r" -r particleShape1;
+
+//dynExpression -s "global float $swarmSize;\r\nglobal float $swarmSpeed;\r\nglobal float $minDist;\r\nglobal float $maxDist;\r\nglobal float $influence;\r\nvector $locPos;\r\nvector $difference;\r\nglobal vector $otherPos[];\r\nglobal int $countIDs;\r\nint $partSize = particleShape1.count;\r\nint $i;\r\nvector $minDiff = <<100 * $maxDist, 100 * $maxDist, 100 * $maxDist>>;\r\nvector $maxDiff = <<$minDist, $minDist, $minDist>>;\r\n\r\n$locPos = <<locator1.translateX, locator1.translateY, locator1.translateZ>>;\r\nif (abs(particleShape1.position - $locPos) < <<$swarmSize, $swarmSize, $swarmSize>>)\r\n	particleShape1.acceleration = $swarmSpeed * sphrand ($swarmSize);\r\nelse \r\n	particleShape1.acceleration = -0.5 * $swarmSpeed * (particleShape1.position - $locPos);\r\n\r\nfor ($i=0; $i<$partSize; $i++)\r\n	{\r\n	if (particleShape1.position != $otherPos[$i])\r\n		{\r\n		$difference = particleShape1.position - $otherPos[$i];\r\n//		if (abs($difference) < <<$minDist, $minDist, $minDist>>)\r\n//			{\r\n//			if (abs//($difference) < $maxDiff)\r\n//				$maxDiff = $difference;\r\n//			}\r\n		if (abs($difference) < $minDiff)\r\n			{\r\n				$minDiff = $difference;\r\n			}\r\n		}\r\n	}\r\nif (abs($minDiff) < <<$minDist, $minDist, $minDist>>)\r\n	particleShape1.acceleration = particleShape1.acceleration + $influence * ($minDist / ($maxDiff + 0.00001));\r\n\r\nif ($minDiff < <<100 * $maxDist, 100 * $maxDist, 100 * $maxDist>> && abs($minDiff) > <<$maxDist, $maxDist, $maxDist>>)\r\n	particleShape1.acceleration = particleShape1.acceleration + $influence * (-5 * $minDiff);\r\n\r\nif ($countIDs >= $partSize)\r\n	$countIDs = 0;\r\nelse\r\n	{\r\n	$countIDs++;\r\n	$otherPos[$countIDs] = particleShape1.position;\r\n	}\r" -r particleShape1;
+
+//dynExpression -s "global float $swarmSize;\r\nglobal float $swarmSpeed;\r\nglobal float $minDist;\r\nglobal float $maxDist;\r\nglobal float $influence;\r\nvector $locPos;\r\nvector $difference;\r\nglobal vector $otherPos[];\r\nglobal int $countIDs;\r\nint $partSize = particleShape1.count;\r\nint $i;\r\nvector $minDiff = <<100 * $maxDist, 100 * $maxDist, 100 * $maxDist>>;\r\nvector $maxDiff = <<$minDist, $minDist, $minDist>>;\r\n\r\n$locPos = <<locator1.translateX, locator1.translateY, locator1.translateZ>>;\r\nif (abs(particleShape1.position - $locPos) < <<$swarmSize, $swarmSize, $swarmSize>>)\r\n	particleShape1.acceleration = $swarmSpeed * sphrand ($swarmSize);\r\nelse \r\n	particleShape1.acceleration = -0.5 * $swarmSpeed * (particleShape1.position - $locPos);\r\n\r\nfor ($i=0; $i<$partSize; $i++)\r\n	{\r\n	if (particleShape1.position != $otherPos[$i])\r\n		{\r\n		$difference = particleShape1.position - $otherPos[$i];\r\n		if (abs($difference) < <<$minDist, $minDist, $minDist>>)\r\n			{\r\n			if (abs($diff//erence) < $maxDiff)\r\n				$maxDiff = $difference;\r\n			}\r\n		if (abs($difference) < $minDiff)\r\n			{\r\n				$minDiff = $difference;\r\n			}\r\n		}\r\n	}\r\nif ($maxDiff < <<$minDist, $minDist, $minDist>>)\r\n	particleShape1.acceleration = particleShape1.acceleration + $influence * ($minDist / ($maxDiff + 0.00001));\r\n\r\nif ($minDiff < <<100 * $maxDist, 100 * $maxDist, 100 * $maxDist>> && abs($minDiff) > <<$maxDist, $maxDist, $maxDist>>)\r\n	particleShape1.acceleration = particleShape1.acceleration + $influence * (-1 * $minDiff);\r\n\r\nif ($countIDs >= $partSize)\r\n	$countIDs = 0;\r\nelse\r\n	{\r\n	$countIDs++;\r\n	$otherPos[$countIDs] = particleShape1.position;\r\n	}\r" -r particleShape1;
+
+//dynExpression -s "global float $swarmSize;\r\nglobal float $swarmSpeed;\r\nglobal float $minDist;\r\nglobal float $maxDist;\r\nglobal float $influence;\r\nvector $locPos;\r\nvector $difference;\r\nglobal vector $otherPos[];\r\nglobal int $countIDs;\r\nint $partSize = particleShape1.count;\r\nint $i;\r\nvector $minDiff = 100 * $maxDist;\r\nvector $maxDiff = $minDist / 10.0;\r\n\r\n$locPos = <<locator1.translateX, locator1.translateY, locator1.translateZ>>;\r\nif (abs(particleShape1.position - $locPos) < <<$swarmSize, $swarmSize, $swarmSize>>)\r\n	particleShape1.acceleration = $swarmSpeed * sphrand ($swarmSize);\r\nelse \r\n	particleShape1.acceleration = -0.5 * $swarmSpeed * (particleShape1.position - $locPos);\r\n\r\nfor ($i=0; $i<$partSize; $i++)\r\n	{\r\n	if (particleShape1.position != $otherPos[$i])\r\n		{\r\n		$difference = particleShape1.position - $otherPos[$i];\r\n		if (abs($difference) > $maxDiff)\r\n			{\r\n			$maxDiff = $difference;\r\n			}\r\n		else if (abs($difference) < $minDiff)\r\n			{\r\n			$//minDiff = $difference;\r\n			}\r\n		}\r\n	}\r\nif ($maxDiff > $minDist / 10.0 && abs($maxDiff) < <<$minDist, $minDist, $minDist>>)\r\n	particleShape1.acceleration = particleShape1.acceleration + $influence * ($minDist / ($maxDiff + 0.00001));\r\n\r\nif ($minDiff < 100 * $maxDist && abs($minDiff) > <<$maxDist, $maxDist, $maxDist>>)\r\n	particleShape1.acceleration = particleShape1.acceleration + $influence * (-1 * $minDiff);\r\n\r\nif ($countIDs >= $partSize)\r\n	$countIDs = 0;\r\nelse\r\n	{\r\n	$countIDs++;\r\n	$otherPos[$countIDs] = particleShape1.position;\r\n	}" -r particleShape1;
+//dynExpression -s "global int $countIDs;\r\nglobal vector $otherPos[];\r\n\r\n$otherPos[$countIDs] = particleShape1.position;" -c particleShape1;
+//dynExpression -s "global float $swarmSize;\r\nglobal float $swarmSpeed;\r\nglobal float $minDist;\r\nglobal float $maxDist;\r\nglobal float $influence;\r\nvector $locPos;\r\nvector $difference;\r\nglobal vector $otherPos[];\r\nglobal int $countIDs;\r\nint $partSize = particleShape1.count;\r\nprint $partSize;\r\nint $i;\r\nvector $minDiff = 10 * $maxDist;\r\nvector $maxDiff = $minDist / 10.0;\r\n\r\n$locPos = <<locator1.translateX, locator1.translateY, locator1.translateZ>>;\r\nif (abs(particleShape1.position - $locPos) < <<$swarmSize, $swarmSize, $swarmSize>>)\r\n	particleShape1.acceleration = $swarmSpeed * sphrand ($swarmSize);\r\nelse \r\n	particleShape1.acceleration = -0.5 * $swarmSpeed * (particleShape1.position - $locPos);\r\n\r\nfor ($i=0; $i<$partSize; $i++)\r\n	{\r\n	if (particleShape1.position != $otherPos[$i])\r\n		{\r\n		$difference = particleShape1.position - $otherPos[$i];\r\n		if (abs($difference) < <<$minDist, $minDist, $minDist>> && abs($difference) > $maxDiff)\r\n			{\r\n			$maxDiff = $diff//erence;\r\n			}\r\n		else if (abs($difference) > <<$maxDist, $maxDist, $maxDist>> && abs($difference) < $minDiff)\r\n			{\r\n			$minDiff = $difference;\r\n			}\r\n		}\r\n	}\r\nif ($maxDiff > $minDist / 10.0)\r\n	particleShape1.acceleration = particleShape1.acceleration + $influence * ($minDist / ($difference + 0.00001));\r\n\r\nif ($minDiff < 10 * $maxDist)\r\n	particleShape1.acceleration = particleShape1.acceleration + $influence * (-1 * $difference);\r\n\r\nif ($countIDs >= $partSize)\r\n	$countIDs = 0;\r\nelse\r\n	{\r\n	$countIDs++;\r\n	$otherPos[$countIDs] = particleShape1.position;\r\n	}" -r particleShape1;
+
+//dynExpression -s "global float $swarmSize;\r\nglobal float $swarmSpeed;\r\nglobal float $minDist;\r\nglobal float $maxDist;\r\nglobal float $influence;\r\nvector $locPos;\r\nvector $difference;\r\nglobal vector $otherPos[];\r\nglobal int $countIDs;\r\nint $partSize = particleShape1.count;\r\nprint $partSize;\r\nint $i;\r\nvector $minDiff = 10 * $maxDist;\r\n\r\n$locPos = <<locator1.translateX, locator1.translateY, locator1.translateZ>>;\r\nif (abs(particleShape1.position - $locPos) < <<$swarmSize, $swarmSize, $swarmSize>>)\r\n	particleShape1.acceleration = $swarmSpeed * sphrand ($swarmSize);\r\nelse \r\n	particleShape1.acceleration = -0.5 * $swarmSpeed * (particleShape1.position - $locPos);\r\n\r\nfor ($i=0; $i<$partSize; $i++)\r\n	{\r\n	if (particleShape1.position != $otherPos[$i])\r\n		{\r\n		$difference = particleShape1.position - $otherPos[$i];\r\n		if (abs($difference) < <<$minDist, $minDist, $minDist>>)\r\n			{\r\n			particleShape1.acceleration = particleShape1.acceleration + $influence * (1.0 / ($dif//ference + 0.00001));\r\n			}\r\n		else if (abs($difference) > <<$maxDist, $maxDist, $maxDist>> && abs($difference) < $minDiff)\r\n			{\r\n			$minDiff = $difference;\r\n			}\r\n		}\r\n	}\r\n\r\nif ($minDiff < 10 * $maxDist)\r\n	particleShape1.acceleration = particleShape1.acceleration + $influence * (-1 * $difference);\r\n\r\nif ($countIDs = $partSize)\r\n	$countIDs = 0;\r\nelse\r\n	{\r\n	$countIDs++;\r\n	$otherPos[$countIDs] = particleShape1.position;\r\n	}" -r particleShape1;
+//dynExpression -s "global float $swarmSize;\r\nglobal float $swarmSpeed;\r\nglobal float $minDist;\r\nglobal float $maxDist;\r\nglobal float $influence;\r\nvector $locPos;\r\nvector $difference;\r\nglobal vector $otherPos[];\r\nglobal int $countIDs;\r\nint $partSize = particleShape1.count;\r\nprint $partSize;\r\nint $i;\r\n\r\n$locPos = <<locator1.translateX, locator1.translateY, locator1.translateZ>>;\r\nif (abs(particleShape1.position - $locPos) < <<$swarmSize, $swarmSize, $swarmSize>>)\r\n	particleShape1.acceleration = $swarmSpeed * sphrand ($swarmSize);\r\nelse \r\n	particleShape1.acceleration = -0.5 * $swarmSpeed * (particleShape1.position - $locPos);\r\n\r\nfor ($i=0; $i<$partSize; $i++)\r\n	{\r\n	if (particleShape1.position != $otherPos[$i])\r\n		{\r\n		$difference = particleShape1.position - $otherPos[$i];\r\n		if (abs($difference) < <<$minDist, $minDist, $minDist>>)\r\n			{\r\n			particleShape1.acceleration = particleShape1.acceleration + $influence * (1.0 / ($difference + 0.00001));\r\n			}\r\n		el//se if (abs($difference) > <<$maxDist, $maxDist, $maxDist>>)\r\n			{\r\n			particleShape1.acceleration = particleShape1.acceleration + $influence * (-1 * $difference);\r\n			}\r\n		}\r\n	}\r\nif ($countIDs = $partSize)\r\n	$countIDs = 0;\r\nelse\r\n	{\r\n	$countIDs++;\r\n	$otherPos[$countIDs] = particleShape1.position;\r\n	}" -r particleShape1;
+//dynExpression -s "global float $swarmSize;\r\nglobal float $swarmSpeed;\r\nvector $locPos;\r\n$locPos = <<locator1.tx, locator1.ty, locator1.tz>>;\r\nif (abs(particleShape1.position - $locPos) < <<$swarmSize, $swarmSize, $swarmSize>>)\r\n	particleShape1.acceleration = $swarmSpeed * sphrand ($swarmSize);\r\nelse particleShape1.acceleration = -0.5 * $swarmSpeed * (particleShape1.position - $locPos);" -r particleShape1;
+currentTime -e `playbackOptions -query -min`;
+togglePlayback;
+} //end proc buildSwarm
+
+
+global proc flock ()
+{
+string $winName = "flockWin";
+global float $gridSize = 10;
+global float $density = 2;
+global float $swarmSize = 10;
+global float $swarmSpeed = 1;
+global float $maxDist = 5;
+global float $minDist = 0;
+global float $influence = 0;
+
+check ($winName);
+window -title "Flock" -wh 400 300 $winName;
+columnLayout;
+
+floatSliderGrp -label "Initial swarm grid size" -field true
+                          -minValue 0 -maxValue 20
+                          -fieldMinValue 0 -fieldMaxValue 100
+                          -value 10
+		-cc "$gridSize = `floatSliderGrp -q -v gridSlider`;"
+		-dc "$gridSize = `floatSliderGrp -q -v gridSlider`;" gridSlider;
+text " ";
+//print ($gridSize + "\n");
+
+floatSliderGrp -label "Swarm Spacing" -field true
+                          -minValue 0 -maxValue 20
+                          -fieldMinValue 0 -fieldMaxValue 100
+                          -value 2
+		-cc "$density = `floatSliderGrp -q -v densitySlider`;"
+		-dc "$density = `floatSliderGrp -q -v densitySlider`;" densitySlider;
+text " ";
+//print ($density + "\n");
+
+floatSliderGrp -label "Swarm Range" -field true
+                          -minValue 0 -maxValue 20
+                          -fieldMinValue 0 -fieldMaxValue 100
+                          -value 10
+		-cc "$swarmSize = `floatSliderGrp -q -v swarmSlider`;"
+		-dc "$swarmSize = `floatSliderGrp -q -v swarmSlider`;" swarmSlider;
+text " ";
+//print ($swarmSize + "\n");
+floatSliderGrp -label "Swarm Speed" -field true
+                          -minValue 0.1 -maxValue 10
+                          -fieldMinValue 0.1 -fieldMaxValue 50
+                          -value 1
+		-cc "$swarmSpeed = `floatSliderGrp -q -v speedSlider`;"
+		-dc "$swarmSpeed = `floatSliderGrp -q -v speedSlider`;" speedSlider;
+text " ";
+
+floatSliderGrp -label "Per Particle Min Distance" -field true
+                          -minValue 0 -maxValue 20
+                          -fieldMinValue 0 -fieldMaxValue 100
+                          -value 0
+		-cc "$minDist = `floatSliderGrp -q -v minDistSlider`;"
+		-dc "$minDist = `floatSliderGrp -q -v minDistSlider`;" minDistSlider;
+text " ";
+
+floatSliderGrp -label "Per Particle Max Distance" -field true
+                          -minValue 0 -maxValue 20
+                          -fieldMinValue 0 -fieldMaxValue 100
+                          -value 5
+		-cc "$maxDist = `floatSliderGrp -q -v maxDistSlider`;"
+		-dc "$maxDist = `floatSliderGrp -q -v maxDistSlider`;" maxDistSlider;
+text " ";
+
+floatSliderGrp -label "Per Particle Influence" -field true
+                          -minValue 0 -maxValue 1
+                          -fieldMinValue 0 -fieldMaxValue 1
+                          -value 0
+		-cc "$influence = `floatSliderGrp -q -v influenceSlider`;"
+		-dc "$influence = `floatSliderGrp -q -v influenceSlider`;" influenceSlider;
+text " ";
+
+button -l "Build the Swarm!" -c ("buildSwarm ();");
+text " ";
+button -l "Delete Old Swarm" -c ("deleteIt ();");
+text " ";
+button -l "Close" -c ("deleteUI " + $winName);
+
+showWindow $winName;
+} //end proc gnats;
+
+

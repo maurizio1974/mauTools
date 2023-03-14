@@ -1,0 +1,189 @@
+/////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////// ORIENT BY VELOCITY //////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
+//// (c) Robert Schröder, 2011 //////////////////////////////////////////////////////
+////////////////////////////////////////////////////////// procanic.blogspot.com ////
+/////////////////////////////////////////////////////////////////////////////////////
+//                                                                                 //
+// DESCRIPTION:                                                                    //
+// The tool can orient an object with animated translation towards its direction   //
+// of travel. The effect is pretty much like animating an object along a motion    //
+// path. The downside of the motion path is that you have to adjust all uValue     //
+// keys when ever you change the length of the curve.                              //
+// With OrientByVelocity you can simply animate freeform and still have the        //
+// motionPath-like auto rotation.                                                  //
+// In Maya 2012 you can even use Editable Motion Trails ...                        //
+//                                                                                 //
+/////////////////////////////////////////////////////////////////////////////////////
+//                                                                                 //
+// DISCLAIMER:                                                                     //
+// you can not use the same object as motion source and rotation target because    //
+// this would create some kind of dependency loop. instead: animate a locator and  //
+// pointConstraint the object you want to orient to that locator ...               //
+//                                                                                 //
+/////////////////////////////////////////////////////////////////////////////////////
+//                                                                                 //
+// USAGE:                                                                          //
+// - animate a locator (translate only)                                            //
+// - add locator in GUI as "animated Position Locator"                             //
+// - pointConstraint object to locator and add the object as "Object to Orient"    //
+// - press "Create Object Orient by Velocity Setup"                                //
+// - check advanced options for animatable reverse attribute                       //
+// - create/delete speed HUD in km/h via GUI                                       //
+//                                                                                 //
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+
+global proc OBV_GUI()
+{
+	global string $ObvPosObj;
+	global string $ObvAimObj; 
+	
+	if(`window -exists OBV_window`) deleteUI OBV_window;
+	if(`windowPref -exists OBV_window`) windowPref -r OBV_window;
+	
+	window -t "Orient By Velocity v0.1 BETA © 2011 Robert Schroeder" -titleBar 1 -mnb 1 -mxb 0 -mb 1 -tlb 0 -sizeable 1 OBV_window;
+
+	columnLayout;
+		rowLayout -nc 3 -cw 1 5 -cw 2 485 -cw 3 5;
+			separator -w 5 -hr 1 -st "none";
+			columnLayout;
+				separator -h 5 -hr 1 -st "none";
+				textFieldButtonGrp -label "Animated Position Locator" -text "" -buttonLabel "Add" -bc "OBV_addPosLoc" OBV_textfield1;
+				separator -h 5 -hr 1 -st "none";
+				textFieldButtonGrp -label "Object to Orient" -text "" -buttonLabel "Add" -bc "OBV_addAimObj" OBV_textfield2;
+				separator -h 20 -w 480 -hr 1 -st "in";
+				button -w 480 -l "Create Orient by Velocity Setup" -c "OBV_createSetup" -en 0 OBV_createSetupButton;
+				if (`objExists obv_locator_aim`)
+				{
+					separator -h 5 -hr 1 -st "none";
+					frameLayout -l "Advanced Options:" -cl 1 -cll 1 -w 480 -cc "window -e -h 203 OBV_window;";
+						separator -h 1 -hr 1 -st "none";
+						rowLayout -nc 5;
+							attrControlGrp -attribute "obv_locator_aim.reverse";
+							separator -w 5 -hr 1 -st "none";
+							button -l " Set Key" -h 20 -c "setKeyframe obv_locator_aim.reverse;";
+							separator -w 5 -hr 1 -st "none";
+							button -l "Open in Graph Editor" -h 20 -c "select -r obv_locator_aim; GraphEditor;";
+						setParent..;
+						attrControlGrp -attribute "obv_locator_aim.fps";
+						separator -h 1 -hr 1 -st "none";
+					setParent..;
+				}			
+				separator -h 20 -w 480 -hr 1 -st "in";
+				rowLayout -nc 3;
+					button -w 235 -l "Create Speed HUD" -c "RS_createSpeedHUD" -en (`objExists obv_locator_aim`) OBV_speedOn;
+					separator -w 5 -hr 1 -st "none";
+					button -w 235 -l "Delete Speed HUD" -c "RS_deleteSpeedHUD" -en (`objExists obv_locator_aim`) OBV_speedOff;
+				setParent..;					
+				separator -h 20 -w 480 -hr 1 -st "in";
+			setParent..;	
+			separator -w 5 -hr 1 -st "none";
+		setParent..;	
+	setParent..;	
+	
+	showWindow OBV_window;
+}
+
+
+global proc OBV_addPosLoc()
+{
+	string $sel[] = `ls -sl`;
+	string $field2 = `textFieldButtonGrp -q -tx OBV_textfield2`;
+	if ((`objectType $sel[0]` == "transform") && ($field2 != $sel[0])) textFieldButtonGrp -e -tx ($sel[0]) OBV_textfield1;
+	string $field1 = `textFieldButtonGrp -q -tx OBV_textfield1`;
+	if (($field1 != $field2) && ($field1 != "") && ($field2 != "")) button -e -en 1 OBV_createSetupButton;
+}
+
+
+global proc OBV_addAimObj()
+{
+	string $sel[] = `ls -sl`;
+	string $field1 = `textFieldButtonGrp -q -tx OBV_textfield1`;
+	if ((`objectType $sel[0]` == "transform") && ($field1 != $sel[0])) textFieldButtonGrp -e -tx ($sel[0]) OBV_textfield2;
+	string $field2 = `textFieldButtonGrp -q -tx OBV_textfield2`;
+	if (($field1 != $field2) && ($field1 != "") && ($field2 != "")) button -e -en 1 OBV_createSetupButton;
+}
+
+
+global proc RS_createSpeedHUD()
+{
+	headsUpDisplay -section 5 -block 1 -blockSize "small" -l ("Speed :") 
+		-command "RS_readSpeed()" -event "timeChanged" speedHUD1;
+}
+
+
+global proc RS_deleteSpeedHUD()
+{
+	if (`headsUpDisplay -ex speedHUD1`) headsUpDisplay -rem speedHUD1;
+}
+	
+	
+global proc string RS_readSpeed()
+{
+	float $value = `getAttr obv_locator_aim.kmh`;
+	int $speed = floor($value + 0.5);
+	string $speedtxt = ($speed + " km/h");
+	return $speedtxt;
+}
+
+
+global proc OBV_createSetup()
+{
+	string $field1 = `textFieldButtonGrp -q -tx OBV_textfield1`;
+	string $field2 = `textFieldButtonGrp -q -tx OBV_textfield2`;
+
+	if ( ($field1 != "") && ($field2 != "") && (`objExists $field1`) && (`objExists $field2`) && ($field1 != $field2) )
+	{
+		// select translRot ctrl & press button
+		string $posObj = `textFieldButtonGrp -q -tx OBV_textfield1`;
+		string $aimObj = `textFieldButtonGrp -q -tx OBV_textfield2`;
+		
+		// create position locator 
+		spaceLocator -p 0 0 0 -n "obv_locator_pos";
+		// constraint to transl rot ctrl 
+		pointConstraint -offset 0 0 0 -weight 1 $posObj obv_locator_pos;
+		
+		// create aim locator @ 0 
+		spaceLocator -p 0 0 0 -n "obv_locator_aim";
+		addAttr -ln "fps" -at double -min 1 -max 100 -dv 25 obv_locator_aim;
+		setAttr -e-keyable true obv_locator_aim.fps;
+		addAttr -ln "kmh" -at double obv_locator_aim;
+		setAttr -e-keyable true obv_locator_aim.kmh;
+		addAttr -ln "reverse" -at bool obv_locator_aim;
+		setAttr -e-keyable true obv_locator_aim.reverse;
+		
+		group -em -n "orientByVelocity"; 
+		xform -os -piv 0 0 0;
+		parent obv_locator_pos obv_locator_aim orientByVelocity;
+		if (`objExists "ANIMs"`) parent orientByVelocity ANIMs;
+		
+		string $expr = "/////////// ORIENTATION BY VELOCITY ///////////\n";
+		$expr += "vector $pos1 = `getAttr -t (frame-1) obv_locator_pos.translate`;\n";
+		$expr += "vector $pos2 = <<obv_locator_pos.translateX, obv_locator_pos.translateY, obv_locator_pos.translateZ>>;\n";
+		$expr += "vector $vel = $pos2 - $pos1;\n";
+		$expr += "vector $newPos;\n";
+		$expr += "// only change aim position if object is moving\n";
+		$expr += "if (mag($vel))\n{\n";
+		$expr += "	// add reverse switch\n";
+		$expr += "	if (reverse) $newPos = $pos2 - $vel;\n";
+		$expr += "	else $newPos = $pos2 + $vel;\n";
+		$expr += "	translateX = $newPos.x;\n";
+		$expr += "	translateY = $newPos.y;\n";
+		$expr += "	translateZ = $newPos.z;\n}\n\n";
+		$expr += "// calculate km/h\n";
+		$expr += "float $cmPerFrame = mag($vel);\n";
+		$expr += "kmh = $cmPerFrame / 100 / 1000 * obv_locator_aim.fps * 3600;\n";
+		expression -s $expr -o obv_locator_aim -ae 1 -uc all;
+		
+		aimConstraint -offset 0 0 0 -weight 1 -aimVector 1 0 0 -upVector 0 1 0 -worldUpType "vector" -worldUpVector 0 1 0 obv_locator_aim $aimObj;
+	
+		button -e -en (`objExists obv_locator_aim`) OBV_speedOn;
+		button -e -en (`objExists obv_locator_aim`) OBV_speedOff;
+	}
+	OBV_GUI;
+}
+
+
+OBV_GUI;

@@ -1,0 +1,149 @@
+source "C:/Users/mgiglioli/Documents/maya/2018/scripts/mau/scripts/vctrUtils.mel";
+
+global proc do_centroidMau()
+{
+    int $version = 1;
+
+    string $nodi[] = `ls -sl`;
+    int $nbNodi = `size $nodi`;
+    // print $nodi;
+    // print ($nbNodi+"\n");
+
+    if ($nbNodi > 0)
+    {
+        centroidMau($nodi, $nbNodi);
+    } else {
+        print("//\n");
+        print("// ERROR: do_geomOrientedTfm -\n");
+        print("//\n");
+    }
+}
+
+
+
+global proc centroidMau( string $nodi[], int $nbNodi )
+{
+    vector $pnts[];
+    int $nbPnts = 0;
+    float $pnt[3];
+
+    int $componentMode = 0;
+    int $i = 0;
+    // FOR EACH NODES SELECTED
+    for ($i = 0; $i < $nbNodi; $i++)
+    {
+
+        // EXPAND ANY NURBS COMPONENT SELECTIONS
+        string $nurbCvs[] = `filterExpand -ex true -sm 28 $nodi[$i]`;
+        int $nbNurbsCvs = `size $nurbCvs`;
+        for ($j = 0; $j < $nbNurbsCvs; $j++)
+        {
+            $componentMode = 1;
+            float $pnt[3] = `xform -q -ws -t $nurbCvs[$j]`;
+            $pnts[$nbPnts++] = <<$pnt[0], $pnt[1], $pnt[2]>>;
+        }
+
+        // EXPAND ANY POLYGON COMPONENT SELECTIONS
+        string $polyVerts[] = `filterExpand -ex true -sm 31 $nodi[$i]`;
+        int $nbPolyVerts = `size $polyVerts`;
+        for ($j = 0; $j < $nbPolyVerts; $j++)
+        {
+            $componentMode = 1;
+            float $pnt[3] = `xform -q -ws -t $polyVerts[$j]`;
+            $pnts[$nbPnts++] = <<$pnt[0], $pnt[1], $pnt[2]>>;
+        }
+        //print $pnts;
+        if ($componentMode == 0)
+        {
+            string $shape[] = `listRelatives -s $nodi[$i]`;
+            string $nodeShape = $shape[0];
+
+            // IF THE NODES SHAPE IS A NURB
+            if (`objectType $nodeShape` == "nurbsSurface")
+            {
+                int $nbU = `getAttr ($nodeShape+".maxValueU")`;
+                int $nbV = `getAttr ($nodeShape+".maxValueV")`;
+
+                // PICK SEVERAL RANDOM POINTS ON THE SURFACE
+                float $uStep = (float)$nbU / 10.0;
+                float $vStep = (float)$nbV / 10.0;
+                float $u, $v;
+                for ($u = 0; $u < $nbU; $u+=$uStep)
+                {
+                    for ($v = 0; $v < $nbV; $v+=$vStep)
+                    {
+                        string $infoNode;
+                        $infoNode = `pointOnSurface -ch on -u $u -v $v $nodeShape`;
+                        $pnt = `getAttr($infoNode+".position")`;
+                        delete $infoNode;
+                        $pnts[$nbPnts++] = <<$pnt[0], $pnt[1], $pnt[2]>>;
+                    }
+                }
+            } // END NURBSURFACE
+
+            if (`objectType $nodeShape` == "mesh")
+            {
+                int $nb[] = `polyEvaluate -v $nodeShape`;
+                int $nbMeshPnts = $nb[0];
+                for ($j = 0; $j < $nbMeshPnts; $j++)
+                {
+                    $pnt = `pointPosition -w ($nodeShape+".pt["+$j+"]")`;
+                    $pnts[$nbPnts++] = <<$pnt[0], $pnt[1], $pnt[2]>>;
+                } // END FOR j
+            } // END MESH
+        } // END IF COMPONENT MODE
+    }
+    // THE POINTS ARE IN WORLDSPACE AT THIS POINT
+    centroidPtns($pnts, $nbPnts);
+}
+
+global proc centroidPtns( vector $pnts[], int $nbPnts )
+{
+    int $doCentroid = 0;
+    // INITIAL BOUNDS FOR THE BOX
+    float $xmin =  99999.0;
+    float $ymin =  99999.0;
+    float $zmin =  99999.0;
+    float $xmax = -99999.0;
+    float $ymax = -99999.0;
+    float $zmax = -99999.0;
+
+    // FOR THE COVARIANCE CALCULATION
+    vector $centroid = <<0.0, 0.0, 0.0>>;
+
+    for ($i = 0; $i < $nbPnts; $i++)
+    {
+        vector $p = $pnts[$i];
+
+        if (!$doCentroid)
+        {
+            if ($p.x < $xmin) $xmin = $p.x;
+            if ($p.y < $ymin) $ymin = $p.y;
+            if ($p.z < $zmin) $zmin = $p.z;
+            if ($p.x > $xmax) $xmax = $p.x;
+            if ($p.y > $ymax) $ymax = $p.y;
+            if ($p.z > $zmax) $zmax = $p.z;
+        }
+
+        $centroid = vctrAdd($centroid, $p);
+        //print $centroid;
+    }
+
+    float $centerX;
+    float $centerY;
+    float $centerZ;
+
+    if (!$doCentroid)
+    {
+        $centerX = ($xmax + $xmin) / 2.0;
+        $centerY = ($ymax + $ymin) / 2.0;
+        $centerZ = ($zmax + $zmin) / 2.0;
+    }
+
+    float $scale = 1.0 / (float)$nbPnts;
+    $centroid = vctrScale($centroid, $scale);
+
+    string $newNode[] = `spaceLocator`;
+
+    xform -ws -t ($centroid.x) ($centroid.y) ($centroid.z) $newNode[0];
+}

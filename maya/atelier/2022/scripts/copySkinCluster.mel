@@ -1,0 +1,45 @@
+////////////////////////////////////////////////////////////////
+//
+//  copySkinCluster.mel v1.1
+//  05/31/2006
+//  By Eli Enigenburg (eli@hierographics.com)
+//  www.hierographics.com
+//
+//  Description:
+//    This tool will bind the target object to the same skeleton
+//    as the source object and add the necessary influences,
+//    effectively duplicating the skin cluster from one object
+//    to another.
+//
+//  Usage:
+//    copySkinCluster [source object] [target object]
+//
+//  Returns:
+//    - nothing -
+//
+//  Example:
+//    copySkinCluster poly_hand1 subd_hand1
+//
+//  Shelf Button Script:
+//    $sel = `ls -sl`;
+//    if (`size $sel` != 2) {
+//      error "You must select a source object and a target object.";
+//    } else {
+//      copySkinCluster $sel[0] $sel[1];
+//    }
+//
+////////////////////////////////////////////////////////////////
+
+global proc copySkinCluster (string $sourceObj, string $targetObj) {
+	string $sc = `findRelatedSkinCluster $sourceObj`;
+	string $sourceInfs[] = `skinCluster -q -inf $sc`;
+	select -r $targetObj;
+	$newSC = `skinCluster -n ("skinCluster_" + $targetObj) -tsb $sourceInfs[0] $targetObj`;
+	for ($i=1; $i < `size $sourceInfs`; $i++) {
+		skinCluster -e -ai $sourceInfs[$i] $newSC;
+	}
+	// uncomment below to copy skin weights too
+	// select -r $targetObj;
+	// select -af $sourceObj;
+	// doCopySkinWeightsArgList 1 { "" };
+}

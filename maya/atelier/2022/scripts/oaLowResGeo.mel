@@ -1,0 +1,133 @@
+/*
+===========================================================================
+
+<NAME> oaLowResGeo.mel </NAME>
+<VERSION> v1.1 </VERSION>
+<AUTHORS> Oleg Alexander (olegalexander@gmail.com) </AUTHORS>
+
+<DESCRIPTION> 
+A quick way to create low res geometry for your rig.
+Creates a poly cylinder for every joint in the hierarchy and parents it
+under the corresponding joint. </DESCRIPTION>
+
+<TO_USE> 
+Select one or more root joints and execute 'oaLowResGeo'. 
+
+WORKFLOW:
+	
+	o Once the cylinders are created you may scale them or modify them using history.
+	o Modify the radius of the cylinders so that they roughly fit the high res skin.
+	o Finally, it is highly recommended to use xyShrinkWrap.mel (included in this zip file)
+		to better fit the low res geo to the high res skin. To use xyShrinkWrap,
+		simply select all your low res geo first and the high res skin last. Execute 'xyShrinkWrap'.
+
+WARNING: 
+		These two script in combination will help cut down your low res geo setup time 
+		to about five minutes! </TO_USE>
+
+<HISTORY>
+	v1.1 (November 1, 2005)
+		o Made the radius of each cylinder 20% of the length. 
+			This generally makes the hands look better and breaks up the pattern a little.
+
+	v1.0 (Halloween, October 31, 2005) 
+		o Original Release 	</HISTORY>
+		
+<RELATED_SCRIPT></RELATED_SCRIPT>
+
+<OTHER></OTHER>
+
+IF YOU ENJOY THIS MEL SCRIPT, PLEASE RATE IT. I WOULD APPRECIATE IT. THANK YOU!
+===========================================================================
+*/
+
+/*
+//////////////////////////////////////
+<PROC>
+	<NAME> oaLowResGeoRecursive </NAME>
+	<DESCRIPTION> The main recursive procedure that creates the cylinders. </DESCRIPTION> 
+	<ARGS> (string $rootJoint) </ARGS>
+	<RETURNS> Nothing. </RETURNS>
+*/
+global proc oaLowResGeoRecursive(string $rootJoint) {
+
+	select $rootJoint;
+	
+	//Get the child of this joint
+	string $childJoint[] = `listRelatives $rootJoint`;
+		
+	for ($child in $childJoint) {
+		
+		//Again, make sure only joints are used
+		if (`nodeType $child` != "joint") {
+			warning ($child + " is not a joint. Skipping...");
+			continue;
+		}
+		
+		//Get the world possition of the root and child joint
+		vector $point1 = `joint -q -p $rootJoint`;
+		vector $point2 = `joint -q -p $child`;
+		
+		//Find the distance between them (this will be the 'length' of the cylinder)
+		float $distance = mag($point1 - $point2);
+		
+		//Make the radius of the cylinder 20% of the length
+		float $radius = $distance * 0.20;
+			
+		//Create the poly cylinder
+		string $geo[] = `polyCylinder -r $radius -h $distance -sx 8 -sy 4 -sz 1 -ax 0 1 0 -cuv 1 -ch 1`;
+		
+		//Point and aim constrain it to the two joints
+		delete `pointConstraint $rootJoint $child $geo[0]`;
+		delete `aimConstraint -aimVector 0 1 0 $child $geo[0]`;
+		
+		//Rename the cylinder ($rootJoint + "Geo")
+		$geo[0] = `rename $geo[0] ($rootJoint + "Geo")`;
+		
+		//Parent it under the corresponding joint
+		parent $geo[0] $rootJoint;
+		
+		//Refresh view to show progress
+		refresh -cv;
+		
+		//Call the recursive procedure again with the child joint this time
+		oaLowResGeoRecursive($child);
+	}
+}
+//</PROC> oaLowResGeoRecursive
+
+
+
+//////////////////////////////////
+/*
+<PROC>
+	<NAME> oaLowResGeo </NAME>
+	<DESCRIPTION> The procedure to call. </DESCRIPTION> 
+	<ARGS> None </ARGS>
+	<RETURNS> Nothing </RETURNS>
+*/
+global proc oaLowResGeo() {
+	
+	//Get the selected root joints
+	string $selection[] = `ls -sl`;
+	if (`size $selection` == 0) error "Nothing is selected. Please select one or more root joints.";
+	
+	for ($rootJoint in $selection) {
+		
+		//Make sure only joints are used
+		if (`nodeType $rootJoint` != "joint") {
+			warning ($rootJoint + " is not a joint. Skipping...");
+			continue;
+		}
+		
+		//Call main recursive procedure
+		oaLowResGeoRecursive($rootJoint);
+	}
+	
+	//Select the root joints when done
+	select $selection;
+	
+	//Confirmation
+	print "Low Res Geometry created successfully! Use xyShrinkWrap.mel to better fit this geometry to the high res skin.\n";
+}
+//</PROC> oaLowResGeo
