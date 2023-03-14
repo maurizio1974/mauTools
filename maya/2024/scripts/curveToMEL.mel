@@ -1,0 +1,68 @@
+// Help: Prints MEL commands that can be fed back to into the script editor to 'draw' a curve.  
+global proc string [] curveToMEL(string $curve)
+{
+	int	$degree = 0,
+		$numControlPoints = 0,
+		$numKnots = 0,
+		$i = 0,
+		$currentCurveShape = 0,
+		$currentCurveCommand;
+	
+	string	$shapeList[],
+			$shape,
+			$curveCommand,
+			$knotCommand,
+			$outputCommands[];
+	
+	// float 
+	
+	if(`objExists $curve`)
+	{
+		// Get the shapes
+		$shapeList = `listRelatives -f -shapes $curve`;
+		
+		for($shape in $shapeList)
+		{
+			// if it's a valid nurbsCurve shape
+			if(`nodeType $shape` == "nurbsCurve")
+			{
+				$curveCommand = "";
+				$knotCommand = "\t";
+				
+				// get the degree, the number of vertices and the number of knots required to build the curve.
+				$degree = `getAttr ($shape + ".degree")`;
+				$numControlPoints = `getAttr -size ($shape + ".controlPoints")`;
+				$numKnots = ($numControlPoints + $degree - 1);
+				$curveCommand = ("\ncurve -d " + $degree + " ");
+				
+				// Assemble the curve command by appending each vertices world space position which we recover using the pointPosition command.
+				for($i = 0; $i < $numControlPoints; $i++)
+				{
+					$pointPosition = `pointPosition -w ($shape + ".controlPoints[" + $i + "]")`;
+					$curveCommand += ("\n\t-p " + $pointPosition[0] + " " + $pointPosition[1] + " " + $pointPosition[2] + " ");
+				}
+
+				$curveCommand += "\n";
+
+				// For each knot build the knot portion of the command; First the multiple knots to weight the curve so that it starts at the first control point.
+					for($i = 0; $i < $degree; $i++)
+					$knotCommand += ("-k 0 ");
+				
+				// Knots for each control point
+				for($i = 1; $i < ($numControlPoints - $degree); $i++)
+					$knotCommand += ("-k " + $i + " ");
+
+				// Multiple knots to weight the curve so that it ends at the first control point.
+				for($i = 0; $i < $degree; $i++)
+					$knotCommand += ("-k " + ($numControlPoints - $degree) + " ");			
+		
+				// Finally assemble the curve and knot vector portions of the command and add them to the list of returned commands.
+				$outputCommands[$currentCurveCommand++] = ($curveCommand + $knotCommand + " ; // " + (substitute(".*|", $shape, "")));
+			}
+		}
+	}
+	else
+		warning($curve + "; No such node exists!\n");
+		
+	return $outputCommands;
+}

@@ -1,0 +1,268 @@
+//	Description:	initializes weightSculptContext tool property sheet values
+//
+//	Input Arguments:
+//		toolName  - this is the name of the instance of the tool
+//					that the property sheet is modifying.
+//
+//	Return Value:
+//		None.
+
+
+global proc weightSculptValues(string $toolName) 
+{
+	string $parent = 
+		(`toolPropertyWindow -q -location` + "|weightSculpt|weightSculptFrame|weightSculptOptions");
+	setParent $parent;
+
+	string $icon = "weightSculptTool.xpm";
+	string $help = "";
+	toolPropertySetCommon $toolName $icon $help;
+
+	frameLayout -e -en true -cl false weightSculptFrame;
+	weightSculptOptionValues($toolName);
+
+	toolPropertySelect weightSculpt;
+}
+
+//the function that gets evaluated when the tool is activated
+global proc weightSculptOptionValues(string $toolName)
+{
+	int $set;
+	
+ 	// displayPrecision
+ 	$set = eval("weightSculptContext -q -dp " + $toolName);
+ 	intSliderGrp -e -value $set displayPrecision;
+
+	// clampMin
+	$set = eval("weightSculptContext -q -cmn " + $toolName);
+ 	if ($set) {
+ 		checkBoxGrp -e -value1 1 clampMin;
+ 	}
+ 	else {
+ 		checkBoxGrp -e -value1 0 clampMin;
+ 	}
+
+	// clampMax
+	$set = eval("weightSculptContext -q -cmx " + $toolName);
+ 	if ($set) {
+ 		checkBoxGrp -e -value1 1 clampMax;
+ 	}
+ 	else {
+ 		checkBoxGrp -e -value1 0 clampMax;
+ 	}
+
+	// weightMin
+	$set = eval("weightSculptContext -q -wmn " + $toolName);
+	floatField - e -value $set weightMin;
+
+	// weightMax
+	$set = eval("weightSculptContext -q -wmx " + $toolName);
+	floatField - e -value $set weightMax;
+    
+    /*
+	//clear the deformer list
+	textScrollList
+		-e
+		-removeAll
+		deformerList;
+
+	//get the selected shape
+	string $sel[];
+	$sel = `ls -sl -l`;
+	if (size($sel) == 0)
+	{
+		return;
+	}
+	$selTransform = $sel[0];
+	$selectedShape = "";
+	if (`nodeType($selTransform)` == "mesh")
+	{
+		$selectedShape = $selTransform;
+	}
+	else
+	{
+		$selShapes = `listRelatives -s -f $selTransform`;
+		if (size($selShapes) == 0)
+		{
+			return;
+		}
+		for ($i = 0; $i < size($selShapes); $i++)
+		{
+			if (`nodeType($selShapes[$i])` == "mesh")
+			{
+				$selectedShape = $selShapes[$i];
+				break;
+			}
+		}
+	}
+
+	//update the deformerList
+	string $deformerList[];
+	$deformerList = `getDeformerList2 $selectedShape`;
+
+    string $activeDeformer = `weightSculptContext -q -def $toolName`;
+
+    $usePlug = `weightSculptContext -q -up $toolName`;
+    $plug = `weightSculptContext -q -plug $toolName`;
+
+	for ($i = 0; $i < size($deformerList); $i++)
+	{
+	    $eachDeformer = $deformerList[$i];
+	    string $paintableAttributes[];
+	    $paintableAttributes = `listPaintableAttributes $eachDeformer`;
+	    for ($j = 0; $j < size($paintableAttributes); $j ++)
+	    {
+            $eachPaintableAttr = $paintableAttributes[$j];
+            string $eachPaintableAttrSplit[];
+            tokenize $eachPaintableAttr "." $eachPaintableAttrSplit;
+            $eachPaintableAttr = $eachPaintableAttrSplit[size($eachPaintableAttrSplit) - 1];
+            textScrollList 
+            	-e
+                -append ($eachDeformer + "." + $eachPaintableAttr)
+        	    deformerList;
+
+            if ($activeDeformer == $eachDeformer)
+            {
+                if ($usePlug)
+                {
+                    //get the child plug of the weightList plug
+                    $childAttrList = `attributeQuery -lc -node $activeDeformer $plug`;
+                    $childAttr = $childAttrList[0];
+
+                    //if the child plug is the same as the one we are adding to the list
+                    //then select it
+                    if ($childAttr == $eachPaintableAttr)
+                    {
+                        textScrollList
+                            -e
+                            -selectItem ($eachDeformer + "." + $eachPaintableAttr)
+                            deformerList;                    
+                    }
+                }
+                else
+                {
+                    //make sure the activeDeformer is a MFnGeometryFilter
+                    $nodeTypeList = `nodeType -inherited $activeDeformer`;
+                    $isWeightedGeometryFilter = false;
+                    for ($k = 0; $k < size($nodeTypeList); $k++)
+                    {
+                        if ($nodeTypeList[$k] == "weightGeometryFilter")
+                        {
+                            $isWeightedGeometryFilter = true;
+                            break;
+                        }
+                    }
+
+                    if (!$isWeightedGeometryFilter)
+                    {
+                        continue;
+                    }
+
+                    //select the active weightMap in the deformerList
+                    if ($eachPaintableAttr == "weights")
+                    {
+                        textScrollList
+                            -e
+                            -selectItem ($eachDeformer + "." + $eachPaintableAttr)
+                            deformerList;
+                    }
+                }
+            }
+	    }
+	}
+    */
+}
+/*
+global proc string[] getDeformerList2(string $shape)
+{
+    //valid_node_list = ['wire','cluster','nonLinear','softMod','ffd','repulsor']
+    string $deformerNodeArray[];
+    //if the shape exists
+    if (`objExists $shape`)
+    {
+        //get the list of deformers
+        string $set_list[];
+        $set_list =  `listSets -object $shape`;
+        if (size($set_list) == 0)
+        {
+            return {};
+        }
+        for ($i=0;$i<size($set_list);$i++)
+        {
+            $set = $set_list[$i];
+            if (objExists($set))
+            {
+                if (`attributeQuery -node $set -exists "usedBy"`)
+                {
+                    string $deformer_node = `connectionInfo -sfd ($set + ".usedBy[0]")`;
+                    string $deformer_node_tokens[];
+                    tokenize $deformer_node "." $deformer_node_tokens;
+                    $deformer_node = $deformer_node_tokens[0];
+                    if ($deformer_node != "")
+                    {
+			if (`nodeType $deformer_node` != "skinCluster")
+			{
+                        	$deformerNodeArray[size($deformerNodeArray)] = $deformer_node;
+			}
+                    }
+                }
+            }
+        }               
+    }
+    return $deformerNodeArray;
+}
+
+global proc string[] listPaintableAttributes(string $deformerNode)
+{
+    string $paintableAttributes[];
+    //go through all the attributes
+    string $attrList[];
+    $attrList = `listAttr $deformerNode`;
+    for ($i = 0; $i < size($attrList); $i++)
+    {
+        string $attr = $attrList[$i];
+        //check if it is a multi
+        string $attrSplit[];
+        tokenize $attr "." $attrSplit;
+        string $shortAttr = $attrSplit[size($attrSplit)-1];
+        if (!`attributeQuery -multi -node $deformerNode $shortAttr`)
+        {
+            continue;
+        }    
+        
+        //check if it has children
+        string $children[];
+        $children = `attributeQuery -listChildren -node $deformerNode $shortAttr`;
+        if (size($children) != 1)
+        {
+            continue;
+        }            
+        //check if it has parents
+        string $parents[];
+        $parents = `attributeQuery -listParent -node $deformerNode $shortAttr`;
+        if (size($parents))
+        {
+            continue;
+        }
+        
+        for ($j = 0; $j < size($children); $j++)
+        {
+            $child = $children[$j];
+            //check if the children are multis
+            if (!`attributeQuery -multi -node $deformerNode $child`)
+            {
+                continue;
+            }   
+                                    
+            //check if the children have children
+            $grandchildren = `attributeQuery -listChildren -node $deformerNode $child`;
+            if (size($grandchildren))
+            {
+                continue;
+            }
+            $paintableAttributes[size($paintableAttributes)] = $attr + "." + $child;
+        }
+    }
+    return $paintableAttributes;
+}
+*/

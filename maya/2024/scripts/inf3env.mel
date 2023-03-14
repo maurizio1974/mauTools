@@ -1,0 +1,61 @@
+// -----------------------------------------------------------------------------------------------------------------------
+// Tranfer influence object to skin
+//
+// Author:
+//      Maurizio Giglioli
+//
+//
+// need to run :
+//      A joint for every vertex of the influence object
+//      Select the influence object first then the skin
+//
+// Example:
+//      inf3env("skinCluster");
+// -----------------------------------------------------------------------------------------------------------------------
+
+global proc inf3env(string $skinCluster)
+{
+	string $sel[]= `ls -sl`;
+	string $fA[];
+	string $sh[1] =`listRelatives -s $sel[0]`;
+	int $vtx[1] = `polyEvaluate -v $sel[1]`;
+	int $zz = 0 ;
+	if(size($sel) == 2)
+	{
+        for($i=0;$i<$vtx[0];$i++)
+        {
+            string $cpm = `createNode closestPointOnMesh -n "tempClosestPointOnMesh"`;
+            connectAttr -f ($sh[0]+".outMesh") ($cpm+".inMesh");
+            float $pos[3] =`pointPosition ($sel[1]+".vtx["+$i+"]")`;
+            setAttr ($cpm+".inPosition") $pos[0] $pos[1] $pos[2];
+            int $cvi = `getAttr ($cpm+".closestVertexIndex")`;
+            string $infT[] = `skinPercent -q -t $skinCluster ($sel[1]+".vtx["+$i+"]")`;
+            float $infV[] = `skinPercent -q -v $skinCluster ($sel[1]+".vtx["+$i+"]")`;
+            int $x = 0 ;
+            for($e in $infT)
+            {
+                if( $e == $sel[0] && $infV[$x] != 0 )
+                {
+                    if(`objExists ($sel[0]+"_"+$cvi+"_foll_env") `)
+                    {
+                        skinPercent -tv ($sel[0]+"_"+$cvi+"_foll_env") $infV[$x] $skinCluster ($sel[1]+".vtx["+$i+"]");
+                        print ($e+".vtx["+$cvi+"] influences \""+$sel[1]+".vtx["+$i+"]\"  of this value: "+$infV[$x]+"\n");
+                        $fA[$zz] = ($sel[1]+".vtx["+$i+"]");
+                        $zz = $zz + 1;
+                    }else{
+                        print "-----------------------------------------------------------\n";
+                        print ("This joint is not there:   "+$sel[0]+"_"+$cvi+"_foll_env\n") ;
+                        print "-----------------------------------------------------------\n";
+                    }
+                }
+                $x = $x+1;
+            }
+        }
+        select -cl;
+        select $fA;
+        print "Done !\n" ;
+    }else{
+        warning "Please select the influence object and then the skin object affected !\n";
+    }
+}
+//inf3env("skinCluster1");

@@ -1,0 +1,166 @@
+/*  This file downloaded from Highend3d.com
+''  
+''  Highend3d.com File Information:
+''  
+''    Script Name: xyShrinkWrap v0.1
+''    Author: Imre Tuske
+''    Last Updated: May 9, 2002
+''    Update/Change this file at:
+''    http://www.highend3d.com/maya/mel/?section=modeling#1721
+''  
+''  Please do not alter any information above this line
+''  it is generated dynamically by Highend3d.com and will
+''  be changed automatically on any updates.
+*/
+
+//
+// *** xyShrinkWrap.mel ***
+//
+//  Version 0.1 [09-may-2002] -- by Imre Tuske
+//
+//
+//  * THIS IS MAILWARE! *
+//
+//  If you use this software regularly and you like it, let me know by dropping me an
+//  e-mail. This will guarantee that I'll keep on writing another useful pieces of MEL
+//  code which will be shared with you. Thanks!
+//
+//  [ All Contents (C) by Imre Tuske (tusimi@freemail.hu), Hungary ]
+//  [ Developments done at Black Hole Ltd. / Animation Department  ]
+//
+//
+//
+//  Description:
+//
+//  This script can be used to 'shrinkwrap' the selected objects and/or components
+//  (vertices/CVs) to the last selected object. It's based on the original idea of
+//  Erick Miller (fitMorph.mel). Just liked the cool idea and wrote my own version
+//  of it ;)
+//
+//
+//
+//  Installation/Usage:
+//
+//  Make your selection and enter
+//
+//	xyShrinkWrap
+//
+//
+//
+//  History:
+//
+//  [09-may-2002] 0.1		Initial version.
+//
+//
+
+
+proc warn( string $mod, string $msg )
+{
+	warning("xyShrinkWrap::"+$mod+"(): "+$msg);
+}
+
+
+global proc string toshape( string $n )
+{
+	string	$s[];
+
+	if (objExists($n))
+	{
+		$s=`listRelatives -pa -s -ni $n`;
+		$s=`ls -type controlPoint $n $s[0]`;
+	}
+	
+	return($s[0]);
+}
+
+
+proc wrapc( string $c, string $n ) // component (node.attr), wrapper transform
+{
+	float	$p[];
+	
+	$p=`xform -q -ws -t $c`; xform -ws -t $p[0] $p[1] $p[2] $n;
+	$p=`xform -q -ws -t $n`; xform -ws -t $p[0] $p[1] $p[2] $c;
+}
+
+
+proc wrap( string $ss[], string $ds ) // source transform(s)/shape(s)/component(s), destination geometry shape 
+{
+	global string	$gMainProgressBar;
+	string		$s, $n, $sh;
+	int		$p;
+	
+	print($ss);
+	
+	if (size(`ls -type controlPoint $ds`))
+	{
+		$n=`group -w -em -n "n1"`;							// create temp ('snapper') null
+		geometryConstraint $ds $n;
+
+		progressBar -e -bp -ii 1 -min 0 -max (size($ss)) -st "Shrinkwrapping..." $gMainProgressBar;
+
+		for($s in $ss)
+		{
+			if (`progressBar -q -ic $gMainProgressBar`) break;
+			
+			if (match("[^.]+[.][^.]+[\[].+[\]]",$s)=="")				// (check for component format)
+			{
+				// object
+				
+				$sh=$s;
+				
+				if (size(`ls -tr $s`))						// transform node
+				{
+					if (($sh=toshape($s))=="")				// find shape node
+					{
+						wrapc($s,$n);					// no shape: snap transform
+						$sh="";
+					}
+				}
+				
+				if (($sh!="")&&size(`ls -type controlPoint $sh`))		// geom. shape node: snap all control points
+				{
+					$m=`getAttr -s ($sh+".controlPoints")`;
+					$p=`progressBar -q -pr $gMainProgressBar`;
+					
+					progressBar -e -min 0 -max $m -st "Wrapping object..." $gMainProgressBar;
+					
+					for($i=0;$i<$m;$i++)
+					{
+						if (`progressBar -q -ic $gMainProgressBar`) break;
+						progressBar -e -s 1 $gMainProgressBar;
+
+						wrapc($sh+".controlPoints["+$i+"]",$n);
+					}
+					
+					progressBar -e -min 0 -max (size($ss)) -pr $p -st "Wrapping components..." $gMainProgressBar;
+				}
+			}
+			else
+			{
+				// component
+				
+				if (($s!="")&&objExists($s)) wrapc($s,$n);
+			}
+		}
+		
+		progressBar -e -ep $gMainProgressBar;
+		delete($n);									// delete temp snapper null
+	}
+	else warn("wrap",$ds+" doesn't exist or not a surface shape");
+}
+
+
+global proc xyShrinkWrap()
+{
+	string	$sl[]=`ls -fl -sl`, $d;
+	int	$i, $m=size($sl);
+	
+	if ( ($m>1)&&(($d=toshape($sl[$m-1]))!="") )
+	{
+		$sl[$m-1]="";
+		wrap($sl,$d);
+	}
+	else warn("xyShrinkWrap","Select some objects; select object to shrinkwrap to last");
+}
+
+

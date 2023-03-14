@@ -1,0 +1,44 @@
+// ---------------------------------------------------------------------------------------------------------------------
+//
+// PROJECT THE VOLUME OF A MESH TO ANOTHER ONE CREATING A SET OR JUST SELECT THE POLYS
+// usage:
+//      
+//      select the full object you want to get the selection transfer on , 
+//      then the smaller object we want to use to create  the selection.
+//      finaly run the procedure
+//
+// ---------------------------------------------------------------------------------------------------------------------
+
+global proc string[] mgTransSelGeo()
+{
+        string $sel[] = `ls -sl`, $allGeo = $sel[0], $cutGeo = $sel[1],$CPS, $newSel[];
+        float $pPos[3] ;
+        int $checkG1[1] ,$checkG2[1], $vtx;
+        select -cl;
+        if(size($sel) == 2)
+        { 
+                $checkG1 = `polyEvaluate -v $allGeo`;
+                $checkG2 = `polyEvaluate -v $cutGeo` ;
+        
+                if ($checkG1[0] > $checkG2[0])
+                {
+                        $cutGeo = $sel[0];
+                        $CPS = `createNode closestPointOnMesh` ;
+                        connectAttr -f ($allGeo+".worldMesh[0]") ($CPS+".inMesh") ;
+                        for($i = 0; $i < $checkG2[0]; $i++)
+                        {
+                                $pPos = `xform -q -ws -t ($cutGeo+".vtx["+$i+"]")` ;
+                                setAttr ($CPS+".inPosition") $pPos[0] $pPos[1] $pPos[2] ;
+                                $vtx = `getAttr ($CPS+".closestVertexIndex")` ;
+                                $newSel[$i] = ($allGeo+".vtx["+$vtx+"]") ;
+                                print ($checkG2[0]-$i+"\n");
+                        }
+                        delete $CPS;
+                }else
+                        confirmDialog -b "Ok"-m "The transfering geoemtry is higher in\n vertex count than the base mesh !\n\nInvert your selection.";
+        }else if(size($sel) < 2)
+                error "select two meshes !\n";
+        
+        select $newSel;
+        return $newSel;
+}

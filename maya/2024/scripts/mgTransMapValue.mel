@@ -1,0 +1,71 @@
+// ---------------------------------------------------------------------------------------------------------------------
+//
+//      COPY THE MAPS ATTRIBUTE FROM A MESH TO ANOTHER BASED ON THE DISTACE OF HTE RESPECTIVE VERTEX
+// 
+//      
+//      Select the node you want to transfer the map onto and run the procedure
+//      Takes three arguments:
+//                              string $node  the node where you want to get the information from
+//                              string $geoS  The mesh where the information is
+//                              string $geoE  The mesh where we want to copy the information of the Map
+//
+// ---------------------------------------------------------------------------------------------------------------------
+
+source "/u/mng/maya/scripts/skinning/mg_skinLib.mel";
+
+global proc mgTransMapValue(string $node, string $geoS, string $geoE)
+{
+    global string $gMainProgressBar; 
+    
+	string $sel[] = `ls -sl`;
+	float $pPos[3], $allValue;
+	int $x = 0; $points[1], $point1[1], $point2[1], $vtx ;
+	string $CPS ;
+
+    for($eS in $sel)
+    {
+        if(`nodeType $eS`== "dnPushNode" )
+        {
+            $point1 = `polyEvaluate -v $geoS` ;
+            $point2 = `polyEvaluate -v $geoE` ;
+            
+            if( $point2[0] > $point1[0] )// GET THE SMALLEST VERTEX COUNT OF THE MESH TO CREATE THE LOOP INFO
+                $points[0] = $point1[0] ;
+            else
+                $points[0] = $point2[0] ;
+                
+            progressBar -e -bp -ii true -st "Transfering Map ..." -max $points[0] $gMainProgressBar;
+            
+            for($i = 0; $i < $points[0]; $i++)// lOOP THROUGH THE VERTEX RANGE BASE ON THE SMALLER OBJECT FOR SPEED
+            {
+                $CPS = `createNode closestPointOnMesh` ;
+                
+                if( $point2[0] > $point1[0] )// BASED ON MESH VERTEX COUNT WE NEED TO GO ONE DIRECTION OR THE OTHER TO PROPERLY COPY VALUES
+                {
+                    $pPos = `xform -q -ws -t ($geoS+".vtx["+$i+"]")` ;
+                    setAttr ($CPS+".inPosition") $pPos[0] $pPos[1] $pPos[2] ;
+                    connectAttr -f ($geoE+".worldMesh[0]") ($CPS+".inMesh") ;
+                    $vtx = `getAttr ($CPS+".closestVertexIndex")` ;
+                    $allValue = `getAttr ($node+".weightList[0].weights["+$i+"]")`;
+                    setAttr ($eS+".weightList[0].weights["+$vtx+"]") $allValue ;
+                    print( "Setting map weights on vertex "+$vtx+" of node: "+$eS+" from vertex "+$i+" of node "+$node+"\n");
+                }else{
+                    $pPos = `xform -q -ws -t ($geoE+".vtx["+$i+"]")` ;
+                    setAttr ($CPS+".inPosition") $pPos[0] $pPos[1] $pPos[2] ;
+                    connectAttr -f ($geoS+".worldMesh[0]") ($CPS+".inMesh") ;
+                    $vtx = `getAttr ($CPS+".closestVertexIndex")` ;
+                    $allValue = `getAttr ($node+".weightList[0].weights["+$vtx+"]")`;
+                    setAttr ($eS+".weightList[0].weights["+$i+"]") $allValue ;
+                    print( "Setting map weights on vertex "+$i+" of node: "+$eS+" from vertex "+$vtx+" of node "+$node+"\n");
+                }
+                delete $CPS;
+                $x = $x+1;
+                
+                progressBar -e -s 1 $gMainProgressBar;
+            }
+        }
+        progressBar -e -ep $gMainProgressBar;
+    }
+    print "Done.\n";
+    select $sel[0];
+}

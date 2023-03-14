@@ -1,0 +1,233 @@
+global proc lockAttrMG_UI()
+{
+	if (` window -ex "lockAttrMG_WIN" `)
+		deleteUI -window "lockAttrMG_WIN";
+	
+	window -wh 200 158 "lockAttrMG_WIN";
+	
+	formLayout attrFR;
+	checkBoxGrp -ct4 "left" "left" "left" "left" -cw4 80 40 40 40 -v1 1 -v2 1 -v3 1 -ncb 3 -l "Translation" -la3 "X" "Y" "Z" attrTraCB ; 
+	checkBoxGrp -ct4 "left" "left" "left" "left" -cw4 80 40 40 40 -v1 1 -v2 1 -v3 1 -ncb 3 -l "Rotation" -la3 "X" "Y" "Z" attrRotCB ;
+	checkBoxGrp -ct4 "left" "left" "left" "left" -cw4 80 40 40 40 -v1 1 -v2 1 -v3 1 -ncb 3 -l "Scale" -la3 "X" "Y" "Z" attrScaCB ;
+    checkBoxGrp -ct3 "left" "left" "left" -cw3 80 50 50 -ncb 2 -l "Extra" -l1 "Vis" -l2 "User" attrVisCB ;
+    //checkBox -al "left" -v 0 -w 40 -l "User" attrUdCB ;
+	button -l "Set lock Pref" -c "setLockAttrMG 0 0 0 0 0 0 0 0 0 0 0" attrBTTm ;
+	separator sepaAttr01 ;
+    checkBox -l "Sel" -v 0 -ofc "checkBox -e -l \"Sel\" lockAttrCB" -onc "checkBox -e -l \"All\" lockAttrCB" lockAttrCB;
+    checkBox -l "Hide" -v 0 hideAttrCB;
+	button -l "lock" -c "dolockAttrMG 1 0" lockBTTm ;
+	button -l "unlock" -c "dolockAttrMG 0 1" unlocBTTm ;
+
+	formLayout -e
+	
+	-af attrTraCB "left" 0 -af attrTraCB "top" 10 -af attrTraCB "right" 0
+	-af attrRotCB "left" 0 -ac attrRotCB "top" 0 attrTraCB -af attrRotCB "right" 0
+	-af attrScaCB "left" 0 -ac attrScaCB "top" 0 attrRotCB -af attrScaCB "right" 0
+    -af attrVisCB "left" 0 
+    -ac attrVisCB "top" 0 attrScaCB 
+    -af attrVisCB "right" 0
+
+	-af attrBTTm "left" 80 -ac attrBTTm "top" 0 attrVisCB -af attrBTTm "right" 5
+	-af sepaAttr01 "left" 5 -ac sepaAttr01 "top" 10 attrBTTm -af sepaAttr01 "right" 5
+    -af lockAttrCB "left" 0 -ac lockAttrCB "top" 0 sepaAttr01 -ap lockAttrCB "right" 0 20
+    -ac hideAttrCB "left" 0 lockAttrCB -ac hideAttrCB "top" 0 sepaAttr01 -ap hideAttrCB "right" 0 42
+	-ac lockBTTm "left" 0 hideAttrCB -ac lockBTTm "top" 0 sepaAttr01 -ap lockBTTm "right" 0 70
+	-ac unlocBTTm "left" 0 lockBTTm -ac unlocBTTm "top" 0 sepaAttr01 -af unlocBTTm "right" 5
+
+	attrFR;
+
+	showWindow lockAttrMG_WIN;
+    window -e -wh 200 158 lockAttrMG_WIN;
+    
+}
+
+
+
+global proc dolockAttrMG( int $value , int $keyAble)
+{
+    global string $gMainProgressBar;
+	string $list, $action;
+    string $attrB[], $sel[];
+    
+    if (` window -ex "lockAttrMG_WIN" `)
+    //if (` window -ex "mauUtyWin" `)
+        $keyAble = `checkBox -q -v hideAttrCB`;
+    else
+        $keyAble = $keyAble;
+    
+    //string $attrK[]= {"tx","ty","tz","rx","ry","rz","sx","sy","sz","v"};
+    string $attrK[];
+    //python("i = 0");
+    
+    if (` window -ex "lockAttrMG_WIN" `)
+    //if (` window -ex "mauUtyWin" `)
+    {
+        if (`checkBox -q -v lockAttrCB` == 0 ) 
+            $sel = `ls -type "transform" -sl`;
+        if (`checkBox -q -v lockAttrCB` == 1 ) 
+            $sel = `ls -dag -type "transform" -sl`;
+    }else
+        $sel = `ls -dag -type "transform" -sl`;
+    
+    if( $value == 1 )
+    {
+        if( $keyAble == 1 )
+            $action = "Locking & Hiding" ;
+        if( $keyAble == 0 )
+            $action = "Locking" ;
+    }
+    if( $value == 0 )
+        $action = "unLocking" ;
+    
+    progressBar -e -bp -ii true -st ($action+" ...") -max (size($sel)) $gMainProgressBar;
+    
+	for($each in $sel)
+	{
+        if(`progressBar -q -ic $gMainProgressBar`)
+            break;
+        
+        // CLEAN PREVIOUS SETINGS
+        if ( ` attributeExists "lockAttrMG" $each ` )
+        {
+            $list =`getAttr ($each+".lockAttrMG")`;
+			tokenize($list," ",$attrB);
+			for($eAttr in $attrB)
+            {
+                setAttr -k 1 ($each+"."+$eAttr);
+                setAttr -l 0 ($each+"."+$eAttr);
+                if($value == 0 )
+                    progressBar -e -s 1 $gMainProgressBar;
+            }
+        }
+        
+		if ( ` attributeExists "lockAttrMG" $each ` )
+		{
+			$list =`getAttr ($each+".lockAttrMG")`;
+			tokenize($list," ",$attrB);
+            
+            if( $value == 1 )
+            {
+                for($eAttr in $attrB)
+                {
+                    setAttr -l 1 ($each+"."+$eAttr);
+                    if( $keyAble == 0 )
+                        setAttr -k 1 ($each+"."+$eAttr);
+                    if( $keyAble == 1 )
+                        setAttr -k 0 ($each+"."+$eAttr);
+                    /*
+                    python ("print 'working  '+'-'*i");
+                    python ("if i < 50:i = i+1");
+                    python ("if i == 50:i = 0");
+                    python ("i = i+1");
+                    */
+                    
+                    progressBar -e -s 1 $gMainProgressBar;
+                }
+			}
+		}
+	}
+    progressBar -e -ep $gMainProgressBar;
+    print "Done.\n";
+}
+
+global proc setLockAttrMG( int $p_trsX, int $p_trsY, int $p_trsZ, int $p_rotX, int $p_rotY, int $p_rotZ, int $p_scaX, int $p_scaY, int $p_scaZ, int $p_vis , int $usd)
+{
+    int $trsX, $trsY, $trsZ, $rotX, $rotY, $rotZ, $scaX, $scaY, $scaZ, $vis ;
+    string $vtx, $vty, $vtz, $vrx, $vry, $vrz, $vsx, $vsy, $vsz, $vv, $u, $listAttr, $p_us[], $p_ud_d;
+    if (` window -ex "lockAttrMG_WIN" `)
+    //if (` window -ex "mauUtyWin" `)
+    {
+        $trsX=`checkBoxGrp -q -v1 "attrTraCB"`;
+        $trsY=`checkBoxGrp -q -v2 "attrTraCB"`;
+        $trsZ=`checkBoxGrp -q -v3 "attrTraCB"`;
+    
+        $rotX=`checkBoxGrp -q -v1 "attrRotCB"`;
+        $rotY=`checkBoxGrp -q -v2 "attrRotCB"`;
+        $rotZ=`checkBoxGrp -q -v3 "attrRotCB"`;
+    
+        $scaX=`checkBoxGrp -q -v1 "attrScaCB"`;
+        $scaY=`checkBoxGrp -q -v2 "attrScaCB"`;
+        $scaZ=`checkBoxGrp -q -v3 "attrScaCB"`;
+        
+        $vis=`checkBoxGrp -q -v1 "attrVisCB"`;
+        $u=`checkBoxGrp -q -v2 "attrVisCB"`;
+    
+    }else{
+        $trsX = $p_trsX;
+        $trsY = $p_trsY; 
+        $trsZ = $p_trsZ; 
+        $rotX = $p_rotX; 
+        $rotY = $p_rotY; 
+        $rotZ = $p_rotZ;
+        $scaX = $p_scaX;
+        $scaY = $p_scaY;
+        $scaZ = $p_scaZ;
+        $vis = $p_vis;
+        $u = $usd;
+    }
+    
+    if($trsX == 1)
+        $vtx = " tx";
+    if($trsY == 1)
+        $vty = " ty";
+    if($trsZ == 1)
+        $vtz = " tz";
+    
+    if($rotX == 1)
+        $vrx = " rx";
+    if($rotY == 1)
+        $vry = " ry";
+    if($rotZ == 1)
+        $vrz = " rz";
+    
+    if($scaX == 1)
+        $vsx = " sx";
+    if($scaY == 1)
+        $vsy = " sy";
+    if($scaZ == 1)
+        $vsz = " sz";
+    
+    if($vis == 1)
+        $vv = " v";
+    
+    $listAttr = $vtx+$vty+$vtz+$vrx+$vry+$vrz+$vsx+$vsy+$vsz+$vv;
+    
+	string $sel[] =`ls -sl`;
+    
+    for($each in $sel)
+    {
+        if($u == 1)
+        {
+            $p_us =`listAttr -se -ud $each`;
+            for($e in $p_us)
+            {
+                if($e != "lockAttrMG")
+                    $p_ud_d += (" "+$e);
+            }
+            $listAttr = ($listAttr + $p_ud_d);
+        }
+        //print $listAttr;
+        
+        if ( size($listAttr) != 0 )
+        {
+            if( ` attributeExists "lockAttrMG" $each ` )
+            {
+                setAttr -l 0 ($each+".lockAttrMG");
+                deleteAttr -at "lockAttrMG" $each;
+            }
+            
+            addAttr -ln "lockAttrMG" -k 0 -dt "string" $each;
+            setAttr -type "string" ($each+".lockAttrMG") $listAttr;
+            setAttr -l 1 ($each+".lockAttrMG");
+        }else{
+            if( ` attributeExists "lockAttrMG" $each ` )
+            {
+                setAttr -l 0 ($each+".lockAttrMG");
+                deleteAttr -at "lockAttrMG" $each;
+            }
+        }
+    }
+}
+
+	
+			

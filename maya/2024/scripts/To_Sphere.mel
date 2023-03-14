@@ -1,0 +1,159 @@
+//get push center
+global proc vector getCenter(string $name, string $method, int $vCount, string $shapeName){
+    vector $center = <<0.0, 0.0, 0.0>>;
+    switch($method){
+        case "Bounding Box Center":
+            float $bbox[] = `polyEvaluate -b $name`;
+            $center = <<($bbox[0]+$bbox[1])/2, ($bbox[2]+$bbox[3])/2, ($bbox[4]+$bbox[5])/2>>;
+            break;
+        case "Average Position":
+            int $j;
+            for($j = 0; $j < $vCount; $j++){
+                float $quePos[] = `xform -q -ws -t ($shapeName + ".vtx[" + $j + "]")`;
+                $center += <<$quePos[0], $quePos[1], $quePos[2]>>;
+            }
+            $center /= $vCount;
+            break;
+        default:
+            float $cex = `floatFieldGrp -q -v1 cenFields`;
+            float $cey = `floatFieldGrp -q -v2 cenFields`;
+            float $cez = `floatFieldGrp -q -v3 cenFields`;
+            $center = <<$cex, $cey, $cez>>;
+            break;
+    }
+    return $center;
+}
+
+//get push center of components
+global proc vector getCenterCom(string $method, string $vtxList[]){
+    vector $center = <<0.0, 0.0, 0.0>>;
+    int $vCount = size($vtxList);
+    switch ($method) {
+        case "Bounding Box Center":
+            float $bbox[] = `polyEvaluate -bc`;
+            $center = <<($bbox[0]+$bbox[1])/2, ($bbox[2]+$bbox[3])/2, ($bbox[4]+$bbox[5])/2>>;
+            break;
+        case "Average Position":
+            int $j;
+            for($j = 0; $j < $vCount; $j++){
+                float $quePos[] = `xform -q -ws -t $vtxList[$j]`;
+                $center += <<$quePos[0], $quePos[1], $quePos[2]>>;
+            }
+            $center /= $vCount;
+            break;
+        default:
+            float $cex = `floatFieldGrp -q -v1 cenFields`;
+            float $cey = `floatFieldGrp -q -v2 cenFields`;
+            float $cez = `floatFieldGrp -q -v3 cenFields`;
+            $center = <<$cex, $cey, $cez>>;
+            break;
+    }
+    return $center;
+}
+
+//deform geo
+global proc pushGeo(){
+    string $geoName[] = `ls -sl`;
+    int $maxCount[] = `polyEvaluate -v $geoName[0]`;
+    string $shapeN[] = `listRelatives -fullPath -shapes $geoName[0]`;
+    vector $center = getCenter($geoName[0], "Average Position", $maxCount[0], $shapeN[0]);        //get deform center
+    int $i;
+    float $length = 0.0;
+    //caculate max length
+    for($i = 0; $i < $maxCount[0]; $i++){
+        float $quePos[] = `xform -q -ws -t ($shapeN[0] + ".vtx[" + $i + "]")`;
+        vector $cusVec = <<$quePos[0], $quePos[1], $quePos[2]>> - $center;
+        float $subLen = mag($cusVec);
+        $length = max($length, $subLen);
+    }
+    //print $length;     //max length
+
+    //do deform
+    float $amount = `floatSliderGrp -q -v amoSli`;
+    for($i = 0; $i < $maxCount[0]; $i++){
+        float $quePos[] = `xform -q -ws -t ($shapeN[0] + ".vtx[" + $i + "]")`;
+        vector $cusVec = <<$quePos[0], $quePos[1], $quePos[2]>> - $center;
+        float $subLen = mag($cusVec);
+        float $delta = $length - $subLen;
+        vector $movVec = $delta * unit($cusVec) * $amount;
+        float $aimPos[] = {$quePos[0] + $movVec.x, $quePos[1] + $movVec.y, $quePos[2] + $movVec.z};
+        xform -absolute -ws -t ($aimPos[0]) ($aimPos[1]) ($aimPos[2]) ($shapeN[0] + ".vtx[" + $i + "]");
+    }
+}
+
+//push components
+global proc pushVtx()
+{
+    string $vtxSel[] = `filterExpand -sm 31`;
+    int $comCount = size($vtxSel);
+    vector $center = getCenterCom("Bounding Box Center", $vtxSel);
+    int $i;
+    float $length = 0.0;
+    for($i = 0; $i < $comCount; $i++)
+    {
+        float $quePos[] = `xform -q -ws -t ($vtxSel[$i])`;
+        vector $cusVec = <<$quePos[0], $quePos[1], $quePos[2]>> - $center;
+        float $subLen = mag($cusVec);
+        $length = max($length, $subLen);
+    }
+    print $length;
+    
+    //do deform
+    float $amount = `floatSliderGrp -q -v amoSli`;
+    for($i = 0; $i < $comCount; $i++){
+        float $quePos[] = `xform -q -ws -t ($vtxSel[$i])`;
+        vector $cusVec = <<$quePos[0], $quePos[1], $quePos[2]>> - $center;
+        float $subLen = mag($cusVec);
+        float $delta = $length - $subLen;
+        vector $movVec = $delta * unit($cusVec) * $amount;
+        float $aimPos[] = {$quePos[0] + $movVec.x, $quePos[1] + $movVec.y, $quePos[2] + $movVec.z};
+        xform -absolute -ws -t ($aimPos[0]) ($aimPos[1]) ($aimPos[2]) ($vtxSel[$i]);
+    }
+}
+
+global proc drawUI(){
+    if(`window -exists sphDefWindow` == true) deleteUI sphDefWindow;
+    window -t "Spherical Deformer" -mxb false -w 600 -h 250 sphDefWindow;
+    columnLayout -adj true -rs 5 mainColumn;
+        optionMenuGrp -l "Center Mode " -cc optionMenuCC -h 35 modeMenu;
+            menuItem -label "Bounding Box Center";
+            menuItem -label "Average Position";
+            menuItem -label "Custom";
+        floatSliderGrp -l "Spherical Amount " -f true -min -1 -max 1 -fmn -100 -fmx 100 -pre 3 -v 1 amoSli;
+        floatFieldGrp -l "Center " -h 35 -cw4 140 100 100 100 -numberOfFields 3 -v1 0.0 -v2 0.0 -v3 0.0 -en false cenFields;
+        formLayout -nd 2 buttonForm;
+            button -l "Deform Geometry" -h 40  -c dGeoButC dGeoBut;
+            button -l "Deform Components" -h 40 -c dComButC dComBut;
+        formLayout -e
+            -attachForm "dGeoBut" "top" 4
+            -attachForm "dGeoBut" "left" 4
+            -attachPosition "dGeoBut" "right" 4 1
+            -attachForm "dComBut" "top" 4
+            -attachForm "dComBut" "right" 4
+            -attachPosition "dComBut" "left" 4 1
+        buttonForm;
+    showWindow sphDefWindow;
+}
+
+global proc optionMenuCC(){
+    if(`optionMenuGrp -q -sl modeMenu` == 3){
+        floatFieldGrp -e -en true cenFields;
+    }else{
+        floatFieldGrp -e -en false cenFields;
+    }
+}
+
+//commands of buttons
+global proc dGeoButC(){
+    if(size(`ls -sl`) == 0) 
+        error "No Selected Object Detected!";
+    pushGeo();
+}
+
+global proc dComButC(){
+    if(size(`ls -sl`) == 0) 
+        error "No Selected Components Detected!";
+    pushVtx();
+}
+
+drawUI();
