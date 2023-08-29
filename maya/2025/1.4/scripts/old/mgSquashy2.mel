@@ -1,0 +1,121 @@
+
+
+global proc string mgSquashy2( int $initial)
+{
+	string $temp[], $grpG, $grpB, $grpS, $grpSN, $grpPlane,$plane[], $s[], $ss[], $e[], $es[], $sh[];
+	string $locPlane[], $cps, $temp[], $jnt, $rev, $cnd, $MD, $MD2, $CND, $ADL;
+	float $tempP[];
+	string $sel[] =`ls -sl`;
+	{
+		for ( $item in $sel)
+		{
+			$tempF = `xform -q -ws -t $item`;
+			$grpG = `group -em -n ($item+"_global_null")`;
+						
+			setAttr -l 1 ($grpG+".t");setAttr -l 1 ($grpG+".r");setAttr -l 1 ($grpG+".s");
+			$grpB = `group -em -n ($item+"_base_null")`;
+			
+			$tempR = `orientConstraint $item $grpB`;delete $tempR[0];
+			
+			parent $grpB $grpG;
+			$grpPlane = `group -em -n ($item+"_SQ_NURB_null")`;
+			$plane = `nurbsPlane -p 0 0 0 -ax 0 1 0 -w 20 -lr 1 -d 3 -u 1 -v 1 -ch 0 -n ($item+"_SQ_NURB")`;
+			setAttr -l 0 ($plane[0]+".t"); setAttr -l 0 ($plane[0]+".r"); 
+			parent $grpPlane $grpB;
+			parent $plane[0] $grpPlane;
+			$s = `spaceLocator -n ($item+"_start_null")`;
+			$ss = `spaceLocator -n ($item+"_startScale_null")`;setAttr ($ss[0]+".v") 0;
+			parent $s $grpB;
+			move 0 $initial 0 $s[0] ;
+			move 0 $initial 0 $ss[0] ;
+			
+			$e = `spaceLocator -n ($item+"_end_null")`;setAttr ($e[0]+".v") 0;
+			$es = `spaceLocator -n ($item+"_endScale_null")`;setAttr ($es[0]+".v") 0;
+			$locPlane = `spaceLocator -n ($item+"_planeLoc_null")`;setAttr ($locPlane[0]+".v") 0;
+			
+			$grpS = `group -em -n ($item+"_null")`;
+						
+			$grpSN = `group -em -n ($item+"_off_null")`;
+						
+			transformLimits -tz 0 0 -etz 1 0 $grpSN;
+			parent $grpS $e[0];
+			parent $grpSN $grpS;
+			parent $es $ss $locPlane[0] $s;
+			parent $e $grpG;
+
+			$temp = `pointConstraint -mo $e $grpS`;
+			pointConstraint -e -mo -tl $es $temp[0];
+
+			$jnt = `joint -n ($item+"_env")`;
+			parent $jnt $grpG;
+			parentConstraint $grpSN $jnt;
+			
+			$dd = `createNode distanceBetween -n ($item+"_DD")`;
+			$dds = `createNode distanceBetween -n ($item+"_DDS")`;
+			$sh  = `listRelatives -s $s`;
+			connectAttr -f ($sh[0]+".worldPosition") ($dd+".point1");
+			$sh  = `listRelatives -s $e`;
+			connectAttr -f ($sh[0]+".worldPosition") ($dd+".point2");
+			$sh  = `listRelatives -s $es`;
+			connectAttr -f ($sh[0]+".worldPosition") ($dds+".point1");
+			$sh  = `listRelatives -s $ss`;
+			connectAttr -f ($sh[0]+".worldPosition") ($dds+".point2");
+
+			// ---------------------------------------
+			move $tempF[0] $tempF[1] $tempF[2] $grpB ;
+			$tempR = `orientConstraint $item $grpB`;delete $tempR[0];
+			$tempR = `orientConstraint $item $s[0]`;delete $tempR[0];
+			$tempR = `orientConstraint $item $e[0]`;delete $tempR[0];
+			// ---------------------------------------
+
+			parentConstraint -mo -st y -sr x -sr y -sr z $s[0] $plane[0];
+			$cps =`createNode closestPointOnSurface -n ($item+"_CPS")`;
+			$sh  = `listRelatives -s $plane[0]`;
+			connectAttr -f ($sh[0]+".worldSpace") ($cps+".inputSurface");
+			$sh  = `listRelatives -s $locPlane[0]`;
+			connectAttr -f ($sh[0]+".worldPosition") ($cps+".inPosition");
+			connectAttr -f ($cps+".position") ($e[0]+".t");
+			
+			$cnd = `createNode condition -n ($item+"_CND")`;
+			setAttr ($cnd+".operation") 3;
+
+			connectAttr -f ($dd+".distance") ($cnd+".firstTerm");
+                        connectAttr -f ($dds+".distance") ($cnd+".secondTerm");
+                        
+                        $tempL = `pointConstraint -q -wal $temp[0]`;
+                        connectAttr -f ($cnd+".outColorR") ($temp[0]+"."+$tempL[0]);
+                        $rev = `createNode reverse -n ($item+"_REV")`;
+                        connectAttr -f ($cnd+".outColorR") ($rev+".inputX");
+                        connectAttr -f ($rev+".outputX") ($temp[0]+"."+$tempL[1]);
+                        
+                        $MD = `createNode multiplyDivide -n ($item+"_MD")`;
+                        setAttr ($MD+".input2X") -1;
+                        connectAttr -f ($dds+".distance") ($MD+".input1X");
+                        
+                        $ADL = `createNode addDoubleLinear -n ($item+"_ADL")`;
+                        connectAttr -f ($MD+".outputX") ($ADL+".input2");
+                        connectAttr -f ($dd+".distance") ($ADL+".input1");
+                        
+                        $MD1 = `createNode multiplyDivide -n ($item+"_1MD")`;
+                        connectAttr -f ($ADL+".output") ($MD1+".input1X");
+                        setAttr ($MD1+".input2X") -1;
+                        
+                        addAttr -k 1 -ln "overSquash" -at double -dv 1 $grpB; 
+                        addAttr -k 1 -ln "ground" -at double -dv 0 $grpB;
+                        addAttr -k 1 -ln "groundVisibility" -at "enum" -dv 0 -en "off:on:" $grpB;
+                        $sh = `listRelatives -s $plane[0]`;
+                        connectAttr ($grpB+".groundVisibility") ($sh[0]+".v");
+                        connectAttr ($grpB+".ground") ($plane[0]+".ty");
+                        
+                        $MD2 = `createNode multiplyDivide -n ($item+"_2MD")`;
+                        connectAttr -f ($MD1+".outputX") ($MD2+".input1X");
+                        connectAttr -f ($grpB+".overSquash") ($MD2+".input2X");
+                        
+                        connectAttr -f ($MD2+".outputX") ($grpSN+".tz");
+                        connectAttr -f ($s[0]+".r") ($grpSN+".r");
+		}
+	}
+	return $grpB ;
+}
+			
+			

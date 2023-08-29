@@ -1,0 +1,216 @@
+// ---------------------------------------------------------------------------------------------------------------------
+// PART THAT HANDLES ATTRIBUTES
+// ---------------------------------------------------------------------------------------------------------------------
+
+global proc writeAttr()
+{
+	$exampleFileName = ( `internalVar -userTmpDir` + "copyAttr.tmp" );
+	$fileId=`fopen $exampleFileName "w"`;
+	string $sel[] =`ls -sl`;
+    string $attr[];
+    float $val;
+    
+    for($each in $sel)
+    {
+        $attr =`listAttr -k -sa $each`;
+        for($e in $attr)
+        {
+            $val = `getAttr ($each+"."+$e)`;
+            fprint $fileId ($each+"."+$e+" "+$val+" "+"\n");
+        }
+        print("Attributes of "+$each+" written on disc in \""+$exampleFileName+"\".\n");
+    }
+	fclose $fileId;
+}
+
+
+global proc readAttr()
+{
+    string $pt = python("sys.platform");
+	$exampleFileName = ( `internalVar -userTmpDir` + "copyAttr.tmp" );
+	$fileId = `fopen $exampleFileName "r"`;
+	string $s,$cmd,$name;
+	string $getV[],$clean[],$nameS[];
+	if($pt == "win32")
+	    $s=`fread $fileId $s`;
+	else
+	    $s =`system("cat "+$exampleFileName)`;
+	tokenize($s,"\n",$getV);
+    
+    // GET SCENE NAMESPACE BASED ON THE SELECTION MADE
+    string $sel[1] =`ls -sl`;
+    tokenize($sel[0],":",$nameS);
+    
+    for($eV in $getV)
+    {
+        tokenize( $eV,":",$clean);
+        
+        // IF THE FILE HAS A NAMESPACE
+        if( size($clean) == 2 )
+        {
+            if( size($nameS) == 2 ) // nameSpace in the scene
+                $name = ($nameS[0]+":"+$clean[1]);
+            if( size($nameS) == 1 || size($nameS) == 0 )
+                $name = $clean[1];
+        }
+        // IF THE FILE DOESN'T HAVE A NAME SPACE
+        if( size($clean) == 1 )
+        {
+            if( size($nameS) == 2 ) // nameSpace in the scene
+                $name = ($nameS[0]+":"+$clean[0]);
+            if( size($nameS) == 1 || size($nameS) == 0 )
+                $name = $clean[0];
+        }
+        $cmd = ("setAttr "+$name);
+        string $p1[];
+        tokenize ($name," ",$p1);
+
+        if( size($p1[0]) != 0 && `getAttr -l $p1[0]` == 0 && (size(`connectionInfo -sfd $p1[0]`) == 0 ))
+            eval($cmd);
+    }
+	fclose $fileId;
+    confirmDialog -t "Read/Write Attr" -m "Attributes Read." -b "OK";
+}
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+// PART THAT HANDLES WORLD POSITION
+// ---------------------------------------------------------------------------------------------------------------------
+
+global proc writeWP()
+{
+	$exampleFileName = ( `internalVar -userTmpDir` + "copyWPOS.tmp" );
+	$fileId=`fopen $exampleFileName "w"`;
+	string $sel[] =`ls -sl`;
+    string $attr[] = {"-t", "-ro", "-s"};
+	int $i = 0;
+    float $val[];
+    for($each in $sel)
+    {
+        for($e in $attr)
+        {
+            if ($e != "-s")
+                $val = `xform -q -ws $e $each`;
+            else
+                $val = `xform -q -r $e $each`;
+            fprint $fileId ($e+" "+$val[0]+" "+$val[1]+" "+$val[2]+" "+$each+"\n");
+        }
+        print("Attributes of "+$each+" written on disc in \""+$exampleFileName+"\".\n");
+    }
+	fclose $fileId;
+}
+
+
+global proc readWP()
+{
+    string $pt = python("sys.platform");
+	$exampleFileName = ( `internalVar -userTmpDir` + "copyWPOS.tmp" );
+	$fileId = `fopen $exampleFileName "r"`;
+	string $s,$cmd,$name;
+	string $getV[],$clean[],$nameS[];
+	if($pt == "win32")
+	    $s=`fread $fileId $s`;
+	else
+	    $s =`system("cat "+$exampleFileName)`;
+	tokenize($s,"\n",$getV);
+    
+    // GET SCENE NAMESPACE BASED ON THE SELECTION MADE
+    string $sel[1] =`ls -sl`;
+    tokenize($sel[0],":",$nameS);
+    
+    for($eV in $getV)
+    {
+        tokenize( $eV,":",$clean);
+        
+        // IF THE FILE HAS A NAMESPACE
+        if( size($clean) == 2 )
+        {
+            if( size($nameS) == 2 ) // nameSpace in the scene
+                $name = ($nameS[0]+":"+$clean[1]);
+            if( size($nameS) == 1 || size($nameS) == 0 )
+                $name = $clean[1];
+        }
+        // IF THE FILE DOESN'T HAVE A NAME SPACE
+        if( size($clean) == 1 )
+        {
+            if( size($nameS) == 2 ) // nameSpace in the scene
+                $name = ($nameS[0]+":"+$clean[0]);
+            if( size($nameS) == 1 || size($nameS) == 0 )
+                $name = $clean[0];
+        }
+        $cmd = ("xform -ws "+$name);
+        string $p1[];
+        tokenize ($name," ",$p1);
+        eval($cmd);
+    }
+	fclose $fileId;
+    confirmDialog -t "Read/Write Attr" -m "World Position Copied." -b "OK";
+}
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+// PART THAT HANDLES SELECTION
+// ---------------------------------------------------------------------------------------------------------------------
+
+global proc writeSel()
+{
+    $exampleFileName = ( `internalVar -userTmpDir` + "copySel.tmp" );
+	$fileId=`fopen $exampleFileName "w"`;
+	string $sel[] =`ls -fl -sl`;
+    for($each in $sel)
+        fprint $fileId ($each+"\n");
+    
+	fclose $fileId;
+    print("Selection has been written on disc into \""+$exampleFileName+"\"\n");
+}
+
+
+global proc readSel()
+{
+    string $pt = python("sys.platform");
+	$exampleFileName = ( `internalVar -userTmpDir` + "copySel.tmp" );
+	$fileId = `fopen $exampleFileName "r"`;
+	string $s,$cmd,$name;
+	string $getV[],$clean[],$nameS[];
+	if($pt == "win32")
+	    $s=`fread $fileId $s`;
+	else
+	    $s =`system("cat "+$exampleFileName)`;
+	tokenize($s,"\n",$getV);
+    
+    
+    // GET SCENE NAMESPACE BASED ON THE SELECTION MADE
+    string $sel[1] =`ls -sl`;
+    tokenize($sel[0],":",$nameS);
+    
+    select -cl;
+    for($eV in $getV)
+    {
+        /*
+        tokenize( $eV,":",$clean);
+        
+        // IF THE FILE HAS A NAMESPACE
+        if( size($clean) > 2 )
+        {
+            if( size($nameS) == 3 ) // double nameSpace in the scene
+                $name = ($nameS[0]+":"+$nameS[1]+":"+$clean[2]);
+        }
+        // IF THE FILE DOESN'T HAVE A NAME SPACE
+        if( size($clean) == 1 )
+        {
+            if( size($nameS) == 2 ) // nameSpace in the scene
+                $name = ($nameS[0]+":"+$clean[0]);
+            if( size($nameS) == 1 || size($nameS) == 0 )
+                $name = $clean[0];
+        }
+        */
+        $name = $eV;
+        if(`objExists $name`)
+        {
+            $cmd = ("select -add "+$name);
+            eval($cmd);
+        }
+    }
+	fclose $fileId;
+    print ("Selection imported from \""+$exampleFileName+"\"\n");
+}

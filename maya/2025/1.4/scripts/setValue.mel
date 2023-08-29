@@ -1,0 +1,107 @@
+//Maya version of the Lightwave Set Value tool
+//v. 1.0
+//by Hays Clark (c)2003
+//www.omita.com
+//omita@omita.com
+
+global proc setValue()
+{
+    global int $xyzValue = 0;
+    string $myWindow = "setValue";
+    string $mainLayout = "cLayout";
+    string $sSelectX = "";
+    string $sSelectY = "";
+    string $sSelectZ = "";
+    string $sSetValueInst = "Choose Vertexs and the Value to align selected in world space.\n";
+    
+    //Print Instructions
+    print($sSetValueInst);
+    
+    //Check to see if a Window Exist kill it
+    if (`window -ex $myWindow`)
+        deleteUI $myWindow;
+    //Create a window hight width, maxi minimize buttons, sizeable title, value.
+    window -wh 300 120 -mxb false -sizeable true -title "Set Value" $myWindow;
+    
+    //Add layouts and controls. Plus check and use existing axis.
+    frameLayout -l "";
+        columnLayout $mainLayout;
+                rowLayout -cat 5 "left" 5 -numberOfColumns 7 -cw 1 10 -cw 2 55 -cw 3 45 -cw 4 45 -cw 5 45 -cw 6 80 -cw 7 80;
+                text -l "";
+                text -l "Axis:";
+                    radioCollection;
+                    if($xyzValue == 1)
+                        radioButton -label "X" -sl -onc "$xyzValue = 1";
+                    else
+                        radioButton -label "X" -onc "$xyzValue = 1";
+                    if($xyzValue == 2)
+                        radioButton -label "Y" -sl -onc "$xyzValue = 2";
+                    else
+                        radioButton -label "Y" -onc "$xyzValue = 2";
+                    if($xyzValue == 3)
+                        radioButton -label "Z" -sl  -onc "$xyzValue = 3";
+                    else
+                        radioButton -label "Z" -onc "$xyzValue = 3";
+
+                    setParent ..;
+            rowLayout -cat 5 "left" 5 -numberOfColumns 5 -cw 1 10 -cw 2 55 -cw 3 135 -cw 4 80 -cw 5 80;
+                text -l "";
+                text -l "Value:";
+                floatField -w 135 -pre 3 -v 0 fSetValueValue;
+                button -w 80 -l "get Value" -c feedValue "bottonGetto";
+                setParent ..;
+            rowLayout -cat 5 "left" 5  -numberOfColumns 5 -cw 1 10 -cw 2 55 -cw 3 135 -cw 4 80 -cw 5 80;
+                text -l "";
+                text -l "";
+                button -w 135 -l "Ok" -c "setValueOk($xyzValue)";
+                button -w 80 -l "Cancel" -c "setValueCancel";
+                text -l "";
+                setParent ..;
+    showWindow;
+}
+
+global proc setValueOk(int $iSetValueInputValue)
+{
+	string $myWindow = "setValue";
+	float $fSetValueValue = `floatField -q -value fSetValueValue`;
+	string $sxyzValue = "!";
+
+	if ($iSetValueInputValue == 0)
+		confirmDialog -title "Axis Error" -message "Please Choose an Axis!";
+	else
+	{
+		string $myReturnWindow = "returnValue";
+		string $mainReturnLayout = "cLayout";
+		if($iSetValueInputValue == "1") $sxyzValue = "-x";
+		if($iSetValueInputValue == "2") $sxyzValue = "-y";
+		if($iSetValueInputValue == "3") $sxyzValue = "-z";
+		move $sxyzValue $fSetValueValue;
+		/*
+		if (`window -ex $myWindow`)
+		    deleteUI $myWindow;
+		*/
+	}
+
+}
+
+global proc feedValue()
+{
+    global int $xyzValue;
+    string $pt[] =`ls -sl`;
+    float $pos[] = `pointPosition $pt[0]`;
+    print $pos;
+    if($xyzValue==1)
+        floatField -e -v $pos[0] "fSetValueValue";
+    if($xyzValue==2)
+        floatField -e -v $pos[1] "fSetValueValue";
+    if($xyzValue==3)
+        floatField -e -v $pos[2] "fSetValueValue";
+}
+
+global proc setValueCancel()
+{
+	string $myWindow = "setValue";
+	if (`window -ex $myWindow`)
+	    deleteUI $myWindow;
+
+}

@@ -1,0 +1,87 @@
+python "import transformTools";python("reload(transformTools)");
+
+global proc mirrorTendons(string $maps[], string $mirror[])
+{
+    global string $gMainProgressBar;
+	float $wtg[], $wtgM[], $pos[3];
+	string $vtx[], $buf[], $mMap, $loc[1], $locF[];
+	int $vt, $mvt, $fa;
+
+	$vtx =`ls -fl -sl`;
+	
+	for($map in $maps)
+	{
+	    $fa = size($vtx);
+	    progressBar -e -bp -ii true -st ("Mirroring Weights of "+$map+" .....") -max $fa $gMainProgressBar;
+	    
+	    if(`progressBar -q -ic $gMainProgressBar`)// Create Progress Bar
+            break;
+        
+        if(`nodeType $map` == "dnPushNode")// Check if this is a pushNode
+        {
+            $wtg = `getAttr ($map+".weightList[0].weights")`;// Weight on current map
+            
+            // GET MIRRORED MAP
+            $mMap = `substitute $mirror[0] $map $mirror[1]`;
+            
+            if( `objExists $mMap` && `nodeType $mMap` == "dnPushNode" )// Check the existance of the mirror map and the nodeType
+            {
+                if(size($vtx)!=0)
+                {
+                    for($ev in $vtx)
+                    {
+                        // GET VERTEX
+                        tokenize($ev,"[",$buf);
+                        tokenize($buf[1],"]",$buf);
+                        $vt = $buf[0];
+                        
+                        if(`gmatch $ev "*vtx*"` == 1 )
+                        {
+                            // CREATE TRANSFORM TO BE MIRROR TO GET THE VERTEX INFORMATION ON THE MESH
+                            $loc =`spaceLocator -n ($ev+"_LOC")`;
+                            $pos =`pointPosition $ev`;
+                            move $pos[0] $pos[1] $pos[2] $loc[0];
+                            select -cl;select $loc[0];
+                            
+                            $locF = python("transformTools.mirrorTrans(0,1,1)");// my mirror function
+                            
+                            // CLOSEST POINT ON MESH NODE TO GET THE MIRRORER VERTEX INFORMATION
+                            string $cpom =`createNode closestPointOnMesh`;
+                            connectAttr -f "body_geoShape.outMesh" ($cpom+".inMesh");
+                            connectAttr -f ($locF[0]+"Shape.worldPosition") ($cpom+".inPosition");
+                            
+                            $mvt= `getAttr ($cpom+".closestVertexIndex")`;// mirrored vertex
+                            
+                            // CLEAN UP
+                            delete $cpom $locF[0] $loc[0];
+                            
+                            // SET WEIGHTS ON THE MIRROR VERTEX
+                            setAttr ($mMap+".weightList[0].weights["+$mvt+"]") $wtg[$vt] ;
+                            $wtgM=`getAttr ($mMap+".weightList[0].weights")`;// Weights on mirrored map
+                            
+                            /*
+                            // PRINT OUT RESULTS
+                            if($wtg[$vt] != 0)
+                            {
+                                print "---------------------------------------------------\n";
+                                print ($map+":  vertex "+$vt+" wegiht is "+$wtg[$vt]+"\n");
+                                print ($mMap+":  vertex "+$mvt+" weight is "+$wtgM[$mvt]+"\n");
+                            }
+                            */
+                            progressBar -e -s 1 $gMainProgressBar;
+                        }else{
+                            warning "Please make sure you select a vertex on a mesh.\n";
+                        }
+                    }
+                }else{
+                    warning "please select at least one vertex on the mesh.\n";
+                }
+            }else{
+                warning "The mirror map doesn't appear to exists please add it to the procedure call.\n";
+            }
+        }
+        print ($map+"   ----   mirror   --->   "+$mMap+"\n");
+        progressBar -e -ep $gMainProgressBar;
+	}
+	print "DONE\n";
+}

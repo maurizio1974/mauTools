@@ -1,0 +1,65 @@
+//------------------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------//
+//	SCRIPT:	mgRandVTX.mel
+//	VERSION: 0.1
+//	AUTHOR:	Maurizio Giglioli
+//		    maurizio1974@gmail.com
+//	DATE:         03 28 2012
+//  Last Updated: 03 29 2012
+//
+//
+//	DESCRIPTION:	Tool to randomize of a specific value vertex on a mesh or Cvs on a surface
+//
+//
+//	INSTRUCTIONS:	source the srcript
+//			        call the procedure mgRandVTX()
+//
+//  UPDATE:         
+//                  
+//                  
+//                  
+//                 
+//------------------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------//
+
+global proc mgRandVTX(float $randX[],float $randY[],float $randZ[],int $iter)
+{
+    string $sel[] =`ls -sl`;
+    int $x, $i;
+    select -cl;
+    for($x=0;$x<$iter;$x++)
+    {
+        for($s in $sel)
+        {
+            string $sh[1] = `listRelatives -s $s`;
+            if(`nodeType $sh[0]`=="mesh")
+            {
+                int $vtx[1] = `polyEvaluate $s`;
+                for($i=0;$i<$vtx[0];$i++)
+                {
+                    move -r 
+                    (rand($randX[0],$randX[1])) 
+                    (rand($randY[0],$randY[1])) 
+                    (rand($randZ[0],$randZ[1]))
+                    ($s+".vtx["+$i+"]");
+                }
+                print ("Done with object "+$s+"\n");
+            }
+            if(`nodeType $sh[0]`=="nurbsSurface")
+            {
+                select ($sh[0]+".cv[*:*]");
+                string $cvs[] =`ls -fl -sl`;
+                select -cl;
+                for($c in $cvs)
+                {
+                    move -r
+                    (rand($randX[0],$randX[1])) 
+                    (rand($randY[0],$randY[1])) 
+                    (rand($randZ[0],$randZ[1]))
+                    $c;
+                }
+                print ("Done with object "+$c+"\n");
+            }
+        }
+    }
+}

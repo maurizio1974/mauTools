@@ -1,0 +1,82 @@
+//	SCRIPT NAME:  DUPExtract.mel v1.2 (Maya 2008 version)
+//	AUTHOR:  Thomas Hamilton
+//	LAST UPDATED:   October 17, 2009
+//	www.thomashamilton.org
+
+//DESCRIPTION:
+//DUPExtract is an extremely efficient tool for both detaching faces from an object, or cloning the selected faces
+//of an object.  Select a group of faces, and run DUPExtract.
+//It will ask you if you want to detach the faces or clone them.
+//If you detach, the selected faces will be removed from the orginal object, and placed in a new one.
+//If you clone, the original object will remain intact, and the faces will be duplicated into a new object.
+
+//SETUP:
+////Close Maya. Copy DUPExtract.mel to My Documents\maya\8.0\scripts.  Type DUPExtract in the 
+//command line, highlight, and middle mouse drag to your shelf.
+
+global proc string do_DUPExtract( int $dir)
+{
+    string $Faces[],$buffer[],$FacesDup[],$dup[];
+    int $i = 0;
+    $Faces = `ls -sl`;
+    
+    if( size($Faces) != 0 )
+    {
+        tokenize ($Faces[0],".",$buffer);
+        select $buffer[0];
+        $dup = `duplicate -rr`;
+        if($dir == 0 )
+            delete $Faces;
+        
+        rename $dup[0] ($dup[0] + "_DUP");
+        $dup[0] = ($dup[0] + "_DUP");
+    
+        for ($i = 0; $i < size($Faces); $i++ )
+            $FacesDup[$i] = `substitute $buffer[0] $Faces[$i] $dup[0]`;
+        
+        PolySelectConvert 1;
+        select -d $FacesDup;
+        delete;
+
+        select -cl;
+        select $dup[0];
+        CenterPivot;
+        return $dup[0];
+    }else
+        print "------>>>> Please Select some faces to duplicate or detach. <<<<------";
+}
+
+global proc DUPExtract()
+{
+    if (`window -ex DelFacesConfirm` == true)
+        deleteUI DelFacesConfirm;
+    
+    window  -t "Detach or Clone?" -wh 100 100 -s 1 DelFacesConfirm;
+        formLayout dupFR;
+        button -l "Detach" -w 50 -h 35 -c "do_DUPExtract(0)" detachBttn;
+        button -l "Clone" -w 50 -h 35 -c "do_DUPExtract(1)" cloneButt;
+        
+        formLayout -e
+            -af detachBttn "left" 5
+            -af detachBttn "top" 5
+            -ap detachBttn "right" 0 48
+            -af detachBttn "bottom" 5
+            
+            -af cloneButt "right" 5
+            -af cloneButt "top" 5
+            -ac cloneButt "left" 5 "detachBttn"
+            -af cloneButt "bottom" 5
+        dupFR;
+    showWindow DelFacesConfirm;
+    window -e -wh 150 70 DelFacesConfirm;
+}
+
+
+
+
+
+
+
+
+
+

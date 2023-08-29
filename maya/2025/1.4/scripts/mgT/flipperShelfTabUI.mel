@@ -1,0 +1,380 @@
+
+// THE SHELF TAB
+
+global proc string flipperShelfTabUI(int $lato, string $win, string $presets[], string $currentPanel, string $panelType)
+{
+    string $mauUtyFLbase   =    `formLayout -p $win`;
+    string $buttonScene    =        `button` ;
+    string $buttonVersion  =        `button` ;
+    // COMMON BUTTON
+    string $aniMSetBttn    =        `button` ;
+    string $polyMSetBttn   =        `button` ;
+    string $surfMSetBttn   =        `button` ;
+    string $dynMSetBttn    =        `button` ;
+    string $renMSetBttn    =        `button` ;
+    string $nCMSetBttn     =        `button` ;
+                                   setParent ;
+    string $shelfFL        =    `frameLayout` ;
+    string $shelfFormL     =        `formLayout` ;
+    string $buttonInizio   =            `button` ;
+    string $buttonAvanti   =            `button` ;
+    string $buttonIndietro =            `button` ;
+    string $buttonFine     =            `button` ;
+    string $bttnSS         =            `button` ;
+    string $bttnCL         =            `button` ;
+    string $bttnLS         =            `button` ;
+    string $bttnDL         =            `button` ;
+    string $shelfPL        =            `formLayout` ;
+    string $mauTabShelf    =                `shelfTabLayout` ;
+    string $primary        =                `shelfLayout -p $mauTabShelf "Primary" ` ;
+    string $secondary      =                `shelfLayout -p $mauTabShelf "Secondary" ` ;
+                                            setParent ..;
+                                        setParent ..;
+    string $presetFR       =            `frameLayout` ;
+    string $mau_TSL        =                `textScrollList `;
+                                            setParent ..;
+                                        setParent ..;
+                                    setParent..;
+                                setParent..;
+    string $sepa04         =    `separator`;
+    string $renameFL       =    `frameLayout`;
+    string $renameRCL      =        `formLayout`;
+    string $hirCB          =            `checkBox`;
+    string $hirEV          =            `checkBox`;
+    string $hirCB2         =            `checkBox`;
+    string $renBoxBttm     =            `button`;
+    string $masterResBttn  =            `button`;
+    string $addRemFR       =            `frameLayout`;
+    string $addRemFL       =                `formLayout`;
+    string $txFD           =                    `textField`;
+    string $mi1            =                        `popupMenu`;
+    string $addremCB       =                    `checkBox`;
+    string $buttonADRE     =                    `button`;
+                                                setParent..;
+                                            setParent..;
+    string $replaceFR      =            `frameLayout`;
+    string $replaceFL      =                `formLayout`;
+    string $txRep1FD       =                    `textField`;
+    string $mi2            =                        `popupMenu`;
+    string $txRep2FD       =                    `textField`;
+    string $mi3            =                        `popupMenu`;
+    string $buttonREP      =                    `button`;
+                                                setParent..;
+                                            setParent..;
+    string $renumberFR     =                `frameLayout`;
+    string $renumberFL     =                    `formLayout`;
+    string $renuGetBTTN    =                        `button`;
+    string $renumberTF     =                        `textField`;
+    string $mi4            =                            `popupMenu`;
+    string $renuTX         =                        `text`;
+    string $renuIF         =                        `intField`;
+    string $padTX          =                        `text`;
+    string $padIF          =                        `intField`;
+    string $renuBTTN       =                        `button`;
+                                                    setParent..;
+                                                setParent..;
+                                            setParent..;
+                                        setParent..;
+                                    setParent..;
+                                setParent..;
+    // -----------------------------------------------------------------------------------------------------------------
+    // THE SHELF TAB SET UP
+    // -----------------------------------------------------------------------------------------------------------------
+    frameLayout -e -w $lato -cll 1 -cl 1 -l "Common Shelf"
+                -ec ("mauTSL_ActionFlipper (0 , \""+$mau_TSL+"\", \""+$mauTabShelf+"\" )") $shelfFL;
+        button -e -l "New Win" -c ("source \"DM_win.mel\";DM_win();") $buttonScene ;
+        button -e -en 0 -l "New Version"-c ("source \"mgInfo.mel\";mgSceneVersion;") $buttonVersion ;
+
+        button -e -l "anim"     -c ( "workingMode animationMenuSet") $aniMSetBttn;
+        button -e -l "poly"      -c ( "workingMode polygonsMenuSet") $polyMSetBttn;
+        button -e -l "surf"       -c ( "workingMode surfacesMenuSet") $surfMSetBttn;
+        button -e -l "dyn"       -c ( "workingMode dynamicsMenuSet") $dynMSetBttn;
+        button -e -l "render"  -c ( "workingMode renderingMenuSet") $renMSetBttn;
+        button -e -l "nDyn"     -c ( "workingMode nDynamicsMenuSet") $nCMSetBttn;
+
+        formLayout -e $shelfFormL ;
+            button -e -l "<<"     -c "tabbing 3" $buttonInizio;
+            button -e -l "<--"    -c "tabbing 1" $buttonAvanti;
+            button -e -l "-->"    -c "tabbing 2" $buttonIndietro;
+            button -e -l ">>"     -c "tabbing 4" $buttonFine;
+            button -e -l "Save"   -c ("shelfAction (2 , \""+$mau_TSL+"\", \""+$mauTabShelf+"\" ) ") $bttnSS;
+            button -e -l "Clear"  -c ("shelfAction (3 , \""+$mau_TSL+"\", \""+$mauTabShelf+"\" ) ") $bttnCL;
+            button -e -l "Get"    -c ("shelfAction (5 , \""+$mau_TSL+"\", \""+$mauTabShelf+"\" ) ") $bttnLS;
+            button -e -l "Delete" -c ("shelfAction (4 , \""+$mau_TSL+"\", \""+$mauTabShelf+"\" ) ") $bttnDL;
+            formLayout -e $shelfPL ;
+                shelfTabLayout -e -h 200 -i "smallTrash.xpm" -iv true -cc ("mauTSL_ActionFlipper (0, \""+$mau_TSL+"\", \""+$mauTabShelf+"\" ) ") -cr 1 $mauTabShelf  ;
+                    shelfLayout -e -h 200 $primary;
+                    shelfLayout -e -h 200 $secondary;
+                frameLayout -e -cll 1 -cl 1 -l "Presets"
+                            /*-ec ("window -e -w "+$lato+" \""+$win+"\"")*/
+                            -cc ("mauTSL_ActionFlipper (0 , \""+$mau_TSL+"\", \""+$mauTabShelf+"\" );") $presetFR ;
+                            //-cc ("mauTSL_ActionFlipper (0 , \""+$mau_TSL+"\", \""+$mauTabShelf+"\" );window -e -w "+$lato+" \""+$win+"\"") $presetFR ;
+                    textScrollList -e -nr 5 -dcc ("shelfAction (0 , \""+$mau_TSL+"\", \""+$mauTabShelf+"\" ) ") $mau_TSL ;
+            formLayout -e
+
+            -af $mauTabShelf "top" 5
+            -af $mauTabShelf "left" 5
+            -af $mauTabShelf "right" 5
+
+            -ac $presetFR "top" 0 $mauTabShelf
+            -af $presetFR "left" 5
+            -af $presetFR "right" 5
+
+            $shelfPL ;
+
+        formLayout -e
+
+        -af $buttonInizio "top" 5
+        -af $buttonInizio "left" 5
+        -ap $buttonInizio "right" 0 20
+
+        -af $buttonAvanti "top" 5
+        -ac $buttonAvanti "left" 0 $buttonInizio
+        -ap $buttonAvanti "right" 0 50
+
+        -af $buttonIndietro "top" 5
+        -ac $buttonIndietro "left" 0 $buttonAvanti
+        -ac $buttonIndietro "right" 0 $buttonFine
+
+        -af $buttonFine "top" 5
+        -ap $buttonFine "left" 0 80
+        -af $buttonFine "right" 5
+
+        -ac $shelfPL "top" 5 $buttonAvanti
+        -af $shelfPL "left" 5
+        -af $shelfPL "right" 5
+
+        -af $bttnLS "left" 5
+        -ap $bttnLS "right" 0 25
+        -ac $bttnLS "top" 5 $shelfPL
+
+        -ac $bttnCL "left" 0 $bttnLS
+        -af $bttnCL "right" 100
+        -ac $bttnCL "top" 5 $shelfPL
+
+        -ac $bttnDL "left" 0 $bttnCL
+        -af $bttnDL "right" 50
+        -ac $bttnDL "top" 5 $shelfPL
+
+        -ac $bttnSS "left" 0 $bttnDL
+        -af $bttnSS "right" 5
+        -ac $bttnSS "top" 5 $shelfPL
+
+        $shelfFormL;
+
+    // -----------------------------------------------------------------------------------------------------------------
+    // THE RENAME TAB SET UP
+    // -----------------------------------------------------------------------------------------------------------------
+    //string $components = ("['"+$hirCB+"','"+$hirCB2+"','"+$txFD+"','"+$addremCB+"','"+$txRep1FD+"','"+$txRep2FD+"','"+$buttonADRE+"','"+$buttonREP+"','"+$renumberFR+"','"+$hirEV+"']") ;
+    string $components = ("[\""+$hirCB+"\",\""+$hirCB2+"\",\""+$txFD+"\",\""+$addremCB+"\",\""+$txRep1FD+"\",\""+$txRep2FD+"\",\""+$buttonADRE+"\",\""+$buttonREP+"\",\""+$renumberFR+"\",\""+$hirEV+"\"]") ;
+    /*
+    string $uiComponent[] = { (uiHelper($hirCB)+"\","), ("\""+uiHelper($hirCB2)+"\","), ("\""+uiHelper($txFD)+"\","), ("\""+uiHelper($addremCB)+"\","),
+                                               ("\""+uiHelper($txRep1FD)+"\","),("\""+uiHelper($txRep2FD)+"\","), ("\""+uiHelper($buttonADRE)+"\","),
+                                               ("\""+uiHelper($buttonREP)+"\","),("\""+uiHelper($renumberFR)+"\","), ("\""+uiHelper($hirEV)) };
+    string $components = stringArrayToString($uiComponent, " ");*/
+    for($e in $presets)
+    {
+        $pmi = `menuItem -l $e -p $mi1`;
+        menuItem -e -c ("textField -e -tx \""+$e+"\" \""+$txFD+"\"") $pmi;
+        $pmi = `menuItem -l $e -p $mi2`;
+        menuItem -e -c ("textField -e -tx \""+$e+"\" \""+$txRep1FD+"\"") $pmi;
+        $pmi = `menuItem -l $e -p $mi3`;
+        menuItem -e -c ("textField -e -tx \""+$e+"\" \""+$txRep2FD+"\"") $pmi;
+        $pmi = `menuItem -l $e -p $mi4`;
+        menuItem -e -c ("textField -e -tx \""+$e+"\" \""+$renumberTF+"\"") $pmi;
+    }
+
+    // PYTHON COMMAND TO DO THE RENAMING
+    $cmdA = "python(\"renRelName.renRelN(1,mel.eval('checkBox -q -v "+$hirCB+"'),mel.eval('checkBox -q -v "+$hirCB2+"'),mel.eval('checkBox -q -v "+$hirEV+"'),mel.eval('textField -q -tx "+$txFD+"'),mel.eval('textField -q -tx "+$txRep1FD+"'),mel.eval('textField -q -tx "+$txRep2FD+"'))\")";
+    $cmdR = "python(\"renRelName.renRelN(2,mel.eval('checkBox -q -v "+$hirCB+"'),mel.eval('checkBox -q -v "+$hirCB2+"'),mel.eval('checkBox -q -v "+$hirEV+"'),mel.eval('textField -q -tx "+$txFD+"'),mel.eval('textField -q -tx "+$txRep1FD+"'),mel.eval('textField -q -tx "+$txRep2FD+"'))\")";
+    $cmdRP = "python(\"renRelName.renRelN(3,mel.eval('checkBox -q -v "+$hirCB+"'),mel.eval('checkBox -q -v "+$hirCB2+"'),mel.eval('checkBox -q -v "+$hirEV+"'),mel.eval('textField -q -tx "+$txFD+"'),mel.eval('textField -q -tx "+$txRep1FD+"'),mel.eval('textField -q -tx "+$txRep2FD+"'))\")";
+
+    string $butA = ("button -e -c "+$cmdA+"\" "+$buttonADRE+"\"");
+    string $butR = ("button -e -c "+$cmdR+"\" "+$buttonADRE+"\"");
+
+    frameLayout -e -w $lato -cll 1 -cl 1 /*-cc ("window -e -w "+$lato+" \""+$win+"\"") -ec ("window -e -w "+$lato+" \""+$win+"\"")*/  -l "Rename Utility" -p $mauUtyFLbase $renameFL;
+        formLayout -e $renameRCL;
+            checkBox -e -l "Selection" -onc ("checkBox -e -l \"Hierarchy\" \""+$hirCB+"\"") -ofc ("checkBox -e -l \"Selection\" \""+$hirCB+"\";") $hirCB;
+            checkBox -e -l "Everything" -onc ("checkBox -e -en 0 \""+$hirCB+"\";checkBox -e -en 0 \""+$hirCB2+"\"") -ofc ("checkBox -e -en 1 \""+$hirCB+"\";checkBox -e -en 1 \""+$hirCB2+"\"") $hirEV;
+            checkBox -e -l "Before" -onc ("checkBox -e -l \"After\" \""+$hirCB2+"\"") -ofc ("checkBox -e -l \"Before\" \""+$hirCB2+"\"") $hirCB2;
+            button -e -l "Rename Box" -c mgRenameBox $renBoxBttm;
+            button -e -l "Reset" -c ("python (\"renRelName.renRelN(0,'','',\"+(`checkBox -q -v \""+$hirCB+"\"`)+\","+$components+")\")") $masterResBttn;
+
+            frameLayout -e -cll 1 -l "Add Remove" -cl 1 /*-cc ("window -e -w "+$lato+" \""+$win+"\"") -ec ("window -e -w "+$lato+" \""+$win+"\"")*/  $addRemFR;
+                formLayout -e $addRemFL;
+                    textField -e $txFD;
+                    checkBox -e -l "" -onc ("button -e -l \"Add\" \""+$buttonADRE+"\";")
+                      -ofc ("button -e -l \"Remove\" \""+$buttonADRE+"\";")
+                      -v 1 $addremCB;
+                    button -e -l "Add" -c $cmdA $buttonADRE;
+
+                formLayout -e
+
+                -af $txFD "left" 0
+                -af $txFD "top" 0
+                -af $txFD "right" 0
+
+                -ap $addremCB "right" 0 10
+                -ac $addremCB "top" 0 $txFD
+                -af $addremCB "left" 0
+
+                -ac $buttonADRE "left" 0 $addremCB
+                -ac $buttonADRE "top" 0 $txFD
+                -af $buttonADRE "right" 0
+
+                $addRemFL;
+
+            frameLayout -e -w $lato -cll 1 -l "Replace" /*-cc ("window -e -w "+$lato+" \""+$win+"\"") -ec ("window -e -w "+$lato+" \""+$win+"\"")*/ -cl 1 $replaceFR;
+                formLayout -e $replaceFL;
+                    textField -e $txRep1FD;
+                    textField -e $txRep2FD;
+                    //button -e -l "Replace" -c ("python (\"renRelName.renRelN(3,'','',\"+(`checkBox -q -v \""+$hirCB+"\"`)+\","+$components+")\")") $buttonREP;
+                    button -e -l "Replace" -c $cmdRP $buttonREP;
+
+                formLayout -e
+
+                -af $txRep1FD "left" 0
+                -af $txRep1FD "top" 0
+                -af $txRep1FD "right" 0
+
+                -af $txRep2FD "left" 0
+                -ac $txRep2FD "top" 0 $txRep1FD
+                -af $txRep2FD "right" 0
+
+                -af $buttonREP "left" 0
+                -ac $buttonREP "top" 0 $txRep2FD
+                -af $buttonREP "right" 0
+
+                $replaceFL;
+
+            frameLayout -e -w $lato -cll 1 -l "Renumber"
+                        /*-cc ("window -e -w "+$lato+" \""+$win+"\"")
+                        -ec ("window -e -w "+$lato+" \""+$win+"\"")*/ -cl 1 $renumberFR;
+                formLayout -e $renumberFL;
+                    button -e -l ">>>" -c ("string $renuObj[1] =`ls -sl`;textField -e -tx $renuObj[0] \""+$renumberTF+"\";") $renuGetBTTN;
+                    textField -e $renumberTF;
+                    text -e -l "Start # " $renuTX;
+                    intField -e -v 1 $renuIF;
+                    text -e -l "Padding " $padTX;
+                    intField -e -v 1 -min 1 $padIF;
+                    button -e -l "Renumber" -c ("python (\"renuRel.renuRel(\"+(`intField -q -v \""+$renuIF+"\"`)+\",\"+(`intField -q -v \""+$padIF+"\"`)+\",'\"+(`textField -q -tx \""+$renumberTF+"\"`)+\"')\")") $renuBTTN;
+
+                formLayout -e
+
+                -af $renuGetBTTN "left" 0
+                -af $renuGetBTTN "top" 0
+                -ap $renuGetBTTN "right" 0 20
+
+                -ac $renumberTF "left" 0 $renuGetBTTN
+                -af $renumberTF "top" 0
+                -af $renumberTF "right" 0
+
+                -af $renuTX "left" 0
+                -ac $renuTX "top" 0 $renumberTF
+                -ap $renuTX "right" 0 23
+
+                -ac $renuIF "left" 0 $renuTX
+                -ac $renuIF "top" 0 $renumberTF
+                -ap $renuIF "right" 0 50
+
+                -ac $padTX "left" 0 $renuIF
+                -ac $padTX "top" 0 $renumberTF
+                -ap $padTX "right" 0 73
+
+                -ac $padIF "left" 0 $padTX
+                -ac $padIF "top" 0 $renumberTF
+                -af $padIF "right" 0
+
+                -af $renuBTTN "left" 0
+                -ac $renuBTTN "top" 0 $renuIF
+                -af $renuBTTN "right" 0
+
+                $renumberFL;
+
+            formLayout -e
+
+            -af $hirEV "left" 0
+            -af $hirEV "top" 0
+            -ap $hirEV "right" 0 35
+
+            -ac $hirCB "left" 0 $hirEV
+            -af $hirCB "top" 0
+            -ap $hirCB "right" 0 70
+
+            -ac $hirCB2 "left" 0 $hirCB
+            -af $hirCB2 "top" 0
+            -af $hirCB2 "right" 0
+
+            -af $addRemFR "left" 0
+            -ac $addRemFR "top" 0 $hirCB
+            -af $addRemFR "right" 0
+
+            -af $replaceFR "left" 0
+            -ac $replaceFR "top" 0 $addRemFR
+            -af $replaceFR "right" 0
+
+            -af $renumberFR "left" 0
+            -ac $renumberFR "top" 0 $replaceFR
+            -af $renumberFR "right" 0
+
+            -af $renBoxBttm "left" 0
+            -ac $renBoxBttm "top" 0 $renumberFR
+            -af $renBoxBttm "right" 0
+
+            -af $masterResBttn "left" 0
+            -ac $masterResBttn "top" 0 $renBoxBttm
+            -af $masterResBttn "right" 0
+
+            $renameRCL;
+
+    // ARRANGEMENT FOR THE BASIC TAB
+    formLayout -e
+
+        -af $buttonScene "top" 5
+        -af $buttonScene "left" 5
+        -ap $buttonScene "right" 0 50
+
+        -ac $buttonVersion "left" 5 $buttonScene
+        -af $buttonVersion "top" 5
+        -af $buttonVersion "right" 5
+
+        -ac $aniMSetBttn "top" 5 $buttonScene
+        -af $aniMSetBttn "left" 5
+        -ap $aniMSetBttn "right" 0 15
+
+        -ac $polyMSetBttn "left" 0 $aniMSetBttn
+        -ac $polyMSetBttn "top" 5 $buttonScene
+        -ap $polyMSetBttn "right" 0 30
+
+        -ac $surfMSetBttn "top" 5 $buttonScene
+        -ac $surfMSetBttn "left" 0 $polyMSetBttn
+        -ap $surfMSetBttn "right" 0 45
+
+        -ac $dynMSetBttn "left" 0 $surfMSetBttn
+        -ac $dynMSetBttn "top" 5 $buttonScene
+        -ap $dynMSetBttn "right" 0 60
+
+        -ac $renMSetBttn "top" 5 $buttonScene
+        -ac $renMSetBttn "left" 0 $dynMSetBttn
+        -ap $renMSetBttn "right" 0 80
+
+        -ac $nCMSetBttn "top" 5 $buttonScene
+        -ac $nCMSetBttn "left" 0 $renMSetBttn
+        -af $nCMSetBttn "right" 5
+
+        -af $shelfFL "left" 5
+        -af $shelfFL "right" 5
+        -ac $shelfFL "top" 5 $aniMSetBttn
+
+        -af $sepa04 "left" 0
+        -af $sepa04 "right" 0
+        -ac $sepa04 "top" 5 $shelfFL
+
+        -af $renameFL "left" 5
+        -af $renameFL "right" 5
+        -ac $renameFL "top" 5 $sepa04
+
+    $mauUtyFLbase;
+
+    return $mauUtyFLbase;
+}

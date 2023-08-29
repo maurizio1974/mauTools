@@ -1,0 +1,176 @@
+//--------------------------------------------------------------------------
+//
+// ScriptName : flatten Model By UV
+// Contents   : select faces of mesh based on edgeloops
+// Author     : Joe Wu
+// URL        : https://www.youtube.com/@Im3dJoe
+// Since      : 2022/10
+// Version    : 1.00 public release
+//--------------------------------------------------------------------------
+
+global proc flattenModelbyUV(){
+    $scaleMethod = 0;
+    //scale method, 0 use random edge  - fast but not accurate
+    //              1 use boundry box  - fast also not accurate
+    //              2 use longest edge - slow but more accurate
+    string $SLobj[] = `ls -sl -fl` ;
+        if (`size $SLobj` > 0){
+            for ($A=0;$A<`size $SLobj`;$A++){
+                if (`match "BlendShape" $SLobj[$A]` != "BlendShape"){
+                    string $BlendShape1 , $BlendShape2 ;
+                    select -r $SLobj[$A] ;
+                    string $TempNameA[] = `duplicate -n ($SLobj[$A]+"_BlendShape1")` ;
+                    $BlendShape1 = $TempNameA[0] ;
+                    polySoftEdge -a 0 -ch 1 $BlendShape1;FreezeTransformations;DeleteHistory;
+                    PolySelectConvert 4;polySelectBorderShell 1;SplitVertex;
+                    select -r $BlendShape1 ;FreezeTransformations;DeleteHistory;
+                    string $TempName[] = `duplicate -n ($SLobj[$A]+"_BlendShape2")` ; $BlendShape2 = $TempName[0] ;
+                    int $VtxNum[] = `polyEvaluate -v`;
+                    for ($B=0;$B<$VtxNum[0];$B++){
+                        string $VTXname = $BlendShape2 + ".vtx[" + $B + "]" ;
+                        float $UVnum[] = `polyEvaluate -bc2 $VTXname`;
+                        move ($UVnum[0]-0.5) 0 (0.5-$UVnum[2]) $VTXname;
+                        }
+                    select -r $BlendShape2 ;
+                    CenterPivot $BlendShape2;
+                    //scale
+                    //no boader Edge, cause problem when find max length
+                    select -r $SLobj[$A] ;
+                    string $currSelected[] = `ls -sl -o`;
+                    string $tempAAA[] = `ls ($currSelected[0]+".map[*]")`;
+                    select $tempAAA;
+                    polySelectBorderShell 1;
+                    PolySelectConvert 20;
+                    string $potentialEdges[]=`filterExpand -ex 1 -sm 32`;
+                    string $removedEdges[];
+                    clear $removedEdges;
+                    for($eachEdge in $potentialEdges){
+                            string $uvs[] =`polyListComponentConversion -fe -tuv $eachEdge`;
+                            $uvs = `ls -fl $uvs`;
+                            if(size($uvs)<=2)
+                                    $removedEdges[size($removedEdges)] = $eachEdge;
+                    }
+                    if (`size($removedEdges)` !=  `size($potentialEdges)`){
+                        select -d $removedEdges;
+                        InvertSelection;
+                        }
+                    float $scaleFactorRef;
+                    if($scaleMethod == 0){
+                        string $amountOfEdge[]= `ls -sl -fl`;
+                        float $value;
+                        $targetEdge = $amountOfEdge[`size$amountOfEdge`/2];
+                        select -r $targetEdge;
+                        select -r `polyListComponentConversion -tv`;
+                        string $connectedVerts[] = `filterExpand -ex 1 -sm 31`;
+                        vector $PT1 = `pointPosition -w $connectedVerts[0]`;
+                        vector $PT2 = `pointPosition -w $connectedVerts[1]`;
+                        float $distance3d = mag($PT1-$PT2);
+                        string $buffer[];
+                        tokenize $targetEdge "." $buffer;
+                        select ($BlendShape2+"."+$buffer[1]);
+                        $edge=`ls -sl`;
+                        string $tmp[] =`polyListComponentConversion -fe -tv $edge[0]`;
+                        string $vtx[]=`ls -fl $tmp`;
+                        vector $p1 =`pointPosition -w $vtx[0]`;
+                        vector $p2=`pointPosition -w $vtx[1]`;
+                        $distance3dB = mag($p2-$p1);
+                        $scaleFactorRef =$distance3d/ $distance3dB;
+                        
+                        }
+                    else if ($scaleMethod == 1){
+                        float $area3DA[] = `polyEvaluate -b ($SLobj[$A]+"_BlendShape1")`;
+                        float $area2DA[] = `polyEvaluate -b ($SLobj[$A]+"_BlendShape2")`;
+                        float $XXXAA = sqrt(($area3DA[3]-$area3DA[0])*($area3DA[3]-$area3DA[0]));
+                        float $ZZZAA = sqrt(($area3DA[5]-$area3DA[2])*($area3DA[5]-$area3DA[2]));
+                        if($XXXAA < $ZZZAA){
+                            $XXXAA =  $ZZZAA;
+                        }
+                        float $XXXBB = sqrt(($area2DA[3]-$area2DA[0])*($area2DA[3]-$area2DA[0]));
+                        float $ZZZBB = sqrt(($area2DA[5]-$area2DA[2])*($area2DA[5]-$area2DA[2]));
+                        if($XXXBB < $ZZZBB){
+                            $XXXBB =  $ZZZBB;
+                        }
+                        $scaleFactorRef = $XXXAA/ $XXXBB;
+                    }
+                    else{
+                        string $amountOfEdge[]= `ls -sl -fl`;
+                        float $value;
+                        $value=0;
+                        string $targetEdge;
+                        for($i=0;$i<`size $amountOfEdge`;$i++){
+                                select -r $amountOfEdge[$i];
+                                select -r `polyListComponentConversion -tv`;
+                                string $connectedVerts[] = `filterExpand -ex 1 -sm 31`;
+                                vector $PT1 = `pointPosition -w $connectedVerts[0]`;
+                                vector $PT2 = `pointPosition -w $connectedVerts[1]`;
+                                float $checkEdgeLength = mag($PT1-$PT2);
+                                if( $checkEdgeLength > $value){
+                                    $value = $checkEdgeLength;
+                                    $targetEdge = $amountOfEdge[$i];
+                                    }
+                                }
+                         select $targetEdge;
+                        //distance Oringal
+                        $distance3d = $value;
+                        //distance flatten
+                        string $buffer[];
+                        tokenize $targetEdge "." $buffer;
+                        select ($BlendShape2+"."+$buffer[1]);
+                        $edge=`ls -sl`;
+                        string $tmp[] =`polyListComponentConversion -fe -tv $edge[0]`;
+                        string $vtx[]=`ls -fl $tmp`;
+                        vector $p1 =`pointPosition -w $vtx[0]`;
+                        vector $p2=`pointPosition -w $vtx[1]`;
+                        $distance3dB = mag($p2-$p1);
+                        $scaleFactorRef =$distance3d/ $distance3dB;
+                    }
+                    setAttr ($BlendShape2+".scaleX")  $scaleFactorRef;
+                    setAttr ($BlendShape2+".scaleY")  $scaleFactorRef;
+                    setAttr ($BlendShape2+".scaleZ")  $scaleFactorRef;
+                    select -r $BlendShape2;
+                    FreezeTransformations;
+                    string $BlandName[] = `blendShape $BlendShape2 $BlendShape1`;
+                    addAttr -ln FlattenModel -at double  -min 0 -max 1 -dv 0 ("|" + $BlendShape1);setAttr -e -keyable true ("|" + $BlendShape1 + ".FlattenModel");
+                    expression -s ($BlandName[0] + "." + $BlendShape2 + " = " + $BlendShape1 + ".FlattenModel")  -o pCube1_BlendShape1 -ae 1 -uc all ;
+                    rename $BlendShape1 ($SLobj[$A] +"FlattenModel");
+                    delete $BlendShape2;
+                    currentTime 1 ;
+                    setKeyframe ($SLobj[$A]  + "FlattenModel.FlattenModel");
+                    currentTime 25 ;
+                    setAttr ($SLobj[$A]  + "FlattenModel.FlattenModel") 1;
+                    setKeyframe ($SLobj[$A]  + "FlattenModel.FlattenModel");
+
+
+					// fix broken merge
+					select $SLobj[$A] ;
+					float $myBB[] = `xform -q -bb -ws`;
+					ConvertSelectionToUVs;
+					$tempShell = `texGetShells`; // type is string[]
+					for ($t in $tempShell){
+						$cmd = ("select " + $t);
+						eval $cmd;
+						ConvertSelectionToContainedFaces;
+						string $shellFace[]=`ls -sl -fl`;
+						string $flattenUVFace[];
+						clear $flattenUVFace;
+						for  ($s in $shellFace){
+							string $tempShellName = `substitute $SLobj[$A]  $s ($SLobj[$A] +"FlattenModel")`;
+							 $flattenUVFace[size( $flattenUVFace)] =$tempShellName;
+							 }
+						select $flattenUVFace;
+						polyMergeVertex  -d 0.001 -am 1;
+						select $flattenUVFace;
+						polyMergeUV -d 0.001;
+						}
+					select -r ($SLobj[$A] +"FlattenModel");
+					float $newBB[] = `xform -q -bb -ws`;
+					float $moveSide = ($newBB[3] - $newBB[0])/2 + ($myBB[3] - $myBB[0]) ;
+					move -r -os -wd  $moveSide 0 0;
+					currentTime 25;
+					SetToFaceNormals;
+				}
+			}
+        }
+    select("*FlattenModel");
+    }
+//flattenModelbyUV;

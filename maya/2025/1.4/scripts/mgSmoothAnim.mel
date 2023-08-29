@@ -1,0 +1,285 @@
+//------------------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------//
+//	SCRIPT:	mgAnimSmooth.mel
+//	VERSION: 0.1
+//	AUTHOR:	Maurizio Giglioli
+//		    maurizio1974@gmail.com
+//	DATE:         30 05 2011
+//
+//
+//	DESCRIPTION:	smooth animation curves with nodes
+//
+//
+//	INSTRUCTIONS:	source the script
+//			        call the procedure mgSmoothAnimUI()
+//
+//  UPDATE:         
+//                 
+//------------------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------//
+
+
+global proc mgSmoothAnimUI()
+{
+    // Measures
+    int $winSide = 150;
+    int $uiSide = 5;
+    
+    // UI TO SPECIFY SETTINGS
+    string $win             = `window -t "smoothAnimaNode" -rtf 1 -w $winSide `;
+    string $flBase          =     `formLayout`;
+    string $axesTX          =         `text` ;
+    string $txCheck         =         `checkBox` ;
+    string $tyCheck         =         `checkBox` ;
+    string $tzCheck         =         `checkBox` ;
+    string $rxCheck         =         `checkBox` ;
+    string $ryCheck         =         `checkBox` ;
+    string $rzCheck         =         `checkBox` ;
+    string $iterTX          =         `text` ;
+    string $iterField       =         `intField` ;
+    string $btgo            =         `button` ;
+    
+    
+    string $uiComponents[] = { ($txCheck+"\","),("\""+$tyCheck+"\","),("\""+$tzCheck+"\","),("\""+$rxCheck+"\","),
+                               ("\""+$ryCheck+"\","),("\""+$rzCheck+"\","),("\""+$iterField)};
+    string $ui = stringArrayToString($uiComponents," ");
+    
+    text -e -l "Axes to work on" -al "center" $axesTX ;
+    checkBox -e -w 10 -l "Tx" -al "center" $txCheck;
+    checkBox -e -w 10 -l "Ty" -al "center" $tyCheck;
+    checkBox -e -w 10 -l "Tz" -al "center" $tzCheck;
+    
+    checkBox -e -w 10 -l "Rx" -al "center" $rxCheck;
+    checkBox -e -w 10 -l "Ry" -al "center" $ryCheck;
+    checkBox -e -w 10 -l "Rz" -al "center" $rzCheck;
+    
+    text -e -l "Smooth Iterations" -al "center" $iterTX ;
+    intField -e -min 1  -v 1 -w 20 $iterField;
+    
+    button -e -l "Smooth" -c ("set_mgSmoothAnim({\""+$ui+"\"})") $btgo;
+    
+    formLayout -e 
+    
+        -af $axesTX "left" $uiSide -af $axesTX "top" $uiSide -af $axesTX "right" $uiSide
+        
+        -af $txCheck "left" $uiSide -ac $txCheck "top" $uiSide $axesTX -ap $txCheck "right" 0 33
+        -ac $tyCheck "left" 0 $txCheck -ac $tyCheck "top" $uiSide $axesTX -ap $tyCheck "right" 0 66
+        -ac $tzCheck "left" 0 $tyCheck -ac $tzCheck "top" $uiSide $axesTX -af $tzCheck "right" $uiSide
+        
+        -af $rxCheck "left" $uiSide -ac $rxCheck "top" 0 $txCheck -ap $rxCheck "right" 0 33
+        -ac $ryCheck "left" 0 $rxCheck -ac $ryCheck "top" 0 $tyCheck -ap $ryCheck "right" 0 66
+        -ac $rzCheck "left" 0 $ryCheck -ac $rzCheck "top" 0 $tzCheck -af $rzCheck "right" $uiSide
+        
+        -af $iterTX "left" $uiSide -ac $iterTX "top" 5 $rxCheck -ap $iterTX "right" 0 80
+        -ac $iterField "left" 0 $iterTX -ac $iterField "top" 5 $rzCheck -af $iterField "right" $uiSide
+        
+        -af $btgo "left" $uiSide -ac $btgo "top" 10 $iterTX  -af $btgo "right" $uiSide
+        
+    $flBase ;
+    
+    showWindow $win;
+    
+    window -e -w $winSide -h 120 $win ; 
+}
+
+global proc do_mgSmoothAnim(int $iterations, string $name, string $axis)
+{
+    string $locP, $locF, $pCon, $mdinode, $fcnode, $mdAx, $enum;
+    // CREATE THE FRAMECACHE NODE
+    int $i           = 0;
+    float $pos[]     = `xform -q -ws -t $name`;
+    float $rot[]     = `xform -q -ws -ro $name`;
+    string $fcnode   = `createNode frameCache -n ($name+"_"+$axis+"_FC")`;
+    
+    if(!`attributeExists "smoothStrenght" $name`) 
+        addAttr -k 1 -ln "smoothStrenght" -at double -dv 1 -min 0 $name;
+    if(!`attributeExists "iterations" $name`)
+    {
+        for($i =0;$i<$iterations;$i++)
+            $enum += (($i+1)+":");
+        addAttr -k 1 -ln "iterations" -at "enum" -en $enum $name;
+    }
+    if( $axis == "tx" || $axis == "ty" || $axis == "tz" )
+    {
+        if ($axis == "tx")
+            $mdAx = "X";
+        if ($axis == "ty")
+            $mdAx = "Y";
+        if ($axis == "tz")
+            $mdAx = "Z";
+        if(!`objExists ($name+"_in_Tra_MD")`)
+        {
+            $mdinode  = `createNode multiplyDivide -n ($name+"_in_Tra_MD")`;
+            setAttr ($mdinode+".operation") 1;
+            connectAttr -f ($name+"."+$axis) ($mdinode+".input1"+$mdAx);
+            connectAttr -f ($name+".smoothStrenght") ($mdinode+".input2"+$mdAx);
+        }else{
+            connectAttr -f ($name+"."+$axis) ($name+"_in_Tra_MD.input1"+$mdAx);
+        }
+        
+        if(!`isConnected ($name+".smoothStrenght") ($name+"_in_Tra_MD.input2"+$mdAx)`)
+            connectAttr -f ($name+".smoothStrenght") ($name+"_in_Tra_MD.input2"+$mdAx);
+        
+        connectAttr -f ($name+"_in_Tra_MD.output"+$mdAx) ($fcnode+".stream");
+    }
+    
+    if( $axis == "rx" || $axis == "ry" || $axis == "rz" )
+    {
+        if ($axis == "rx")
+            $mdAx = "X";
+        if ($axis == "ry")
+            $mdAx = "Y";
+        if ($axis == "rz")
+            $mdAx = "Z";
+        if(!`objExists ($name+"_in_Rot_MD")`)
+        {
+            $mdinode  = `createNode multiplyDivide -n ($name+"_in_Rot_MD")`;
+            setAttr ($mdinode+".operation") 1;
+            connectAttr -f ($name+"."+$axis) ($mdinode+".input1"+$mdAx);
+            connectAttr -f ($name+".smoothStrenght") ($mdinode+".input2"+$mdAx);
+        }else{
+            connectAttr -f ($name+"."+$axis) ($name+"_in_Rot_MD.input1"+$mdAx);
+        }
+        
+        if(!`isConnected ($name+".smoothStrenght") ($name+"_in_Rot_MD.input2"+$mdAx)`)
+            connectAttr -f ($name+".smoothStrenght") ($name+"_in_Rot_MD.input2"+$mdAx);
+        
+        connectAttr -f ($name+"_in_Rot_MD.output"+$mdAx) ($fcnode+".stream");
+    }
+    
+    $i =0;
+    for($i=0;$i<$iterations;$i++)
+    {
+        if(!`objExists ($name+"_past"+($i+1)) `)
+        {
+            $locP = ` group -em -n ($name+"_past"+($i+1)) `;
+            xform -ws -t $pos[0] $pos[1] $pos[2] $locP;
+            xform -ws -t $rot[0] $rot[1] $rot[2] $locP;
+        }else{
+            $locP = ($name+"_past"+($i+1));
+        }
+        if(!`objExists ($name+"_future"+($i+1)) `)
+        {
+            $locF = ` group -em -n ($name+"_future"+($i+1)) `;
+            xform -ws -t $pos[0] $pos[1] $pos[2] $locP;
+            xform -ws -t $rot[0] $rot[1] $rot[2] $locP;
+        }else{
+            $locF = ($name+"_future"+($i+1));
+        }
+        
+        connectAttr -f ($fcnode+".p["+($i+1)+"]") ($locP+"."+$axis);
+        connectAttr -f ($fcnode+".f["+($i+1)+"]") ($locF+"."+$axis);
+    }
+}
+
+global proc mg_constraintSmooth( string $name )
+{
+    string $masterArray[], $mdOTnode, $mdORnode, $avgTnode, $avgRnode, $avgTTnode, $avgRRnode, $avgRnode, $revTnode, $revRnode;
+    string $smLoc[1] = `spaceLocator -n ($name+"_Smooth_null")`;
+    string $locEnd = `group -em -n ($name+"_Restored_null")`;
+    string $selP[] =`ls -typ "transform" ($name+"_past*")`;
+    string $selF[] =`ls -typ "transform" ($name+"_future*")`;
+    int $i = 0;
+    int $x = 0;
+    int $z = 0;
+    
+    for($i=0;$i<(size($selP)*2);$i++)
+    {
+        float $rema = $i%2;
+        if($rema)
+        {
+            $masterArray[size($masterArray)] = $selF[$x];
+            $x = $x +1;
+        }else{
+            $masterArray[size($masterArray)] = $selP[$z];
+            $z = $z +1;
+        }
+    }
+    
+    $i = 0;
+    string $pc[1] = `parentConstraint $masterArray[0] $smLoc[0]`;
+    for($i=1;$i<size($masterArray);$i++)
+        parentConstraint -e -tl $masterArray[$i] $pc[0];
+    
+    
+    $mdOTnode = `createNode multiplyDivide -n ($name+"_out_Tra_MD")`;
+    setAttr ($mdOTnode+".operation") 2;
+    connectAttr -f ($smLoc[0]+".t") ($mdOTnode+".input1");
+    connectAttr -f ($name+".smoothStrenght") ($mdOTnode+".input2X");
+    connectAttr -f ($name+".smoothStrenght") ($mdOTnode+".input2Y");
+    connectAttr -f ($name+".smoothStrenght") ($mdOTnode+".input2Z");
+    
+    $mdORnode = `createNode multiplyDivide -n ($name+"_out_Rot_MD")`;
+    setAttr ($mdORnode+".operation") 2;
+    connectAttr -f ($smLoc[0]+".r") ($revRnode+".input1");
+    connectAttr -f ($name+".smoothStrenght") ($revRnode+".input2X");
+    connectAttr -f ($name+".smoothStrenght") ($revRnode+".input2Y");
+    connectAttr -f ($name+".smoothStrenght") ($revRnode+".input2Z");
+    
+    $avgTnode = `createNode plusMinusAverage -n ($name+"_Tra_AVG")`;
+    $avgRnode = `createNode plusMinusAverage -n ($name+"_Rot_AVG")`;
+    setAttr ($avgTnode+".operation") 2;
+    setAttr ($avgRnode+".operation") 2;
+    connectAttr -f ($name+".t") ($avgTnode+".input3D[0]");
+    connectAttr -f ($mdOTnode+".output") ($avgTnode+".input3D[1]");
+    connectAttr -f ($name+".r") ($avgRnode+".input3D[0]");
+    connectAttr -f ($mdORnode+".output") ($avgRnode+".input3D[1]");
+    
+    $avgTTnode = `createNode plusMinusAverage -n ($name+"_Tra_end_AVG")`;
+    $avgRRnode = `createNode plusMinusAverage -n ($name+"_Rot_end_AVG")`;
+    setAttr ($avgTTnode+".operation") 1;
+    setAttr ($avgRRnode+".operation") 1;
+    connectAttr -f ($mdOTnode+".output") ($avgTTnode+".input3D[0]");
+    connectAttr -f ($avgTnode+".output3D") ($avgTTnode+".input3D[1]");
+    connectAttr -f ($mdORnode+".output") ($avgRRnode+".input3D[0]");
+    connectAttr -f ($avgRnode+".output3D") ($avgRRnode+".input3D[1]");
+    
+    connectAttr -f ($avgTTnode+".output3D") ($locEnd+".t");
+    connectAttr -f ($avgRRnode+".output3D") ($locEnd+".r");
+
+    if(!`objExists "softAnim_noTransform_null"`)
+        group -em -n "softAnim_noTransform_null";
+        
+    for($e in $selP)
+        parent $e "softAnim_noTransform_null";
+    for($e in $selF)
+        parent $e "softAnim_noTransform_null";
+    parent $locEnd "softAnim_noTransform_null";
+    select $name;
+}
+
+    
+global proc set_mgSmoothAnim(string $ui[])
+{
+    string $sel[] =`ls -sl`;
+    
+    if(size($sel) != 0)
+    {
+        for($e in $sel)
+        {
+            if(`nodeType $e` == "transform")
+            {
+                if(`checkBox -q -v $ui[0]` == 1)
+                    do_mgSmoothAnim((`intField -q -v $ui[6]`),$e, "tx");
+                if(`checkBox -q -v $ui[1]` == 1)
+                    do_mgSmoothAnim((`intField -q -v $ui[6]`),$e, "ty");
+                if(`checkBox -q -v $ui[2]` == 1)
+                    do_mgSmoothAnim((`intField -q -v $ui[6]`),$e, "tz");
+                
+                if(`checkBox -q -v $ui[3]` == 1)
+                    do_mgSmoothAnim((`intField -q -v $ui[6]`),$e, "rx");
+                if(`checkBox -q -v $ui[4]` == 1)
+                    do_mgSmoothAnim((`intField -q -v $ui[6]`),$e, "ry");
+                if(`checkBox -q -v $ui[5]` == 1)
+                    do_mgSmoothAnim((`intField -q -v $ui[6]`),$e, "rz");
+            }else{
+                warning ("... Skipping "+$e+" because not a transform.\n");
+            }
+            mg_constraintSmooth $e;
+        }
+    }else{
+        warning "Please select at least one transform.";
+    }
+}
+
+

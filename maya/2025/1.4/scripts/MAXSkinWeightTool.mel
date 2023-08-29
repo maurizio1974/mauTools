@@ -1,0 +1,1200 @@
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+/*
+	SCRIPT		:    	MAXSkinWeightTool v 1.1 for Maya
+	AUTHOR		:    	Preeth.P.G., 3D Animator, 
+					pg.preeth@gmail.com |
+
+	DATE			:	27/10/2009 18:00
+
+	DESCRIPTION		:    	SkinWeightTool is skinning tool/UI.  It has similar functions as in 3DsMAX. where skinning is made easy for Riggers.
+                    		You just have to assign preset weights instead of painting.
+	Known Issues	:	if any please mail me. Since this is my first script there might be some BUG. May be. So please feel free to mail me.
+               
+	Updates		: 	Added Paste mirror option, mirror positive X Axis to Negative X axis and mirror negative X Axis to positive X axis . 
+
+	History 		:	v1.1    Added Mirror Option for Maya
+					v1.2	  Fixed a bug in the paste mirror procedure.
+
+
+*/    
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc MAXSkinWeightTool() // Procedure that will be run from the installed shelf icon.
+{
+	//source "/u/mng/maya/2010-x64/scripts/MAXSkinWeightTool.mel";
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc SkinWeightTool_Win() // Procedure for creating a Window UI
+{
+	string $windowName = "Weight_Tool";
+	if(`window -ex $windowName`) 
+        deleteUI $windowName;
+    
+	window -t $windowName -wh 333 686  $windowName;
+        formLayout mainFL;
+            frameLayout -l "Selection" -la "center"  seleFL;
+                formLayout seleFR;
+                    button - label "  Grow  " -bgc 0.7 0.7 0.7 -c GrowPolygonSelectionRegion Grow_but;
+                    button - label " Shrink " -bgc 0.7 0.7 0.7 -c ShrinkPolygonSelectionRegion Shrink_But;
+                    button - label " Loop " -bgc 0.7 0.7 0.7 -c loopSel loop_but;
+                    button - label " Ring " -bgc 0.7 0.7 0.7 -command RingSel ring_but;
+                setParent ..;
+            setParent ..;
+            
+            formLayout -e
+            
+                -af Grow_but left 0
+                -af Grow_but top 0
+                -ap Grow_but right 0 25
+                
+                -ac Shrink_But left 0 Grow_but
+                -af Shrink_But top 0
+                -ap Shrink_But right 0 50
+                
+                -ac loop_but left 0 Shrink_But
+                -af loop_but top 0
+                -ap loop_but right 0 75
+                
+                -ac ring_but left 0 loop_but
+                -af ring_but top 0
+                -af ring_but right 0
+            
+            seleFR;
+
+            frameLayout -l "Preset Weight Values" -la "center" /*-w 198 -h 45 -mh 3 -mw 5 -bs "etchedOut"*/ presetFL;
+                formLayout presetFR;
+                    button - label "  0 " -bgc 0.5 1.0 0.5 -c VertWeight0_proc but0;
+                    button - label " 0.1" -bgc 0.5 1.0 0.5 -c VertWeight01_proc but01 ;
+                    button - label "0.25" -bgc 0.5 1.0 0.5 -c VertWeight025_proc but25;
+                    button - label " 0.5" -bgc 0.5 1.0 0.5 -c VertWeight050_proc but5;
+                    button - label "0.75" -bgc 0.5 1.0 0.5 -c VertWeight075_proc but075;
+                    button - label "1.0 " -bgc 0.5 1.0 0.5 -c VertWeight1_proc but1;
+                setParent ..;
+            setParent ..;
+            
+            formLayout -e
+                
+                -af but0 left 0
+                -af but0 top 0
+                -ap but0 right 0 18
+                
+                -ac but01 left 0 but0
+                -af but01 top 0
+                -ap but01 right 0 35
+                
+                -ac but25 left 0 but01
+                -af but25 top 0
+                -ap but25 right 0 50
+                
+                -ac but5 left 0 but25
+                -af but5 top 0
+                -ap but5 right 0 68
+                
+                -ac but075 left 0 but5
+                -af but075 top 0
+                -ap but075 right 0 82
+                
+                -ac but1 left 0 but075
+                -af but1 top 0
+                -af but1 right 0
+                
+            presetFR;
+                
+
+            frameLayout -l "Custom Weight Values" -la "center" customFL;
+                formLayout customFR;
+                    button - label "Set Weight" -bgc 1.0 1.0 0.6 -c SetWeight SetWeight_but;
+                    button - label "Scale Weight" -bgc 1.0 1.0 0.6 -c ScaleWeight ScaleWeight_but;
+                    floatField -minValue 0 -maxValue 1.0 -precision 2 -value 0.1 -step 0.1 -w 35 SetWeight_Val;
+                    floatField -minValue 0.001 -maxValue 5.0 -precision 3 -value 0.95 -step 0.05 -w 35 ScaleWeight_Val;
+
+                    button - label "+" -bgc 1.0 0.8 0.2 -w 30 -command AddWeight AddWeight_but;
+                    button - label "+" -bgc 1.0 0.8 0.2 -w 30 -c AddWeight5 AddWeight5_but;
+
+                    button - label "-" -bgc 1.0 1.0 0.6 -w 30 -command SubWeight SubWeight_but;
+                    button - label "-" -bgc 1.0 1.0 0.6 -w 30 -command SubWeight5 SubWeight5_but;
+                setParent ..;
+            setParent ..;
+            
+            formLayout -e
+            
+                -af SetWeight_but left 0
+                -af SetWeight_but top 0
+                -ap SetWeight_but right 0 25
+                
+                -ac SetWeight_Val left 0 SetWeight_but
+                -af SetWeight_Val top 0
+                -ac SetWeight_Val right 0 AddWeight_but
+                
+                -ap AddWeight_but left 0 70
+                -af AddWeight_but top 0
+                -ac AddWeight_but right 0 SubWeight_but
+                
+                -ap SubWeight_but left 0 85
+                -af SubWeight_but top 0
+                -af SubWeight_but right 0
+                
+                -af ScaleWeight_but left 0
+                -ac ScaleWeight_but top 0 SetWeight_but
+                -ap ScaleWeight_but right 0 25
+                
+                -ac ScaleWeight_Val left 0 SetWeight_but
+                -ac ScaleWeight_Val top 0 SetWeight_Val
+                -ac ScaleWeight_Val right 0 AddWeight_but
+                
+                -ap AddWeight5_but left 0 70
+                -ac AddWeight5_but top 0 SubWeight_but
+                -ac AddWeight5_but right 0 SubWeight_but
+                
+                -ap SubWeight5_but left 0 85
+                -ac SubWeight5_but top 0 SubWeight_but
+                -af SubWeight5_but right 0
+
+            customFR;
+                
+
+            frameLayout -l "Value Transfer" -la "center" valueFL;
+                formLayout valueFR;
+                    button - label "    Copy    " -bgc 0.9 1.0 1.0 -c CopyVert CopyVert_but;
+                    button - label "    Paste    " -bgc 0.9 1.0 1.0 -c PasteVert PasteVert_but;
+                    button - label "    Blend    " -bgc 0.9 1.0 1.0 -c BlendVert BlendVert_but;
+                setParent ..;
+            setParent ..;
+            
+            formLayout -e 
+            
+                -af CopyVert_but left 0
+                -af CopyVert_but top 0
+                -ap CopyVert_but right 0 35
+                
+                -ac PasteVert_but left 0 CopyVert_but
+                -af PasteVert_but top 0
+                -ap PasteVert_but right 0 70
+                
+                -ac BlendVert_but left 0 PasteVert_but
+                -af BlendVert_but top 0
+                -af BlendVert_but right 0 
+                
+            valueFR;
+             
+            frameLayout -lv 0 -w 198 -mh 3 -mw 5 vertexFL;
+                formLayout vertexFR ;
+                    text -l "No vertex copied in buffer" vertName;
+                setParent ..;
+            setParent ..;
+            
+            formLayout -e
+            
+                -af vertName left 0
+                -af vertName top 0
+                -af vertName right 0
+                
+            vertexFR;
+           
+            frameLayout -l "Skin Joints" -la "center" skinFL;
+                formLayout skinFR;
+                    textField -tx "*" -cc "JntList();VertJntList()" sortTF;
+                    textScrollList -numberOfRows 7 -ams 0 -h 140 -bgc 0 0 0 -sc SelInfJoint_proc listBox ;
+                setParent ..;
+            setParent ..;
+            
+            formLayout -e
+                
+                -af sortTF left 0
+                -af sortTF top 0
+                -af sortTF right 0
+                
+                -af listBox left 0
+                -ac listBox top 0 sortTF
+                -af listBox right 0
+                
+            skinFR;
+                
+            frameLayout -l "Vertex Joint Info" -la "center" vtxJointFL;
+                formLayout vtxJointFR;
+                    textField -tx "*" -cc VertJntList sort1TF;
+                    textScrollList -ams 0 -h 140 -numberOfRows 7 -sc VertjointInfo_proc listBox1;
+                    textScrollList -ams 0 -h 140 -numberOfRows 7 -enable 1 listBox2;
+                setParent ..;
+            setParent ..;
+            
+            formLayout -e
+                
+                -af sort1TF left 0
+                -af sort1TF top 0
+                -af sort1TF right 0
+                
+                -af listBox1 left 0
+                -ac listBox1 top 0 sort1TF
+                -ap listBox1 right 0 50
+                
+                -ac listBox2 left 0 listBox1
+                -ac listBox2 top 0 sort1TF
+                -af listBox2 right 0
+                
+            vtxJointFR;
+            
+
+            frameLayout -l "Other Tools" -la "center" otherFL;
+                formLayout otherFR;
+                    button -l "Remove Zero Weight" -bgc 0.5 0.5 1.0 -c RemoveZeroWeight RemoveZeroWeight_but;
+                    floatField -minValue 0.0001 -maxValue 1.0 -precision 3 -value 0.01 -step 0.1 -w 40 ZeroWeight_Val;
+                setParent ..;
+            setParent ..;
+            
+            formLayout -e
+        
+                -af RemoveZeroWeight_but left 0
+                -af RemoveZeroWeight_but top 0
+                -ap RemoveZeroWeight_but right 0 50
+                    
+                -ac ZeroWeight_Val left 0 RemoveZeroWeight_but
+                -af ZeroWeight_Val top 0
+                -af ZeroWeight_Val right 0
+        
+            otherFR;
+
+            frameLayout -l "Mirror Skin" -la "center" mirrorFL;
+                formLayout mirrorFR;
+                    button -l "Paste Mirror" -bgc 1.0 0.4 0.1 -c mirrorPaste pasteMir_but;
+                    button -l "+X  >  -X" -bgc 1.0 1.0 0.6 -c posX2negX R2L_But;
+                    button -l "-X  > +X" -bgc 1.0 1.0 0.6 -c negX2posX L2R_But;
+                setParent ..;
+                setParent ..;
+            
+            formLayout -e
+        
+                -af pasteMir_but left 0
+                -af pasteMir_but top 0
+                -ap pasteMir_but right 0 35
+                
+                -ac R2L_But left 0 pasteMir_but
+                -af R2L_But top 0
+                -ap R2L_But right 0 67
+            
+                -ac L2R_But left 0 R2L_But
+                -af L2R_But top 0
+                -af L2R_But right 0
+        
+            mirrorFR;
+            
+            
+            formLayout mailFR;
+                button -l "  ?  " -bgc 1.0 0 0 -c Help_proc bttHelp;
+                text -w 175 -l "      mail @  pg.preeth@gmail.com" -al "left" -bgc 0.9 1.0 1.0 infoTX;
+            
+            formLayout -e
+            
+                -af bttHelp left 0
+                -af bttHelp top 0
+                -ap bttHelp right 0 25
+                
+                -ac infoTX left 0 bttHelp
+                -af infoTX top 0
+                -af infoTX right 0
+                
+            mailFR;
+            
+    
+        formLayout -e
+   
+        -af seleFL left 5
+        -af seleFL top 5 
+        -af seleFL right 5 
+        
+        -af presetFL left 0
+        -ac presetFL top 5 seleFL
+        -af presetFL right 5
+      
+        -af customFL left 0
+        -ac customFL top 5 presetFL
+        -af customFL right 0
+        
+        -af valueFL left 0
+        -ac valueFL top 5 customFL
+        -af valueFL right 5
+        
+        -af vertexFL left 0
+        -ac vertexFL top 5 valueFL
+        -af vertexFL right 5
+        
+        -af skinFL left 0
+        -ac skinFL top 5 vertexFL
+        -af skinFL right 5
+        
+        -af vtxJointFL left 0
+        -ac vtxJointFL top 5 skinFL
+        -af vtxJointFL right 0
+        
+        -af otherFL left 0
+        -ac otherFL top 5 vtxJointFL
+        -af otherFL right 5
+        
+        -af mirrorFL left 0
+        -ac mirrorFL top 5 otherFL
+        -af mirrorFL right 0
+        
+        -af mailFR left 0
+        -ac mailFR top 5 mirrorFL
+        -af mailFR right 0
+
+        
+        mainFL;
+        
+	showWindow $windowName;
+    window -e -wh 333 686 $windowName;
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc SetWeight() // Procedure for setting an absolute weight based on the field value. Default=0.1. 
+{
+	float $SetWeightVal = `floatField -q -value SetWeight_Val`;
+	ButAddWeight($SetWeightVal);
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc ScaleWeight() // Procedure for multiplying each selected vertex's weight value by the field value, resulting in a relative weight change. Default=0.95.
+{
+	string $ClusterName[];
+	string $SelVert1[] = `ls -sl -fl`;
+	string $numTokens = `tokenize $SelVert1[0] "." $ClusterName`;
+	string $SkCluster = `findRelatedSkinCluster($ClusterName[0])`;
+	float $ScaleWeightVal = `floatField -q -value ScaleWeight_Val`;
+	string $SelInfJoint1[] = `textScrollList -q -selectItem listBox1`;
+	string $SelInfJointMain[] = `textScrollList -q -selectItem listBox`;
+	int $NoofInfList = `textScrollList -q -ni listBox1`;
+	if ($NoofInfList == 1)
+	{
+		print "NOTE: 100% influence to a bone. Please add more joints to the vertex to scale the values\n";
+	}
+	else
+	{
+		if (size($SelInfJoint1) == 0)
+		{
+			print "NOTE: Cannot be Scaled. Please Select the joint from the Vertex Joint Info.\n";
+		}
+		else
+		{
+			if (size($SelInfJoint1) == 0)
+			{
+				string $SelVerts[];
+				$SelVerts = `ls -sl -fl`;
+				float $WeightVal_flt;
+				for ($i = 0; $i<size($SelVerts); $i++)
+				{
+					float $CurrentWeightVal = `skinPercent -transform $SelInfJointMain[0] -query $SkCluster $SelVerts[$i]`;
+					float $AddweightVal = $CurrentWeightVal * $ScaleWeightVal;
+					skinPercent -transformValue $SelInfJointMain[0] $AddweightVal $SkCluster $SelVerts[$i];
+				}
+				if ( catch( `VertJntList`) )
+				{
+					print "NOTE: No Deformers Selected\n";
+				}
+				textScrollList -e -selectItem $SelInfJointMain[0] listBox1;
+				textScrollList -e -deselectAll listBox;
+			}
+			else
+			{
+				string $SelVerts[];
+				$SelVerts = `ls -sl -fl`;
+				float $WeightVal_flt;
+				for ($i = 0; $i<size($SelVerts); $i++)
+				{
+					float $CurrentWeightVal = `skinPercent -transform $SelInfJoint1[0] -query $SkCluster $SelVerts[$i]`;
+					float $AddweightVal = $CurrentWeightVal * $ScaleWeightVal;
+					skinPercent -transformValue $SelInfJoint1[0] $AddweightVal $SkCluster $SelVerts[$i];
+				}
+				if ( catch( `VertJntList`) )
+				{
+					print "NOTE: No Deformers Selected\n";
+				}
+				textScrollList -e -selectItem $SelInfJoint1[0] listBox1;
+			}
+		}
+	}
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+global proc AddWeight() // Procedure for increasing each selected vertex's weight by 0.05. 
+{
+	string $ClusterName[];
+	string $SelVert1[] = `ls -sl -fl`;
+	string $numTokens = `tokenize $SelVert1[0] "." $ClusterName`;
+	string $SkCluster = `findRelatedSkinCluster($ClusterName[0])`;
+	string $SelInfJoint1[] = `textScrollList -q -selectItem listBox1`;
+   	string $SelInfJointMain[] = `textScrollList -q -selectItem listBox`;
+	if (size($SelInfJoint1) == 0)
+	{
+   		string $SelVerts[];
+		$SelVerts = `ls -sl -fl`;
+		float $WeightVal_flt;
+		for ($i = 0; $i<size($SelVerts); $i++)
+		{
+			float $CurrentWeightVal = `skinPercent -transform $SelInfJointMain[0] -query $SkCluster $SelVerts[$i]`;
+			float $AddweightVal = $CurrentWeightVal + 0.05;
+			skinPercent -transformValue $SelInfJointMain[0] $AddweightVal $SkCluster $SelVerts[$i];
+		}
+		if ( catch( `VertJntList`) )
+		{
+      			print "NOTE: No Deformers Selected\n";
+		}
+		textScrollList -e -selectItem $SelInfJointMain[0] listBox1;
+		textScrollList -e -deselectAll listBox;
+	}
+	else
+	{
+		string $SelVerts[];
+		$SelVerts = `ls -sl -fl`;
+		float $WeightVal_flt;
+		for ($i = 0; $i<size($SelVerts); $i++)
+		{
+			float $CurrentWeightVal = `skinPercent -transform $SelInfJoint1[0] -query $SkCluster $SelVerts[$i]`;
+			float $AddweightVal = $CurrentWeightVal + 0.05;
+			skinPercent -transformValue $SelInfJoint1[0] $AddweightVal $SkCluster $SelVerts[$i];
+		}
+		if ( catch( `VertJntList`) )
+		{
+      			print "NOTE: No Deformers Selected\n";
+		}
+		textScrollList -e -selectItem $SelInfJoint1[0] listBox1;
+	}
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc AddWeight5() // Procedure for increasing each selected vertex's weight by five percent. 
+{
+	string $ClusterName[];
+	string $SelVert1[] = `ls -sl -fl`;
+	string $numTokens = `tokenize $SelVert1[0] "." $ClusterName`;
+	string $SkCluster = `findRelatedSkinCluster($ClusterName[0])`;
+	string $SelInfJoint1[] = `textScrollList -q -selectItem listBox1`;
+	string $SelInfJointMain[] = `textScrollList -q -selectItem listBox`;
+	if (size($SelInfJoint1) == 0)
+	{
+		print "NOTE: Cannot be added\n";
+	}
+	else
+	{
+		string $SelVerts[];
+		$SelVerts = `ls -sl -fl`;
+		float $WeightVal_flt;
+		for ($i = 0; $i<size($SelVerts); $i++)
+		{
+			float $CurrentWeightVal = `skinPercent -transform $SelInfJoint1[0] -query $SkCluster $SelVerts[$i]`;
+			float $AddweightVal = (($CurrentWeightVal * 5)/100) + $CurrentWeightVal;
+			skinPercent -transformValue $SelInfJoint1[0] $AddweightVal $SkCluster $SelVerts[$i];
+			if ( catch( `VertJntList`) )
+			{
+				print "NOTE: No Deformers Selected\n";
+			}
+			textScrollList -e -selectItem $SelInfJoint1[0] listBox1;
+		}
+	}
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc SubWeight() // Procedure for decreasing each selected vertex's weight by 0.05. 
+	{
+	string $ClusterName[];
+	string $SelVert1[] = `ls -sl -fl`;
+	string $numTokens = `tokenize $SelVert1[0] "." $ClusterName`;
+	string $SkCluster = `findRelatedSkinCluster($ClusterName[0])`;
+	string $SelInfJoint1[] = `textScrollList -q -selectItem listBox1`;
+	int $NoofInfList = `textScrollList -q -ni listBox1`;
+	if ($NoofInfList == 1)
+	{
+		print "NOTE: Please add a influence to the vertex. Select from the Skin joint list.\n";
+	}
+	else
+	{
+		if (size($SelInfJoint1) == 0)
+		{
+			print "NOTE: Cannot be subtracted. Please Select the joint from the Vertex Joint Info.\n";
+		}
+		else
+		{
+			int $List1NoofItems = `textScrollList -q -ni listBox1`;
+			$SelInfJointInfo[0] = $SelInfJoint1[0];
+			string $SelVerts[];
+			$SelVerts = `ls -sl -fl`;
+			float $WeightVal_flt;
+			for ($i = 0; $i<size($SelVerts); $i++)
+			{
+				float $CurrentWeightVal = `skinPercent -transform $SelInfJoint1[0] -query $SkCluster $SelVerts[$i]`;
+				float $SubweightVal = $CurrentWeightVal - 0.05;
+				skinPercent -transformValue $SelInfJoint1[0] $SubweightVal $SkCluster $SelVerts[$i];
+			}	
+			VertJntList;
+			int $List1NoofItemsAfter = `textScrollList -q -ni listBox1`;
+			if ($List1NoofItemsAfter == $List1NoofItems)
+			{
+				textScrollList -e -selectItem $SelInfJoint1[0] listBox1;
+			}
+			else
+			{
+				textScrollList -e -sii 1 listBox1;
+			}
+		}
+	}
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc SubWeight5() // Procedure for decreasing each selected vertex's weight by five percent. 
+{
+	string $ClusterName[];
+	string $SelVert1[] = `ls -sl -fl`;
+	string $numTokens = `tokenize $SelVert1[0] "." $ClusterName`;
+	string $SkCluster = `findRelatedSkinCluster($ClusterName[0])`;
+	string $SelInfJoint1[] = `textScrollList -q -selectItem listBox1`;
+	int $NoofInfList = `textScrollList -q -ni listBox1`;
+	if ($NoofInfList == 1)
+	{
+		print "NOTE: Please add a influence to the vertex. Select from the Skin joint list.\n";
+	}
+	else
+	{
+		if (size($SelInfJoint1) == 0)
+		{
+			print "NOTE: Cannot be subtracted. Please Select the joint from the Vertex Joint Info.\n";
+		}
+		else
+		{
+			int $List1NoofItems = `textScrollList -q -ni listBox1`;
+			$SelInfJointInfo[0] = $SelInfJoint1[0];
+			string $SelVerts[];
+			$SelVerts = `ls -sl -fl`;
+			float $WeightVal_flt;
+			for ($i = 0; $i<size($SelVerts); $i++)
+			{
+				float $CurrentWeightVal = `skinPercent -transform $SelInfJoint1[0] -query $SkCluster $SelVerts[$i]`;
+				float $SubweightVal = $CurrentWeightVal - (($CurrentWeightVal * 5)/100);
+				skinPercent -transformValue $SelInfJoint1[0] $SubweightVal $SkCluster $SelVerts[$i];
+			}
+			VertJntList;
+			int $List1NoofItemsAfter = `textScrollList -q -ni listBox1`;
+			if ($List1NoofItemsAfter == $List1NoofItems)
+			{
+				textScrollList -e -selectItem $SelInfJoint1[0] listBox1;
+			}
+			else
+			{
+				textScrollList -e -sii 1 listBox1;
+			}
+		}
+	}
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc ButAddWeight(float $AddVal) // Procedure for assigning an absolute weight value of 0.1, 0.25, 0.5, 0.75 and 1 for the active bone to the selected vertices. 
+// Note: When you click one of these buttons, the active bone is added to the list of bones influencing each of the selected vertices, if necessary. 
+{
+	string $ClusterName[];
+	string $SelVert1[] = `ls -sl -fl`;
+	string $numTokens = `tokenize $SelVert1[0] "." $ClusterName`;
+	string $SkCluster = `findRelatedSkinCluster($ClusterName[0])`;
+	string $SelInfJoint1[] = `textScrollList -q -selectItem listBox1`;
+	int $NoofInfList = `textScrollList -q -ni listBox1`;
+	string $SelInfJointMain[] = `textScrollList -q -selectItem listBox`;
+	if (size($SelInfJoint1) != 0)
+	{
+		if ($NoofInfList == 1)
+		{
+			print "NOTE: Cannot add weight to a single vertes influence joint. Please add more influence to the vertex..\n";
+		}
+		else
+		{
+			if (size($SelInfJoint1) == 0)
+			{
+				string $SelVerts[];
+				$SelVerts = `ls -sl -fl`;
+				float $WeightVal_flt;
+				for ($i = 0; $i<size($SelVerts); $i++)
+				{
+					skinPercent -transformValue $SelInfJointMain[0] $AddVal $SkCluster $SelVerts[$i];
+				}
+				if ( catch( `VertJntList`) )
+				{
+					print "NOTE: No Deformers Selected \n";
+				}
+				textScrollList -e -selectItem $SelInfJointMain[0] listBox1;
+				textScrollList -e -deselectAll listBox;
+			}
+			else
+			{
+				string $SelVerts[];
+				$SelVerts = `ls -sl -fl`;
+				float $WeightVal_flt;
+				for ($i = 0; $i<size($SelVerts); $i++)
+				{
+					skinPercent -transformValue $SelInfJoint1[0] $AddVal $SkCluster $SelVerts[$i];
+				}
+				if ( catch( `VertJntList`) )
+				{
+					print "No Deformers Selected \n";
+				}
+				textScrollList -e -selectItem $SelInfJoint1[0] listBox1;
+			}
+		}
+	}
+	else
+	{
+		if (size($SelInfJoint1) == 0)
+		{
+			string $SelVerts[];
+			$SelVerts = `ls -sl -fl`;
+			float $WeightVal_flt;
+			for ($i = 0; $i<size($SelVerts); $i++)
+			{
+				skinPercent -transformValue $SelInfJointMain[0] $AddVal $SkCluster $SelVerts[$i];
+			}
+			if ( catch( `VertJntList`) )
+			{
+				print "NOTE: No Deformers Selected\n";
+			}
+			textScrollList -e -selectItem $SelInfJointMain[0] listBox1;
+			textScrollList -e -deselectAll listBox;
+		}
+		else
+		{
+    			string $SelVerts[];
+    			$SelVerts = `ls -sl -fl`;
+    			float $WeightVal_flt;
+    			for ($i = 0; $i<size($SelVerts); $i++)
+    			{
+    				skinPercent -transformValue $SelInfJoint1[0] $AddVal $SkCluster $SelVerts[$i];
+    			}
+			if ( catch( `VertJntList`) )
+			{
+				print "No Deformers Selected \n";
+			}
+			textScrollList -e -selectItem $SelInfJoint1[0] listBox1;
+		}
+	}
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc RemoveZeroWeight() // Procedure for removing weights less than the custom value specified in the field.
+{
+	string $ClusterName[];
+	string $SelVert1[] = `ls -sl -fl`;
+	string $buffer[];
+	string $numTokens = `tokenize $SelVert1[0] "." $buffer`;
+	string $numTokens = `tokenize $SelVert1[0] "." $ClusterName`;
+	string $SkCluster = `findRelatedSkinCluster($ClusterName[0])`;
+	float $Weight_val = `floatField -q -value ZeroWeight_Val`;
+	skinPercent -pruneWeights $Weight_val $SkCluster $buffer[0];
+	if ( catch( `VertJntList`) )
+	{
+		print "NOTE: No Deformers Selected\n";
+	}    
+	textScrollList -e -sii 1 listBox1;
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc loopSel() // Procedure for expands the current vertex selection to include all vertices in continuing edges. 
+// Note: You must select at least two vertices to use the Loop selection. 
+{
+	ConvertSelectionToContainedEdges;
+	polySelectEdges edgeLoopOrBorder;
+	PolySelectConvert 3;
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc RingSel() // Procedure for expands the current vertex selection to include all vertices in parallel edges. 
+// Note: You must select at least two vertices to use the Ring selection. 
+{
+	ConvertSelectionToContainedEdges;
+	polySelectEdges edgeRing;
+	PolySelectConvert 3;
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+SkinWeightTool_Win; // Executing the main WINDOW
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc SelInfJoint_proc() // Procedure to be executed when the user clicks on the Skin Joints list.
+{
+	string $SelInfJoint[] = `textScrollList -q -selectItem listBox`;
+	setSmoothSkinInfluence $SelInfJoint[0];
+	textScrollList -e -deselectAll listBox1;
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc JntList() // Procedure for information about the Joint influence to be listed in the Skin Joint list.
+{
+	string $ClusterName[];
+    string $sort = `textField -q -tx "sortTF"`;
+	string $SelVert1[] = `ls -sl -fl`;
+	string $numTokens = `tokenize $SelVert1[0] "." $ClusterName`;
+	if (size($SelVert1) != 0)
+	{
+		string $SkCluster = `findRelatedSkinCluster($ClusterName[0])`;
+		textScrollList -e -ra listBox1;
+		textScrollList -e -ra listBox;
+		string $syntax;
+		string $SelObj[] = `ls -sl -fl`;
+		string $JntList[] = `skinCluster -q -inf`;
+		for ($i = 0 ; $i < size($JntList) ; $i++)
+		{
+			if( $i == 0 )
+			{
+                $syntax = "textScrollList -e -append " + $JntList[$i];
+			}
+			else
+			{
+                if ( `gmatch $JntList[$i] $sort` == 1 )
+                {
+                    //print ($sort +" matches "+$JntList[$i]+"\n");
+                    $syntax = $syntax + " -append " + $JntList[$i];
+                }
+			}
+		}
+		string $synatx1 = $syntax + " listBox";
+		eval ($synatx1);
+	}
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+JntList;
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc VertJntList() // Procedure for information about the Vertex joint influence to be listed in the Vertex Skin Joint list.
+{
+	string $ClusterName[];
+	string $SelVert1[] = `ls -sl -fl`;
+    string $sort1 = `textField -q -tx "sort1TF"`;
+	string $numTokens = `tokenize $SelVert1[0] "." $ClusterName`;
+	if (size($SelVert1) != 0)
+	{
+		string $SkCluster = `findRelatedSkinCluster($ClusterName[0])`;
+		if ($SkCluster == "")
+		{
+			print "Please select a skinned object\n";
+			textScrollList -e -append "Select valid skin object" listBox;
+			textScrollList -e -ra listBox2;
+		}
+		else
+		{
+			textScrollList -e -ra listBox1;
+			textScrollList -e -ra listBox2;
+			string $syntax;
+			string $syntaxNo;
+			string $SelVert1[] = `ls -sl -fl`;
+			if (size($SelVert1) == 0)
+			{
+				print "NOTE: Please Select the skin Object\n";
+				textScrollList -e -append "No Verts selected" listBox1;
+				textScrollList -e -append "No deformers" listBox;
+			}else{
+				string $SelVertText = "No of Vertices selected : " + size($SelVert1);
+				string $JntInfList[] = `skinPercent -ignoreBelow 0.0001 -query -transform $SkCluster $SelVert1[0]`;
+				float $JntInfNoList[] = `skinPercent -ignoreBelow 0.0001 -query -value $SkCluster $SelVert1[0]`;
+				
+				for ($i = 0 ; $i < size($JntInfList) ; $i++)
+				{
+					if( $i == 0)
+					{   
+					    string $JntInfNoListStr1 = $JntInfList[$i];
+                        $syntax = "textScrollList -e -append " + $JntInfNoListStr1;
+                        $syntaxNo = "textScrollList -e -append " + $JntInfNoList[$i];
+					}else{
+						string $JntInfNoListStr1 = $JntInfList[$i];
+					    
+                        if ( `gmatch $JntInfNoListStr1 $sort1` == 1 )
+                        {
+                            $syntax = $syntax + " -append " + $JntInfNoListStr1;
+                            $syntaxNo = $syntaxNo + " -append " + $JntInfNoList[$i];
+                        }
+					}
+				}
+				string $synatx1 = $syntax + " listBox1";
+				string $synatx2 = $syntaxNo + " listBox2";
+				eval ($synatx1);
+				eval ($synatx2);
+			}
+		}
+	}
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+if ( catch( `VertJntList`) )
+{
+	print "NOTE: No Deformers Selected \n";
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc VertjointInfo_proc() // Procedure to be executed when the user clicks on the Vertex skin Joint list.
+{
+	string $SelInfJoint1[] = `textScrollList -q -selectItem listBox1`;
+	textScrollList -e -deselectAll listBox;
+	setSmoothSkinInfluence $SelInfJoint1[0];
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc VertWeight0_proc() // Procedure for assigning an absolute weight value of 0 for the active bone to the selected vertices. 
+// Note: When you click this button, the active bone is added to the list of bones influencing each of the selected vertices, if necessary. 
+{
+	string $ClusterName[];
+	string $SelVert1[] = `ls -sl -fl`;
+	string $numTokens = `tokenize $SelVert1[0] "." $ClusterName`;
+	string $SkCluster = `findRelatedSkinCluster($ClusterName[0])`;
+	string $SelInfJoint1[] = `textScrollList -q -selectItem listBox1`;
+	int $NoofInfList = `textScrollList -q -ni listBox1`;
+	string $SelInfJointMain[] = `textScrollList -q -selectItem listBox`;
+	if ($NoofInfList == 1)
+	{
+		print "NOTE: Cannot Add Zero Weight to a single vertes influence joint. Please add more influence to the vertex..\n";
+	}
+	else
+	{
+		if (size($SelInfJoint1) == 0)
+		{
+			print "NOTE: Cannot Add Zero Weight. Please Select the joint from the Vertex Joint Info.\n";
+		}
+		else
+		{
+			string $SelVerts[];
+			$SelVerts = `ls -sl -fl`;
+			float $WeightVal_flt;
+			for ($i = 0; $i<size($SelVerts); $i++)
+			{
+				skinPercent -transformValue $SelInfJoint1[0] 0 $SkCluster $SelVerts[$i];
+			}
+			if ( catch( `VertJntList`) )
+			{
+				print "NOTE: No Deformers Selected \n";
+			}
+			textScrollList -e -sii 1 listBox1;
+		}
+	}
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc VertWeight01_proc() // Procedure to execute the ButAddWeight() procedure with the custom int value.
+{
+	ButAddWeight(0.1);
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc VertWeight025_proc() // Procedure to execute the ButAddWeight() procedure with the custom int value.
+{
+	ButAddWeight(0.25);
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc VertWeight050_proc() // Procedure to execute the ButAddWeight() procedure with the custom int value.
+{
+	ButAddWeight(0.5);
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc VertWeight075_proc() // Procedure to execute the ButAddWeight() procedure with the custom int value.
+{
+	ButAddWeight(0.75);
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc VertWeight1_proc() // Procedure to execute the ButAddWeight() procedure with the custom int value.
+{
+	ButAddWeight(1.0);
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc CopyVert() // Procedure to store the current weight value(s) in the copy buffer. 
+{
+	string $ClusterName[];
+	string $SelVert1[] = `ls -sl -fl`;
+	string $numTokens = `tokenize $SelVert1[0] "." $ClusterName`;
+	string $SkCluster = `findRelatedSkinCluster($ClusterName[0])`;
+	string $SelVert1[] = `ls -sl -fl`;
+	string $JntInfList[] = `skinPercent -query -transform $SkCluster $SelVert1[0]`;
+	float $JntInfNoList[] = `skinPercent -query -value $SkCluster $SelVert1[0]`;   
+	string $TextDispInfo = $SelVert1[0] + " copied in buffer";
+	text -e -l $TextDispInfo VertName;
+	textScrollList -e -sii 1 listBox1;
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc PasteVert() // Procedure to retrieve the weight values from the copy buffer and assigns them to the selected vertices.
+{
+	string $ClusterName[];
+	string $SelVert1[] = `ls -sl -fl`;
+	string $numTokens = `tokenize $SelVert1[0] "." $ClusterName`;
+	string $SkCluster = `findRelatedSkinCluster($ClusterName[0])`;
+	string $TextDispInfo = `text -q -l VertName`;
+	if ($TextDispInfo == "No vertex copied in buffer")
+	{
+		print "Please copy first to paste\n";
+	}
+	else
+	{
+		string $buffer[];
+		string $TokenizeText = `tokenize $TextDispInfo " " $buffer`;
+		string $JntInfList[] = `skinPercent -query -transform $SkCluster $buffer[0]`;
+		float $JntInfNoList[] = `skinPercent -query -value $SkCluster $buffer[0]`;
+		string $syntax;
+		for ($i = 0 ; $i < size($JntInfList) ; $i++)
+		{
+			if( $i == 0)
+        		{
+            			$syntax = "skinPercent -transformValue " + $JntInfList[$i] + " " + $JntInfNoList[$i] + " ";
+        		}
+        		else
+        		{
+			$syntax = $syntax + " -transformValue " + $JntInfList[$i] + " " + $JntInfNoList[$i] + " ";
+        		}
+		}
+		for ($j = 0 ; $j < size($SelVert1) ; $j++)
+		{
+			string $synatx1 = $syntax + " " + $SkCluster+ " " + $SelVert1[$j];
+			eval ($synatx1);
+		}
+		if ( catch( `VertJntList`) )
+		{
+			print "NOTE: No Deformers Selected \n";
+		}
+		textScrollList -e -sii 1 listBox1;
+	}
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc BlendVert() // Procedure to modify the selected weight values to smooth out the transition between them and their surrounding vertices. 
+{
+	string $ClusterName[];
+	string $SelVert1[] = `ls -sl -fl`;
+	string $numTokens = `tokenize $SelVert1[0] "." $ClusterName`;
+	string $SkCluster = `findRelatedSkinCluster($ClusterName[0])`;
+	string $SelVert1[] = `ls -sl -fl`;
+	GrowPolygonSelectionRegion;
+	select -deselect $SelVert1;
+	string $GrowVert[] = `ls -sl -fl`;
+	for ($z = 0 ; $z < size($GrowVert) ; $z++)
+	{
+		string $JntInfList[] = `skinPercent -query -transform $SkCluster $GrowVert[$z]`;
+		float $JntInfNoList[] = `skinPercent -query -value $SkCluster $GrowVert[$z]`;
+		string $syntax;
+		for ($i = 0 ; $i < size($JntInfList) ; $i++)
+		{
+			if( $i == 0)
+       		{
+        			$syntax = "skinPercent -transformValue " + $JntInfList[$i] + " " + $JntInfNoList[$i] + " ";
+        		}
+        		else
+        		{
+				$syntax = $syntax + " -transformValue " + $JntInfList[$i] + " " + $JntInfNoList[$i] + " ";
+        		}
+		}
+		string $synatx1;
+		for ($j = 0 ; $j < size($SelVert1) ; $j++)
+		{
+			$synatx1 = $syntax + " " + $SkCluster+ " " + $SelVert1[$j];
+			eval ($synatx1);
+		}
+	}
+	if ( catch( `VertJntList`) )
+	{
+		print "NOTE: No Deformers Selected \n";
+	}
+	textScrollList -e -sii 1 listBox1;
+	select -r $SelVert1;
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc mirrorPaste()
+{
+	string $SelVertforPaste[] = `ls -sl -fl`;
+	string $syntax;
+	string $synatx1;
+	int $iVal;
+	string $statusMsg = "No of vertices: 0/" + size($SelVertforPaste);
+	progressWindow -title "Paste mirror....." -progress 0 -status $statusMsg -isInterruptable true;
+	string $buffer[];
+	string $numTokens = `tokenize $SelVertforPaste[0] "." $buffer`;
+	int $noOfVertsinMesh[] = `polyEvaluate -v`;
+	for ($i = 0; $i<size($SelVertforPaste); $i++)
+	{
+		float $SelVertPosition[] = `pointPosition $SelVertforPaste[$i]`;
+		float $mirVertPosition[] = {-$SelVertPosition[0], $SelVertPosition[1], $SelVertPosition[2]};
+		string $SkCluster = `findRelatedSkinCluster($buffer[0])`;
+		string $jntInfList[] = `skinPercent -ignoreBelow 0.0001 -query -transform $SkCluster $SelVertforPaste[$i]`;
+		float $jntInfNoList[] = `skinPercent -ignoreBelow 0.0001 -query -value $SkCluster $SelVertforPaste[$i]`;
+		string $TotjointList[] = `skinCluster -q -inf`;
+		string $FinalJntInfList[];
+		int $incVal = 0;
+		for ($j = 0; $j<size($jntInfList); $j++)
+		{
+			string $mainVert_boneTranslateX = $jntInfList[$j] + ".translateX";
+			float $mainVert_boneTranslateX_Val = `getAttr $mainVert_boneTranslateX`;
+			float $mirrorBoneTranslateX_Val = -$mainVert_boneTranslateX_Val;
+			float $mirrorBoneTranslateX_Val_1000 = $mirrorBoneTranslateX_Val * 1000;
+			int $finalCheckMirrorVal = `floor $mirrorBoneTranslateX_Val_1000`;
+			for ($k = 0; $k<size($TotjointList); $k++)
+			{
+				string $AllboneTranslateX = $TotjointList[$k] + ".translateX";
+				float $getAttrAllboneTranslateX_Val = `getAttr $AllboneTranslateX`;
+				float $AllboneTranslateX_Val_1000 = $getAttrAllboneTranslateX_Val * 1000;
+				int $finalCheckAllVal = `floor $AllboneTranslateX_Val_1000`;
+				if ($finalCheckAllVal == $finalCheckMirrorVal)
+				{
+					$FinalJntInfList[$incVal] = $TotjointList[$k];
+					$incVal = $incVal + 1;
+				}
+			}
+		}
+		for ($m = 0; $m<$noOfVertsinMesh[0]; $m++)
+		{
+			string $FindVertPosition_str = $buffer[0] + ".vtx[" + $m + "]";
+			float $FindVertPosition[] = `pointPosition $FindVertPosition_str`;
+			if ($FindVertPosition[0] == $mirVertPosition[0])
+			{
+				for ($n = 0 ; $n < size($FinalJntInfList) ; $n++)
+				{
+					if( $n == 0)
+						{
+							$syntax = "skinPercent -transformValue " + $FinalJntInfList[$n] + " " + $jntInfNoList[$n] + " ";
+						}
+						else
+						{
+							$syntax = $syntax + " -transformValue " + $FinalJntInfList[$n] + " " + $jntInfNoList[$n] + " ";
+						}
+				}
+				$synatx1 = $syntax + " " + $SkCluster + " " + $FindVertPosition_str;
+				eval ($synatx1);
+			}
+		}
+         	if ( `progressWindow -query -isCancelled` ) break;
+		if ( `progressWindow -query -progress` >= 100 ) break;
+		$iVal = (100 * $i)/size($SelVertforPaste);
+		progressWindow -edit -progress $iVal -status ("No of vertices: "+$i+"/"+size($SelVertforPaste));
+	}
+	progressWindow -endProgress;
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+global proc posX2negX()
+{
+	string $ClusterName[];
+	string $SelVert[] = `ls -sl -fl`;
+	string $numTokens = `tokenize $SelVert[0] "." $ClusterName`;
+	string $SkCluster = `findRelatedSkinCluster($ClusterName[0])`;
+	copySkinWeights -ss $SkCluster -ds $SkCluster -mirrorMode YZ -surfaceAssociation closestPoint -influenceAssociation closestJoint;
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+global proc negX2posX()
+{
+	string $ClusterName[];
+	string $SelVert[] = `ls -sl -fl`;
+	string $numTokens = `tokenize $SelVert[0] "." $ClusterName`;
+	string $SkCluster = `findRelatedSkinCluster($ClusterName[0])`;
+	copySkinWeights -ss $SkCluster -ds $SkCluster -mirrorMode YZ -mirrorInverse -surfaceAssociation closestPoint -influenceAssociation closestJoint;
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc Help_proc() // Procedure for help regarding the tool.
+{
+	string $Helpwindow = `window -title "HELP" -widthHeight 40 10 -ip -bgc 1.0 1.0 1.0`;
+	columnLayout;
+		textField -text "Video demo coming soon at WWW.YOUTUBE.COM" -editable 0 -w 275;
+	setParent ..;
+	showWindow $Helpwindow;
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc ChangeSel() // Procedure to be executed when the user changes the selection in the viewport.
+{
+	string $SelObj[] = `ls -sl -fl`;
+	if (size($SelObj) == 0)
+	{
+		EnaDis_proc(0);
+		textScrollList -e -ra listBox;
+		textScrollList -e -ra listBox1;      		
+		textScrollList -e -ra listBox2; 
+		textScrollList -e -sii 1 -append "No Skin Mesh selected" listBox;
+        textScrollList -e -sii 1 -append "No Verts selected" listBox1;
+		textScrollList -e -sii 1 listBox1;
+	}
+	else
+	{
+		EnaDis_proc(1);
+		if ( catch( `JntList`) )
+		{
+			textScrollList -e -sii 1 -append "No Verts selected" listBox1;
+		}
+		if ( catch( `VertJntList`) )
+		{
+			textScrollList -e -sii 1 -append "No Verts selected" listBox1;
+		}
+		int $noOfItems = `textScrollList -q -ni listBox1`;
+		if ($noOfItems == 0) 
+		{
+			textScrollList -e -ra listBox;
+			textScrollList -e -sii 1 -append "No Verts selected" listBox1;
+			textScrollList -e -sii 1 -append "No Skin Mesh selected" listBox;
+		}
+		else
+		{
+			textScrollList -e -sii 1 listBox1;
+		}
+	}
+	string $CheckIfVertsOrGeo[] = `textScrollList -q -selectItem listBox1`;
+	if ($CheckIfVertsOrGeo[0] == "No Verts selected")
+	{
+		EnaDis_proc(0);
+		print "Note: Select the Vertices to edit\n";
+	}
+	else
+	{
+		EnaDis_proc(1);
+	}
+}
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc EnaDis_proc(int $Val) // Procedure to Enable and disable the buttons and fields in the UI.
+{
+	button -e -enable $Val Grow_but;
+	button -e -enable $Val Shrink_But;
+	button -e -enable $Val loop_but;
+	button -e -enable $Val ring_but;
+	button -e -enable $Val but0;
+	button -e -enable $Val but01;
+	button -e -enable $Val but25;
+	button -e -enable $Val but5;
+	button -e -enable $Val but075;
+	button -e -enable $Val but1;
+	button -e -enable $Val SetWeight_but;
+	button -e -enable $Val ScaleWeight_but;
+	floatField -e -enable $Val SetWeight_Val;
+	floatField -e -enable $Val ScaleWeight_Val;
+	button -e -enable $Val AddWeight_but;
+	button -e -enable $Val AddWeight5_but;
+	button -e -enable $Val SubWeight_but;
+	button -e -enable $Val SubWeight5_but;
+	button -e -enable $Val CopyVert_but;
+	button -e -enable $Val PasteVert_but;
+	button -e -enable $Val BlendVert_but;
+	textScrollList -e -enable $Val listBox ;
+	textScrollList -e -enable $Val listBox1;
+	button -e -enable $Val RemoveZeroWeight_but;
+	floatField -e -enable $Val ZeroWeight_Val;
+	button -e -enable $Val pasteMir_but;
+	button -e -enable $Val R2L_But;
+	button -e -enable $Val L2R_But;
+}
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+int $jobNum = `scriptJob -runOnce true  -parent "Weight_Tool" -e SelectionChanged ChangeSel -protected`; // Automatic update of UI
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+
+global proc ScriptRun() // Procedure to automatically update the UI
+{
+	global string $windowName;
+	global int $jobNum;
+	if(`scriptJob -ex $jobNum`)
+	{
+		scriptJob -kill $jobNum -force;	
+	}
+	$jobNum = `scriptJob -parent "Weight_Tool" -e SelectionChanged ChangeSel -protected`;
+}
+ScriptRun;
+ChangeSel;
+//----------------------------------------------------------------------------------------------------------------------------------------------------//
+// END OF SCRIPT
+// @ pg.preeth@gmail.com

@@ -1,0 +1,194 @@
+//  Description:	defines behaviour and layout of weightSculptContext
+//					tool property sheet
+
+global proc weightSculptProperties ()
+//	Procedure Name:
+//		weightSculptProperties
+//
+//	Description:
+//		layout of tool property sheet
+//
+//	Input Arguments:
+//		None.
+//
+//	Return Value:
+//		None.
+{
+	setUITemplate -pushTemplate DefaultTemplate;
+
+	string $parent = `toolPropertyWindow -q -location`;
+    setParent $parent;
+	string $curctx = `currentCtx`;
+
+	columnLayout weightSculpt;
+			frameLayout -cll true -cl false -l "weightSculpt Settings" weightSculptFrame;
+				columnLayout 
+					weightSculptOptions;
+					separator -style "none";
+              
+					intSliderGrp
+						-field 1
+						-label "Weight Display Precision"
+						-minValue 0
+						-maxValue 5
+						-value 2
+						displayPrecision;
+                    
+					intSliderGrp
+						-field 1
+						-label "Font Size"
+						-minValue 1
+						-maxValue 1000
+						-value 12
+						fontSize;
+
+					checkBoxGrp
+						-label "Display Weights Values"
+						-numberOfCheckBoxes 1
+						-l1 " "
+						-v1 1
+						displayWeights;
+
+
+					checkBoxGrp
+							-label "Clamp Min"
+							-numberOfCheckBoxes 1
+							-l1 " "
+							clampMin;
+
+					checkBoxGrp
+						-label "Clamp Max"
+						-numberOfCheckBoxes 1
+						-l1 " "
+						clampMax;
+
+                    rowLayout 
+                    	-nc 2
+                    	clampMinLayout;
+
+                    	text "Value Min";
+	
+						floatField
+							-min -100
+							-max 100
+							-value 0
+							weightMin;
+
+					setParent ..;
+		
+                    rowLayout 
+                    	-nc 2
+                    	clampMaxLayout;
+					
+                    	text "Value Max";
+
+						floatField
+							-min -100
+							-max 100
+							-value 0
+							weightMax;
+        
+					setParent ..;
+
+                    rowLayout 
+						-nc 2
+                    	buttonsLayout;
+
+						button -label "Launch SkinWeights UI"
+						-c "python(\"import sculptSkinWeights_UI\"); python(\"sculptSkinWeights_UI.SculptSkinWeightsUI().show()\");";
+
+						button -label "Launch Deformer UI"
+						-c "python(\"import deformer_utils_ui\"); python(\"reload(deformer_utils_ui)\");";
+
+					setParent ..;
+
+                	//text "Select Weight Map:";
+
+
+					//textScrollList
+					//deformerList;
+
+			setParent ..; // weightSculptOptions
+		setParent ..; // weightSculptFrame
+	setParent ..; // weightSculpt
+
+	// Name the tabs; -tl does not allow tab labelling upon creation
+	//tabLayout -e -tl weightSculptTab "Tool Defaults" weightSculptTabs;
+
+	setUITemplate -popTemplate;
+
+	weightSculptSetCallbacks($parent);
+}
+
+
+global proc weightSculptSetCallbacks(string $parent)
+//
+//	Procedure Name:
+//		weightSculptSetCallbacks
+//
+//	Description:
+//		associate control events with callbacks
+//
+//	Input Arguments:
+//		parent name.
+//
+//	Return Value:
+//		None.
+//
+{
+	setParent	$parent;
+	string		$whichCtx = `currentCtx`;
+
+ 	checkBoxGrp -e
+ 		-on1 ("weightSculptContext -e -clampMin true `currentCtx`")
+ 		-of1 ("weightSculptContext -e -clampMin false `currentCtx`")
+ 		clampMin;
+
+ 	checkBoxGrp -e
+ 		-on1 ("weightSculptContext -e -clampMax true `currentCtx`")
+ 		-of1 ("weightSculptContext -e -clampMax false `currentCtx`")
+ 		clampMax;
+
+ 	checkBoxGrp -e
+ 		-on1 ("weightSculptContext -e -displayWeights true `currentCtx`")
+ 		-of1 ("weightSculptContext -e -displayWeights false `currentCtx`")
+ 		displayWeights;
+
+ 	intSliderGrp -e
+ 		-cc ("weightSculptContext -e -displayPrecision #1 `currentCtx`")
+ 		displayPrecision;
+
+ 	intSliderGrp -e
+ 		-cc ("weightSculptContext -e -fontSize #1 `currentCtx`")
+ 		fontSize;
+
+ 	floatField -e
+ 		-cc ("weightSculptContext -e -weightMin #1 `currentCtx`")
+ 		weightMin;
+
+ 	floatField -e
+ 		-cc ("weightSculptContext -e -weightMax #1 `currentCtx`")
+ 		weightMax;
+
+ 	/*
+	string $selectDeformer = "\n\
+	string $selectedItems[];\n\
+	$selectedItems = `textScrollList -q -si deformerList`;\n\
+	string $selectedItemSplit[];\n\
+	tokenize $selectedItems[0] \".\" $selectedItemSplit;\n\
+	string $selectedItem = $selectedItemSplit[0];\n\
+	if (size($selectedItemSplit) == 2){\n\
+		if ($selectedItemSplit[1] == \"weights\"){\n\
+			weightSculptContext -e -usc false -up false -deformer $selectedItem `currentCtx`;\n\
+		}else{\n\
+			weightSculptContext -e -usc false -up true -plg $selectedItemSplit[1] -deformer $selectedItem `currentCtx`;\n\
+		}\n\
+	};";
+
+ 	textScrollList -e
+ 		-selectCommand $selectDeformer
+ 		deformerList;
+	*/
+}
+
+

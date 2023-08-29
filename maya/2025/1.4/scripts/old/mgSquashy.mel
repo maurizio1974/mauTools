@@ -1,0 +1,104 @@
+global proc string mgSquashy( int $multy)
+{
+	string $sel[] = `ls -sl`;
+    float $high = 1 ;
+	string $temp[],$tempTL[],$start[1],$end[1],$startS[1],$endS[1],$mult1,$mult2,$lift,$dis,$disS,$cnd,$mdl,$DDMD,$grpOff,$grpHm,$grp,$jnt,$rev,$scale,$base;
+	for($eSel in $sel)
+	{
+	    $base = `group -em -n ($eSel+"_base_null")`;
+	    addAttr -k 1 -ln "height" -at double -min 0.001 -dv 1 $base;
+	    addAttr -k 1 -ln "ground" -at double -dv 0 $base;
+		addAttr -k 1 -ln "overSquash" -at double -dv $multy $base;
+	    $scale = `group -em -n ($eSel+"_scale_null")`;
+	    parent $scale $base;
+	    connectAttr ($base+".height") ($scale+".sx") ;
+	    connectAttr ($base+".height") ($scale+".sy") ;
+	    connectAttr ($base+".height") ($scale+".sz") ;
+	    
+		$start =`spaceLocator -n ($eSel+"_start_null")`;
+		$startS =`spaceLocator -n ($eSel+"_startScale_null")`;
+		$end =`spaceLocator -n ($eSel+"_end_null")`;
+		$endS =`spaceLocator -n ($eSel+"_endScale_null")`;
+		$lift =`group -em -n ($eSel+"_lift_null")`;
+		$temp = `parentConstraint $eSel $base`;delete $temp ;
+		$temp = `parentConstraint $eSel $start[0]`;delete $temp ;
+		$temp = `parentConstraint $eSel $end[0]`;delete $temp ;
+		$temp = `parentConstraint $eSel $lift`;delete $temp ;
+		setAttr ($start[0]+".ty") $high ;
+		setAttr ($startS[0]+".ty") $high ;
+		setAttr ($startS[0]+".v") 0 ;
+		setAttr ($endS[0]+".v") 0 ;
+		setAttr ($end[0]+"Shape.v") 0 ;
+		connectAttr ($base+".ground") ($end[0]+".ty");
+		
+		parent $start[0] $scale;
+		parent $startS[0] $scale;
+		parent $end[0] $scale;
+		parent $endS[0] $scale;
+		parent $lift $start[0];
+
+		$dis =`createNode distanceBetween -n ($eSel+"_DD")` ;
+		connectAttr ($start[0]+".worldMatrix") ($dis+".inMatrix1") ;
+		connectAttr ($end[0]+".worldMatrix") ($dis+".inMatrix2") ;
+		$disS =`createNode distanceBetween -n ($eSel+"_DDS")` ;
+		connectAttr ($startS[0]+".worldMatrix") ($disS+".inMatrix1") ;
+		connectAttr ($endS[0]+".worldMatrix") ($disS+".inMatrix2") ;
+		
+		$DDMD = `createNode multiplyDivide -n ($eSel+"_DD_MD")`;
+		setAttr ($DDMD+".operation") 2 ;
+		connectAttr ($dis+".distance") ($DDMD+".input1X");
+		connectAttr ($disS+".distance") ($DDMD+".input2X");
+		
+		parentConstraint -st y -sr x -sr y -sr z $start[0] $end[0] ;
+
+		$mdl = `createNode multDoubleLinear -n ($eSel+"_MDL")` ;
+		$cnd = `createNode condition -n ($eSel+"_CND")` ;
+		connectAttr ($DDMD+".outputX") ($mdl+".input1") ;
+		connectAttr ($dis+".distance") ($cnd+".firstTerm") ;
+		connectAttr ($disS+".distance") ($cnd+".secondTerm") ;
+		setAttr ($mdl+".input2") -1 ;
+		setAttr($cnd+".operation") 5 ;
+		setAttr ($cnd+".colorIfFalseB") (`getAttr ($mdl+".output")`);
+		
+		float $absolute = `getAttr ($mdl+".output")`;
+		$grpHm = `group -em -n ($eSel+"_Hm_null")`;
+		$grpOff = `group -em -n ($eSel+"_off_null")`;
+		$grp = `group -em -n ($eSel+"_null")`;
+		parent $grpOff $grp;
+		parent $grp $grpHm;
+		$temp = `parentConstraint $end[0] $grpHm`; delete $temp;
+		parent $grpHm $end[0];
+		
+		$mult1 = `createNode multiplyDivide -n ($eSel+"_01_MD")`;
+		$mult2 = `createNode multiplyDivide -n ($eSel+"_02_MD")`;
+		connectAttr ($base+".overSquash") ($mult1+".input2X");
+		connectAttr ($mdl+".output") ($mult1+".input1X");
+		connectAttr -f ($mult1+".outputX") ($cnd+".colorIfTrueB");
+		connectAttr ($mult1+".input2X") ($grp+".tz");
+		connectAttr ($mult1+".input2X") ($mult2+".input1X");
+		setAttr ($mult2+".input2X") -1;
+		connectAttr ($mult2+".outputX") ($cnd+".colorIfFalseB");
+		
+		connectAttr ($cnd+".outColorB") ($grpOff+".tz");
+		$jnt = `joint -n ($eSel+"_env")`;
+		$temp = `parentConstraint $grpHm $jnt`; delete $temp;
+		//parent $jnt $grpOff;
+        parentConstraint -mo $grpOff $jnt;
+
+		$temp = `parentConstraint $end[0] $grpHm`;
+		parentConstraint -e -tl $lift $temp[0];
+		setAttr ($temp[0]+".interpType") 2;
+		$tempTL = `parentConstraint -q -tl $temp[0]`;
+
+		$rev = `createNode reverse -n ($eSel+"_REV")`;
+		connectAttr ($temp[0]+"."+$tempTL[0]+"W0") ($rev+".inputX");
+		connectAttr ($rev+".outputX") ($temp[0]+"."+$tempTL[1]+"W1");
+
+		setDrivenKeyframe -cd ($DDMD+".outputX") ($temp[0]+"."+$tempTL[0]+"W0");
+		move -r 0 ($high/10) 0 $start ;
+		setAttr ($temp[0]+"."+$tempTL[0]+"W0") 0;
+		setDrivenKeyframe -cd ($DDMD+".outputX") ($temp[0]+"."+$tempTL[0]+"W0");
+		setAttr ($start[0]+".ty") $high;
+	}
+    return $base ;
+}

@@ -1,0 +1,346 @@
+//------------------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------//
+//	SCRIPT:	dn_dynSkinJiggle.mel
+//	VERSION: 0.1
+//	AUTHOR:	Maurizio Giglioli
+//		    mng@dneg.com
+//	DATE:         18 06 2011
+//  Last Updated: 18 06 2011
+//
+//
+//	DESCRIPTION:	Make a dynLocator to get jiggle and skin sliding on a specified area
+//                  Can also be sudet to make a prebind sluster                  
+//
+//
+//	INSTRUCTIONS:	source the scrript
+//			        call the procedure dn_dynSkinJiggle_UI()
+//
+//  UPDATE:         
+//                 
+//------------------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------//
+
+global proc dn_dynSkinJiggle_UI()
+{
+    if (` window -ex "dnSkinJiggle_WIN" `)
+		deleteUI -window "dnSkinJiggle_WIN";
+	
+	window -wh 200 158 "dnSkinJiggle_WIN";
+	
+	formLayout dnSJ_FR;
+	text -l "name:" dnSJ_TX;
+	textField dnSJ_TF;
+	button -l "GO" -c "do_dnSkinJiggle" dnSJ_BTTm ;
+	checkBox -l "Dyn on" -v 1 -onc "checkBox -e -l \"Dyn on \" dnSJ_CBD" -ofc "checkBox -e -l \"Dyn off \" dnSJ_CBD" dnSJ_CBD;
+	checkBox -l "slide on" -v 1 -onc "checkBox -e -l \"slide on \" dnSJ_CBS" -ofc "checkBox -e -l \"slide off \" dnSJ_CBS" dnSJ_CBS;
+	checkBox -l "bake on" -v 1 -onc "checkBox -e -l \"bake on \" dnSJ_CBB" -ofc "checkBox -e -l \"bake off \" dnSJ_CBB" dnSJ_CBB;
+	
+	formLayout -e
+	
+	-af dnSJ_TX "left" 10 -af dnSJ_TX "top" 10 -ap dnSJ_TX "right" 0 20
+	-ac dnSJ_TF "left" 10 dnSJ_TX -af dnSJ_TF "top" 10 -af dnSJ_TF "right" 10
+	-af dnSJ_CBD "left" 10 -ac dnSJ_CBD "top" 10 dnSJ_TF -ap dnSJ_CBD "right" 0 32
+	-ac dnSJ_CBS "left" 0 dnSJ_CBD -ac dnSJ_CBS "top" 10 dnSJ_TF -ap dnSJ_CBS "right" 0 65
+	-ac dnSJ_CBB "left" 0 dnSJ_CBS -ac dnSJ_CBB "top" 10 dnSJ_TF -af dnSJ_CBB "right" 10
+	-af dnSJ_BTTm "left" 10 -ac dnSJ_BTTm "top" 10 dnSJ_CBS -af dnSJ_BTTm "right" 10
+
+	dnSJ_FR;
+
+	showWindow dnSkinJiggle_WIN;
+    window -e -wh 230 100 dnSkinJiggle_WIN;
+    
+}
+
+global proc do_dnSkinJiggle()
+{
+    string $sel[] =`ls -fl -sl`;
+    string $name = `textField -q -tx dnSJ_TF`;
+    int $bake = `checkBox -q -v dnSJ_CBB`;
+    float $start = `playbackOptions -q -min`;
+    float $end = `playbackOptions -q -max`;
+    float $current = `currentTime -q`;
+    
+    if(size(`filterExpand -sm 34`) == 1 )
+    {
+        if(size($name)!= 0)
+        {
+            if(!`objExists $name`)
+            {
+                string $edges[2] = `findSepaEdg $sel[0]`;
+                select -r $edges;
+                string $rv = rivet();
+                select -r $rv;
+                if($bake == 1)
+                {
+                    isolateBake 1;
+                    bakeResults -simulation true -t ($start+":"+$end) -sb 1 -dic true -pok true -sac false -ral false -bol false -cp false -s false {$rv};
+                    isolateBake 0;
+                }
+                delete "rivetCurveFromMeshEdge2";
+                string $s[1] = `listRelatives -s $rv`;
+                delete $s[0];
+                
+                if(!`objExists "globalSkinJiggleClustersGRP_null"`)
+                {
+                    group -em -n "globalSkinJiggleClustersGRP_null";
+                    select -cl;
+                    setAttr -l 1 "globalSkinJiggleClustersGRP_null.tx";
+                    setAttr -l 1 "globalSkinJiggleClustersGRP_null.ty";
+                    setAttr -l 1 "globalSkinJiggleClustersGRP_null.tz";
+                    setAttr -l 1 "globalSkinJiggleClustersGRP_null.rx";
+                    setAttr -l 1 "globalSkinJiggleClustersGRP_null.ry";
+                    setAttr -l 1 "globalSkinJiggleClustersGRP_null.rz";
+                }
+                
+                currentTime $current;
+                if(size($name) != 0 )
+                {
+                    rename $rv $name;
+                    do_dnDynSkinCluster $name $sel[0];
+                }else{  
+                    do_dnDynSkinCluster $rv $sel[0];
+                }   
+            }else{
+                confirmDialog -b "Colio" -t "Yo !!!!" -m ("There is already an object named \""+$name+"\" in this scene !!!!\n");
+            }
+        }else{
+            confirmDialog -b "Colio" -t "Bro !!!!" -m "Make sure to introduce your node with a name , it is shy !!\n" ;
+        }
+    }else{
+        confirmDialog -b "Colio" -t "Dude come on .... !" -m "Please select only a face !!!!\n";
+    }
+}
+
+global proc do_dnDynSkinCluster(string $riv, string $edge)
+{
+    string $mesh, $grp, $buf[], $clsN, $sh[];
+    float $pos[3], $rot[3];
+    
+    tokenize($edge,".",$buf);
+    $mesh = $buf[0];
+    select -cl;
+    select $mesh;
+    CreateCluster;
+    $cls = `ls -sl`;
+    addAttr -ln "dnSJCluster" -dt "string" $cls[0]; // Tag Cluster
+    rename $cls[0] ($riv+"_clusterHandle");
+    $cls[0] = ($riv+"_clusterHandle");
+    $grp = `group -em -n ($cls[0]+"_null")`;
+    parent $cls[0] $grp;
+
+    $clsN = ($riv+"_clusterHandleCluster");
+    connectAttr -f ($grp+".worldInverseMatrix[0]") ($clsN+".bindPreMatrix");
+
+    $pos = `xform -q -ws -t $riv`;
+    $rot = `xform -q -ws -ro $riv`;
+    move -a $pos[0] $pos[1] $pos[2] $grp;
+    rotate -a $rot[0] $rot[1] $rot[2] $grp;
+    parent $grp $riv;
+    parent $riv "globalSkinJiggleClustersGRP_null";
+    
+    $sh = `listRelatives -s $cls[0]`;
+    setAttr ($sh[0]+".origin") 0 0 0 ;
+    setAttr ($cls[0]+".rotatePivot") 0 0 0 ;
+    setAttr ($cls[0]+".scalePivot") 0 0 0 ;
+    
+    do_dnDynWiggler $mesh $riv $cls[0];
+}
+
+global proc do_dnDynWiggler(string $mesh, string $riv, string $cls)
+{
+    string $slideDef[], $wiggler[], $p[];
+    int $slide = `checkBox -q -v dnSJ_CBS`, $dyn = `checkBox -q -v dnSJ_CBD`, $state = 0;
+    select -cl;
+    if (!`pluginInfo -q -loaded dnBeefCake`) 
+        loadPlugin dnBeefCake;
+    
+    if($dyn == 1 )
+    {
+        eval("createDnWiggleLocator");
+        $wiggler = `ls -sl`;
+        $p =`listRelatives -p $wiggler[0]`;
+        addAttr -ln "dnSJWiggler" -dt "string" $p[0]; // Tag Wiggler
+        parent $p[0] $riv;
+        setAttr ($p[0]+".t") 0 0 0 ;
+        setAttr ($p[0]+".r") 0 0 0 ;
+        connectAttr ($wiggler[0]+".worldDisplacement[0]") ($cls+".t");
+    }
+    
+    if($slide == 1)
+    {
+        string $deformers[] = `listHistory $mesh`;
+        for($d in $deformers)
+        {
+            if(`objectType $d` == "dnSlideDeformer")
+            {
+                if(`attributeExists "dnSJSDef" $d` )
+                {
+                    reorderDeformers $d $cls $mesh ;
+                    $state = 1;
+                }
+            }
+        }
+        if ($state == 0)
+        {
+            select -r $mesh;
+
+            eval("dnSlideDeformer_create");
+            $slideDef = `ls -sl`;
+            addAttr -ln "dnSJSDef" -dt "string" $slideDef[0]; // Tag Slide Deformer
+            rename "dnSkinJiggleslideDeformer" ;
+        }
+        print "All done with slide Deformer.\n";
+    }else{
+        print "All done without slide Deformer.\n";
+    }
+}
+
+
+global proc isolateBake(int $dir)
+{
+    string $panes[] = `getPanel -all`;
+    for($p in $panes)
+    {
+        if(`objectType $p ` == "TmodelPane")
+        {
+            if($dir == 0)
+                isolateSelect -state 0 $p;
+            if($dir == 1 )
+                isolateSelect -state 1 $p;
+        }
+    }
+}
+
+
+global proc string[] findSepaEdg(string $face)
+{
+    
+    string $idx[];
+    string $mm[] =`polyListComponentConversion -te $face`;
+    string $ed[] = `ls -fl $mm`;
+
+    $idx[0] = $ed[0] ;
+    $idx[1] = $ed[1]; 
+    
+    return $idx;
+}
+
+// Copyright (C) 2000-2001 Michael Bazhutkin - Copyright (C) 2000 studio Klassika
+// www.geocites.com/bazhutkin
+// bazhutkin@mail.ru
+//
+//  Rivet (button) 1.0
+//  Script File
+//  MODIFY THIS AT YOUR OWN RISK
+//
+//  Creation Date:  April 13, 2001
+//
+//
+//  Description:
+//	Use "Rivet" to constrain locator to polygon or NURBS surfaces
+//	Select two edges on polygon object
+//	or select one point on NURBS surface and call rivet
+//	Parent your rivets and buttons to this locator
+
+global proc string rivet()
+{
+
+string $nameObject;
+string $namePOSI;
+
+string $parts[];
+string $list[] = `filterExpand -sm 32`;
+int $size = size($list);
+
+if ($size > 0)
+{
+	if ($size != 2)
+	{	error("No two edges selected");
+		return "";
+	}
+
+	tokenize($list[0],".",$parts);
+	$nameObject = $parts[0];
+	tokenize($list[0],"[]",$parts);
+	float $e1 = $parts[1];
+	tokenize($list[1],"[]",$parts);
+	float $e2 = $parts[1];
+
+	string $nameCFME1 = `createNode curveFromMeshEdge -n "rivetCurveFromMeshEdge1"`;
+		setAttr ".ihi" 1;
+		setAttr ".ei[0]"  $e1;
+	string $nameCFME2 = `createNode curveFromMeshEdge -n "rivetCurveFromMeshEdge2"`;
+		setAttr ".ihi" 1;
+		setAttr ".ei[0]"  $e2;
+	string $nameLoft = `createNode loft -n "rivetLoft1"`;
+		setAttr -s 2 ".ic";
+		setAttr ".u" yes;
+		setAttr ".rsn" yes;
+
+	$namePOSI = `createNode pointOnSurfaceInfo -n "rivetPointOnSurfaceInfo1"`;
+		setAttr ".turnOnPercentage" 1;
+		setAttr ".parameterU" 0.5;
+		setAttr ".parameterV" 0.5;
+
+	connectAttr -f ($nameLoft + ".os") ($namePOSI + ".is");
+	connectAttr ($nameCFME1 + ".oc") ($nameLoft + ".ic[0]");
+	connectAttr ($nameCFME2 + ".oc") ($nameLoft + ".ic[1]");
+	connectAttr ($nameObject + ".w") ($nameCFME1 + ".im");
+	connectAttr ($nameObject + ".w") ($nameCFME2 + ".im");
+    
+}else{	
+    $list = `filterExpand -sm 31`;
+	$size = size($list);
+
+	if ($size > 0)
+	{
+		if ($size != 1)
+		{	
+            error("No one point selected");
+			return "";
+		}
+		tokenize($list[0],".",$parts);
+		$nameObject = $parts[0];
+		tokenize($list[0],"[]",$parts);
+		float $u = $parts[1];
+		float $v = $parts[2];
+		$namePOSI = `createNode pointOnSurfaceInfo -n "rivetPointOnSurfaceInfo1"`;
+				setAttr ".turnOnPercentage" 0;
+				setAttr ".parameterU" $u;
+				setAttr ".parameterV" $v;
+		connectAttr -f ($nameObject + ".ws") ($namePOSI + ".is");
+	}else{	
+        error("No edges or point selected");
+		return "";
+	}
+}
+
+string $nameLocator = `createNode transform -n "rivet1"`;
+createNode locator -n ($nameLocator + "Shape") -p $nameLocator;
+
+string $nameAC = `createNode aimConstraint -p $nameLocator -n ($nameLocator + "_rivetAimConstraint1")`;
+	setAttr ".tg[0].tw" 1;
+	setAttr ".a" -type "double3" 0 1 0;
+	setAttr ".u" -type "double3" 0 0 1;
+	setAttr -k off ".v";
+	setAttr -k off ".tx";
+	setAttr -k off ".ty";
+	setAttr -k off ".tz";
+	setAttr -k off ".rx";
+	setAttr -k off ".ry";
+	setAttr -k off ".rz";
+	setAttr -k off ".sx";
+	setAttr -k off ".sy";
+	setAttr -k off ".sz";
+
+connectAttr ($namePOSI + ".position") ($nameLocator + ".translate");
+connectAttr ($namePOSI + ".n") ($nameAC + ".tg[0].tt");
+connectAttr ($namePOSI + ".tv") ($nameAC + ".wu");
+connectAttr ($nameAC + ".crx") ($nameLocator + ".rx");
+connectAttr ($nameAC + ".cry") ($nameLocator + ".ry");
+connectAttr ($nameAC + ".crz") ($nameLocator + ".rz");
+
+select -r $nameLocator;
+return ($nameLocator);
+
+}

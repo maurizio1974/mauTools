@@ -1,0 +1,52 @@
+//create by : davood tabatabaei.
+//usage: 1-copy fs.mel into script directory. 2-run maya . 3-in command line type fs;
+//if you want script automatically be run after launch maya, create usersetup.mel in your script directory(if doesent exist already) and add this code into that in new line:
+// fs;
+//you can edit this script for create your buttons. just replace your lable and after -c into "" type your command.
+
+global proc fs ()
+{
+        string $path = "/media/space/minimo/users/mau";
+        if(`dockControl -ex a` )
+                deleteUI -ctl a;
+        
+        string $window = `window -widthHeight 200 55 win`;
+        columnLayout -adjustableColumn 1;
+        dockControl -area "left" -content "win" -allowedArea "left" -allowedArea "right" -l "D" a;
+        button -label "MauTools" -c ("source \""+$path+"/mgT/flipper.mel\";\nmauTools");
+        button -label "DM Win" -c ("source \""+$path+"/scripts/DM_win.mel\";DM_win()");
+        button -label "loc BB" -c ("python(\"if '"+$path+"/scripts/' is not (sys.path):sys.path.append('/media/space/minimo/users/mau/scripts/');import directionalBB as BB; BB.directionalBB(0)\")");
+        button -label "Piv BB" -c ("python(\"if '"+$path+"/scripts/' is not (sys.path):sys.path.append('/media/space/minimo/users/mau/scripts/');import directionalBB as BB; BB.directionalBB(1)\")");
+        button -label "New Outliner" -c ("source \""+$path+"/scripts/newOutliner.mel\";newOutliner()");
+        button -label "Outliner Sel" -c ("source \""+$path+"/scripts/outlinerSelected.mel\";outlinerSelected()");
+        button -label "" -c "" ;
+        button -label "" -c "" ;
+        button -label "rcPowerSearch" -c ("source \""+$path+"/scripts/rcPowerSearch.mel\";rcPowerSearch()");
+        button -label "Fix LocalSpace" -c ("source \""+$path+"/scripts/localSpaceFix.mel\";fixLocSpace()") ;
+        button -label "rivetFol" -c ("source \""+$path+"/scripts/rivetFollicle.mel\";rivetFollicle()") ;
+        button -label "Dup Extract" -c ("source \""+$path+"/scripts/DUPExtract.mel\";DUPExtract();DUPExtract") ;
+        button -label "Set Value" -c ("source \""+$path+"/scripts/setValue.mel\";setValue()");
+        button -label "xyShrinkWrap" -c ("source \""+$path+"/scripts/xyShrinkWrap.mel\";xyShrinkWrap()");
+        button -label "" -c "" ;
+        button -label "" -c "" ;
+        button -label "UV editor" -c "TextureViewWindow" ;
+        button -label "Hypergraph" -c "HypergraphDGWindow" ;
+        button -label "Graph" -c "GraphEditor" ;
+        button -label "Trax" -c "CharacterAnimationEditor" ;
+        button -label "Blend Shape" -c "BlendShapeEditor" ;
+        button -label "NameSpace" -c "namespaceEditor" ;
+        button -label "RS" -c "unifiedRenderGlobalsWindow" ;
+        button -label "Hyper shade" -c "HypershadeWindow" ;
+        button -label "Comp E" -c "ComponentEditor" ;
+        button -label "Con E" -c "ConnectionEditor" ;
+        button -label "Ch Control" -c "ChannelControlEditor" ;
+        button -label "" -c "" ;
+        button -label "" -c "" ;
+        button -label "" -c "" ;
+        button -label "" -c "" ;
+        button -label "" -c "" ;
+        button -label "" -c "" ;
+        button -label "Close" -command ("deleteUI -ctl a");
+}
+
+
