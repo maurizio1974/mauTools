@@ -1,0 +1,5 @@
+{
+    "label": "Batch_processing_files_with_Python",
+    "context": "Points",
+    "data": "import os\n\ngeo = hou.pwd().geometry()\nscale = hou.evalParm('scale')\ndir_imp = hou.evalParm('dir_import')\ndir_exp = hou.evalParm('dir_export')\n\nfor root, dirs, files in os.walk(dir_imp):\n    for file in files:\n        if file.endswith('.obj'):\n            path_import = os.path.join(root, file)\n            path_export = dir_exp + file\n            geo.loadFromFile(path_import)\n            for point in geo.points():\n                pos = point.position() * scale\n                point.setPosition(pos)\n            geo.saveToFile(path_export)\n"
+}

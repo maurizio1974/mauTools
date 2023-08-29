@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pythonPanelDocument>
+  <!-- This file contains definitions of Python interfaces and the
+ interfaces menu.  It should not be hand-edited when it is being
+ used by the application.  Note, that two definitions of the
+ same interface or of the interfaces menu are not allowed
+ in a single file. -->
+  <interface name="houdini_iconbrowser" label="Houdini Icon Browser" icon="MISC_binoculars" showNetworkNavigationBar="false" help_url="">
+    <script><![CDATA["""
+name: Houdini Icon Browser
+author: Timothee Maron
+date: 07/10/2022
+source: https://timotheemaron.gumroad.com/l/iconbrowser
+"""
+
+from PySide2 import QtSvg
+from PySide2 import QtCore
+from PySide2 import QtGui
+from PySide2 import QtWidgets
+import hou, os, zipfile, sys, time
+
+def onCreateInterface():
+     return iconBrowser()
+
+     
+     
+class iconBrowser(QtWidgets.QWidget):
+    def __init__(self):
+        super(iconBrowser, self).__init__()
+
+        print("Houdini Icon Browser by Timothee Maron")
+        self.threadpool = QtCore.QThreadPool()
+
+        path = hou.getenv("HFS")+"/houdini/config/Icons/icons.zip"
+        self.path = path
+        self.icons = {}
+        self.content = None
+
+        self.icon_size = 64
+
+        main_layout = QtWidgets.QVBoxLayout(self)
+
+        self.fLy = QtWidgets.QHBoxLayout()
+        main_layout.addLayout(self.fLy)
+
+        ## CATERGORIES
+        self.combofolder = QtWidgets.QComboBox()
+        self.combofolder.addItem("ALL (slow startup)")
+        self.combofolder.insertSeparator(1)
+        self.folders = self.findFolder()
+        for f in self.folders:
+            self.combofolder.addItem(f)
+        self.combofolder.setCurrentIndex(2)
+        self.combofolder.currentTextChanged.connect(self.folderActivated)
+        self.fLy.addWidget(self.combofolder)
+        ##
+
+        ## SEARCH BAR
+        self.clear_btn = QtWidgets.QPushButton('')
+        self.clear_btn.setIcon(hou.ui.createQtIcon('BUTTONS_remove'))
+        #self.clear_btn.clicked.connect(self.fill)
+        self.clear_btn.setFixedSize(QtCore.QSize(20,20))
+        self.fLy.addWidget(self.clear_btn)       
+        @self.clear_btn.clicked.connect
+        def clearFilter():
+            if self.filter.text():
+                self.filter.setText('')
+                self.fillLayout()
+
+        self.filter = QtWidgets.QLineEdit()
+        self.filter.returnPressed.connect(self.fillLayout)
+        self.filter.setPlaceholderText("Search...")
+        self.fLy.addWidget(self.filter)
+        self.fLy.addWidget(self.clear_btn)
+
+        self.search_btn = QtWidgets.QPushButton('Search')
+        self.search_btn.clicked.connect(self.fillLayout)
+        self.fLy.addWidget(self.search_btn)
+        ##
+
+        self.scrollArea = QtWidgets.QScrollArea(self)
+        main_layout.addWidget(self.scrollArea)
+        self.scrollArea.setWidgetResizable(True)
+        self.sawc = QtWidgets.QFrame()
+        #self.ly = QtWidgets.QGridLayout(self.sawc)
+        self.scrollArea.setWidget(self.sawc)
+        self.sawc.setContentsMargins(5,5,5,5)
+
+        self.icons_view = FlowLayout(self.sawc)
+
+        # bottom line
+        self.bLy = QtWidgets.QHBoxLayout()
+        main_layout.addLayout(self.bLy)
+
+        self.icon_number = QtWidgets.QLabel()
+        self.icon_number.setText("0 icons found")
+        self.icon_number.setAlignment(QtCore.Qt.AlignLeft)
+        self.bLy.addWidget(self.icon_number)
+
+        self.about = QtWidgets.QLabel()
+        self.about.setText("timotheemaron.gumroad.com")
+        self.about.setAlignment(QtCore.Qt.AlignRight)
+        self.bLy.addWidget(self.about)
+
+        self.setMinimumSize(435, 149)
+
+        if os.path.exists(self.path):
+            self.folderActivated()
+
+    def folderActivated(self):
+        self.icons = self.findIcons()
+        self.fillLayout()
+    
+    def fillLayout(self):
+        text = self.filter.text()
+        self.clearLayout(self.icons_view)
+        i=0
+        for icon in self.icons.keys():
+            if text in  icon :
+                btn = IconItem(self.icon_size, icon, self.icons)
+                self.icons_view.addWidget(btn)
+                i = i+1
+        self.icon_number.setText(str(i)+" icons found")
+
+    def clearLayout(self, layout):
+        for i in reversed(range(layout.count())): 
+            layout.itemAt(i).widget().setParent(None)
+
+    def findFolder(self):
+        list = zipfile.ZipFile(self.path, 'r').infolist()
+        temp_folders = []
+        for i in list:
+            if not i.is_dir() and i.filename.endswith('.svg') and "/" in i.filename:
+                folder = i.filename.split('/')[0] 
+                temp_folders.append(folder)
+        folders = []
+        [folders.append(x) for x in temp_folders if x not in folders]
+        return folders
+
+    def findIcons(self):
+        category = self.combofolder.currentText()
+        text = self.filter.text()
+        if category == "ALL (slow startup)":
+            category = ""
+        icons = {}
+        with zipfile.ZipFile(self.path, 'r') as zipObject:
+            for i in zipObject.infolist():
+                if i.filename.endswith('.svg') and i.filename.startswith(category):     
+                    #print(i.filename)
+                    svg = QtSvg.QSvgRenderer(QtCore.QByteArray(zipObject.read((i.filename))))
+                    pixmap = QtGui.QPixmap(self.icon_size, self.icon_size)
+                    painter = QtGui.QPainter()
+                    painter.begin(pixmap)
+                    pixmap.fill(QtGui.QColor(50, 50, 50))
+                    #pixmap.fill(QColor(Qt.transparent()))
+                    svg.render(painter)
+                    painter.end()
+                    ico = i.filename.split('/')[-1]   
+                    iconName = ico.replace(".svg","")
+                    catName = i.filename.split('/')[0]
+                    icons[iconName] = []
+                    icons[iconName].append(catName)
+                    icons[iconName].append(pixmap)
+
+        zipObject.close()
+        return icons
+    
+
+
+class IconItem(QtWidgets.QToolButton):
+    def __init__(self, icon_size, icon, icons):
+        super(IconItem, self).__init__()
+        self.icon = icon
+        self.cat = ""
+
+        self.setFixedSize(QtCore.QSize(icon_size*3,icon_size))
+        #btn.setContentsMargins(0,0,0,0)
+        self.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
+        self.setText(icon)
+        self.setToolTip(icon)
+        if icon != "Loading...":
+            self.setIcon(icons[icon][1])
+            self.cat = icons[icon][0]
+        self.setIconSize(QtCore.QSize(icon_size,icon_size))
+        self.clicked.connect(self.addToClipboard)
+
+        self.setStyleSheet("""
+                QToolButton{
+                background-color: rgb(50, 50, 50);
+                border-radius: 5px;
+                border: 1px solid rgb(40, 40, 40);
+                }
+                QToolButton:pressed{
+                background-color: rgb(100, 100, 100);
+                }
+        """)
+    
+    def addToClipboard(self):
+        print(self.cat + "_" + self.icon)
+        hou.ui.copyTextToClipboard(self.cat + "_" + self.icon)
+        hou.ui.displayMessage("Copied to Clipboard :\n" + self.cat + "_" + self.icon)
+
+
+
+class FlowLayout(QtWidgets.QLayout):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        if parent is not None:
+            self.setContentsMargins(QtCore.QMargins(0, 0, 0, 0))
+
+        self._item_list = []
+
+    def __del__(self):
+        item = self.takeAt(0)
+        while item:
+            item = self.takeAt(0)
+
+    def addItem(self, item):
+        self._item_list.append(item)
+
+    def count(self):
+        return len(self._item_list)
+
+    def itemAt(self, index):
+        if 0 <= index < len(self._item_list):
+            return self._item_list[index]
+
+        return None
+
+    def takeAt(self, index):
+        if 0 <= index < len(self._item_list):
+            return self._item_list.pop(index)
+
+        return None
+
+    def expandingDirections(self):
+        return QtCore.Qt.Orientation(0)
+
+    def hasHeightForWidth(self):
+        return True
+
+    def heightForWidth(self, width):
+        height = self._do_layout(QtCore.QRect(0, 0, width, 0), True)
+        return height
+
+    def setGeometry(self, rect):
+        super(FlowLayout, self).setGeometry(rect)
+        self._do_layout(rect, False)
+
+    def sizeHint(self):
+        return self.minimumSize()
+
+    def minimumSize(self):
+        size = QtCore.QSize()
+
+        for item in self._item_list:
+            size = size.expandedTo(item.minimumSize())
+
+        size += QtCore.QSize(2 * self.contentsMargins().top(), 2 * self.contentsMargins().top())
+        return size
+
+    def _do_layout(self, rect, test_only):
+        x = rect.x()
+        y = rect.y()
+        line_height = 0
+        spacing = self.spacing()
+
+        for item in self._item_list:
+            style = item.widget().style()
+            layout_spacing_x = style.layoutSpacing(
+                QtWidgets.QSizePolicy.PushButton, QtWidgets.QSizePolicy.PushButton, QtCore.Qt.Horizontal
+            )
+            layout_spacing_y = style.layoutSpacing(
+                QtWidgets.QSizePolicy.PushButton, QtWidgets.QSizePolicy.PushButton, QtCore.Qt.Vertical
+            )
+            space_x = spacing + layout_spacing_x
+            space_y = spacing + layout_spacing_y
+            next_x = x + item.sizeHint().width() + space_x
+            if next_x - space_x > rect.right() and line_height > 0:
+                x = rect.x()
+                y = y + line_height + space_y
+                next_x = x + item.sizeHint().width() + space_x
+                line_height = 0
+
+            if not test_only:
+                item.setGeometry(QtCore.QRect(QtCore.QPoint(x, y), item.sizeHint()))
+
+            x = next_x
+            line_height = max(line_height, item.sizeHint().height())
+
+        return y + line_height - rect.y()
+  
+]]></script>
+    <includeInPaneTabMenu menu_position="0" create_separator="false"/>
+    <includeInToolbarMenu menu_position="108" create_separator="false"/>
+    <help><![CDATA[]]></help>
+  </interface>
+</pythonPanelDocument>

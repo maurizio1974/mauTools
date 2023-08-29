@@ -1,0 +1,24 @@
+Wire your jittery simulation/animation into the first input.
+
+Tip:
+For best results, it is highly recommended to wire a clean version of the animation or a reference pose into the second input. This can be your animated geo before simulation. This allows it to focus on what introduced the jitter and won't derive too far from the original animation.
+
+WARNING:
+
+This tool is compatible with Houdini 19(Python3) or higher. The scikit-learn(sklearn) Python module must be available for import. For a quick and easy way to install sklearn, check out Paul Ambrosiuissens tutorial here:
+
+https://www.youtube.com/watch?v=cIEN50WuPoc
+
+
+
+
+
+Quick sklearn installation steps:
+
+In Houdini: Windows -> Shell
+
+curl https://bootstrap.pypa.io/get-pip.py -o D:/get-pip.py
+
+hython D:/get-pip.py
+
+hython -m pip install sklearn

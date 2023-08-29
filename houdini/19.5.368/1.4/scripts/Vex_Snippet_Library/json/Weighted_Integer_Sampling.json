@@ -1,0 +1,5 @@
+{
+    "label": "Weighted_Integer_Sampling",
+    "context": "Points",
+    "data": "// VEX sample_discrete - Point Wrangle Example\n\n// Find the relative position of P to the first input bounding box.\nvector relpos = relbbox(0, @P);\n\n// Assign variable for how random u will be.\nfloat rand_weight = chf(\"rand_weight\");\n\n// Interpolate between pt seeded rand and relpos in x.\nfloat upos = lerp(relpos.x, rand(@ptnum), rand_weight);\n\n// Create an array of float parms for weighted sampling.\nfloat weights[] = array(chf(\"weight_1\"),\n                        chf(\"weight_2\"),\n                        chf(\"weight_3\"));\n\n// Sample the int array item at u across weighted values.\nint choice = sample_discrete(weights, upos); \n\n// Create an array of colours to use choice with.\nvector colours[] = array(chv(\"colour_1\"),\n                         chv(\"colour_2\"),\n                         chv(\"colour_3\"));\n\n// Set point group name as selection choice.\nsetpointgroup(geoself(), \"choice_\" + itoa(choice), @ptnum, 1, \"set\");\n\n@Cd = colours[choice];\n"
+}

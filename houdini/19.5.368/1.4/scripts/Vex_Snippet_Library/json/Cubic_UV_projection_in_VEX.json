@@ -1,0 +1,5 @@
+{
+    "label": "Cubic_UV_projection_in_VEX",
+    "context": "Points",
+    "data": "vector bbox = relbbox(0, @P);\nvector side = sign(@N);\nvector nml  = abs(@N);\n\nvector size  = getbbox_size(0);\nvector ratio = size / max(size);\nvector scale = bbox * ratio;\n\nif      (nml.x == max(nml)) { @uv = set(scale.y * side.x, scale.z, 0);             }\nelse if (nml.y == max(nml)) { @uv = set(scale.x * side.y, scale.z, 0); @uv.y += 1; }\nelse                        { @uv = set(scale.x * side.z, scale.y, 0); @uv.y += 2; }\n\n@uv *= 0.3333;\n@uv.x += 0.5;\n"
+}

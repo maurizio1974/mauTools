@@ -1,0 +1,5 @@
+{
+    "label": "blendShape",
+    "context": "Points",
+    "data": "//this is the point positions of the target geometry\nv@targetP = point(1, \"P\", @ptnum);\n//this creates a float attribute that can be used as blend weight\nf@blendWeight = chf(\"blendWeight\");\nv@P = @P + (v@targetP - @P)*(@blendWeight*@paintedweight);\n"
+}

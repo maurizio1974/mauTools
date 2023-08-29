@@ -1,0 +1,5 @@
+{
+    "label": "Normalized_Device_Coordinates",
+    "context": "Points",
+    "data": "// VEX toNDC & fromNDC - Point Wrangle Example\n\n// Assign camera variable using OBJ path as string.\nstring cam = chs(\"camera_obj\");\n\n// Convert point position to camera's normalized device coordinates.\nvector p_ndc = toNDC(cam, @P);\n\n// Use Z component of NDC to move object points 'backward'.\np_ndc[2] *= chf(\"scale_by_cam_dist\");\n\n// Convert point NDC position back to world position and assign to P.\n@P = fromNDC(cam, p_ndc);\n"
+}

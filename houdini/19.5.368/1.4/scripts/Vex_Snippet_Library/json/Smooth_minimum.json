@@ -1,0 +1,5 @@
+{
+    "label": "Smooth_minimum",
+    "context": "Points",
+    "data": "// Calculates the smooth k minimum of two distances a and b.\nfunction float smooth_min(float a, b, k){\n    float h = max(k - abs(a - b), 0.0) / k;\n    float d = min(a, b) - h * h * h * k * (1.0 / 6.0);\n    return d;\n}\n"
+}

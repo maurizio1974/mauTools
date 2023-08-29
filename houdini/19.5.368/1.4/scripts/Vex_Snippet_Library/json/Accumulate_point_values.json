@@ -1,0 +1,5 @@
+{
+    "label": "Accumulate_point_values",
+    "context": "Points",
+    "data": "// Prepend a promote node from points to primitives for a random float value named h with the promotion\n// method set to \"Array of all\". Next, add a point wrangle that sums slices of the array:\n\nfloat h[] = prim(0, 'h', i@primnum);\nfloat s = sum(h[0:i@ptnum+1]);\nv@P.y = s;\n"
+}

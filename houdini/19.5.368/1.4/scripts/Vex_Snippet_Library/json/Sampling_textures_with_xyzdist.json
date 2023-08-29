@@ -1,0 +1,5 @@
+{
+    "label": "Sampling_textures_with_xyzdist",
+    "context": "Points",
+    "data": "// Initial wrangle to hold texture path information.\n\n// Use a string attribute to specify the image used\ns@image_path = chs(\"image_path\");\n\n\n\n\n// VEX xyzdist, primuv & colormap - Prim & Point Wrangle Example\n\nint xprim; vector xuvw;\nfloat xdist = xyzdist(1, @P, xprim, xuvw);\n\n// Find uv position with exported xyzdist values.\nvector uv = primuv(1, \"uv\", xprim, xuvw);\n\n// With nearest prim, find its previously stored image path.\nstring imgpath = prim(1, \"image_path\", xprim);\n\n// If image path contains the UDIM/UVTILE special character sequence,\n// use uv position to find its tile associated map path.\nif(has_udim(imgpath)){\n    imgpath = expand_udim(uv.x, uv.y, imgpath, 0);\n}\n// Sample the nearest filtered colour using checked path and transform.\nvector imgcol = colormap(imgpath, uv, \"wrap\", \"repeat\");\n@Cd = ocio_transform(\"lin_srgb\", \"acescg\", imgcol);\n"
+}

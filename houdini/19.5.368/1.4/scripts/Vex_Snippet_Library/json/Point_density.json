@@ -1,0 +1,5 @@
+{
+    "label": "Point_density",
+    "context": "Points",
+    "data": "// Measures point density within a certain radius.\n// POINT WRANGLE\nint samples = chi('samples');\nfloat radius = chf('radius');\n\nint pts[] = pcfind(0, 'P', v@P, radius, samples);\nfloat dens = len(pts) / float(samples);\n\nf@dens = dens;\n"
+}

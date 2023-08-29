@@ -1,0 +1,5 @@
+{
+    "label": "Shape",
+    "context": "Points",
+    "data": "// Creates shapes based on u, eg. the curveu attribute from the resample node, or a component of the\n// UV coordinates from the sweep node.\n// Recommended values: center 0.5; weight <= 0.5; power > 0.0; amount > 0.0.\n\nfloat center = chf('center');\nfloat weight = chf('weight');\nfloat power = chf('power');\nfloat amount = chf('amount');\n\nfunction float shape(float c, w, p, a, u){\n    u = abs(u - c);\n    if(u > w) return 0.0;\n    u /= w;\n    float d = 1.0 - u * u * (3.0 - 2.0 * u);\n    d = pow(d, p) * a;\n    return d;\n}\n\nfloat u = vertexprimindex(0, i@vtxnum) / (primvertexcount(0, i@primnum) - 1.0);\n\nv@P.y = shape(center, weight, power, amount, u);\n"
+}

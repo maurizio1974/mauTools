@@ -1,0 +1,5 @@
+{
+    "label": "Culling_Points_by_Camera_NDC",
+    "context": "Points",
+    "data": "// VEX toNDC & removepoint - Point Wrangle Example\n\n// Assign camera variable using OBJ path as string.\nstring cam = chs(\"camera_obj\");\n\n// Assign cull scale, halved to fit parameter culling in 0 to 1+ range.\nfloat cull_scale = chf(\"cull_scale\") * 0.5;\nfloat cull_min = 0.5 - cull_scale; \nfloat cull_max = 0.5 + cull_scale;\n\n// Convert point position to camera NDC.\nvector p_ndc = toNDC(cam, @P);\n\n// Create an array for comparing each axis with its min/max NDC bounds.\nint is_culled[] = array(p_ndc.x < cull_min || p_ndc.x > cull_max,\n                        p_ndc.y < cull_min || p_ndc.y > cull_max,\n                        p_ndc.z > 0);\n\n// For each array item, check if its comparison has returned true.\nforeach(int cull; is_culled){\n    // If true, remove the current point and exit the loop.\n    if(cull){\n        removepoint(geoself(), @ptnum);\n        break;\n    }\n}\n"
+}

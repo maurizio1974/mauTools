@@ -1,0 +1,5 @@
+{
+    "label": "Colorspace_transformation",
+    "context": "Points",
+    "data": "// VEX colormap & ocio_transform - Point Wrangle Example\n\n// Find the first linear vertex to share this point.\nint vtx = pointvertex(0, @ptnum);\n\n// Get uv attribute value from selected vertex.\nvector uv = vertex(0, \"uv\", vtx);\n\n// Create image path parameter as string variable.\nstring imgpath = chs(\"image_path\");\n\n// Get colour from image, using uv coordinate as sample point.\nvector imgcol = colormap(imgpath, uv, \"wrap\", \"repeat\");\n\n// Transform image from sRGB to ACES.\n@Cd = ocio_transform(\"lin_srgb\", \"acescg\", imgcol);\n"
+}

@@ -1,0 +1,5 @@
+{
+    "label": "Ping_pong",
+    "context": "Points",
+    "data": "float u = v@P.x;\nv@P.y = 1.0 - abs((abs(u) % (2.0)) - 1.0);\n"
+}

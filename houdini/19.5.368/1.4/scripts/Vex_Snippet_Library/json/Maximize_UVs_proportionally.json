@@ -1,0 +1,5 @@
+{
+    "label": "Maximize_UVs_proportionally",
+    "context": "Vertices",
+    "data": "// vertex wrangle\nstring geo_uv = geounwrap(0, 'uv');\nvector bb = relbbox(geo_uv, v@uv);\nvector size = getbbox_size(geo_uv);\nfloat aspect = size.y / size.x;\nbb.y *= aspect;\nv@uv = bb;\n"
+}

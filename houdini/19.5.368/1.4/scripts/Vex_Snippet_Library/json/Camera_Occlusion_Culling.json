@@ -1,0 +1,5 @@
+{
+    "label": "Camera_Occlusion_Culling",
+    "context": "Points",
+    "data": "// VEX optransform & intersect - Point Wrangle Example\n\n// Assign occlusion object as SOP path with 'op:' syntax.\nstring objop = \"op:\" + chs(\"occlusion_obj\");\n\n// Find the transform matrix associated with camera path, and point pos.\nmatrix camxform = optransform(chs(\"camera_obj\"));\nvector pos = @P;\n\n// Create the vector camera position from its transform matrix.\nvector campos = set(0,0,0) * camxform;\n\n// Create and normalize the point-to-camera direction.\nvector camdir = normalize(campos - pos);\n\n// Find point-to-camera distance to use as intersect max distance.\nfloat camdist = distance(pos, campos);\n\n// Check if point-to-camera ray intersects the occlusion geometry within \n// max distance. If a prim is returned, remove the current point.\nvector ipos; vector iuvw;\nint iprim = intersect(objop, pos, camdir * camdist, ipos, iuvw);\n\nif(iprim != -1){\n    removepoint(geoself(), @ptnum);\n}\n"
+}

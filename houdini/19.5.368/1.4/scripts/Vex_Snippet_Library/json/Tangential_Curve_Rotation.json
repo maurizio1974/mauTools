@@ -1,0 +1,5 @@
+{
+    "label": "Tangential_Curve_Rotation",
+    "context": "Points",
+    "data": "// VEX vector rotation - Point Wrangle Example\n\n// Assign the u attribute with freq + offset parms.\nfloat u = @uv.x * chf(\"revolutions\") + chf(\"offset\");\n\n// Assign tangent and bitangent variables.\nvector tanv = normalize(v@tangentv);\nvector tanu = normalize(v@tangentu);\n\n// Initialise the identity matrix for export.\nmatrix3 m = ident();\n            \n// Convert the u attrib to radians.\nu *= PI * 2;\n            \n// Rotate m using the tangent as its axis.\nrotate(m, u, tanv);\n\n// Apply the rotation matrix to the bitangent.\ntanu = tanu * m;\n\n// Offset P with the rotated bitangent.\n@P += tanu * chf(\"tanu_amp\");\n"
+}

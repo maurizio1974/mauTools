@@ -1,0 +1,5 @@
+{
+    "label": "Average_value_of_point_attribute",
+    "context": "Points",
+    "data": "// Detail wrangle. Optionally replace * with group name.\nint pts[] = expandpointgroup(0, '*');\n\nfloat values[] = {};\nforeach(int pt; pts){\n    float val = point(0, 'val', pt);\n    append(values, val); \n}\nf@val_avg = avg(values);\n"
+}

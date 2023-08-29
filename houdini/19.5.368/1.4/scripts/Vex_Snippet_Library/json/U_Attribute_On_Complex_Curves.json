@@ -1,0 +1,5 @@
+{
+    "label": "U_Attribute_On_Complex_Curves",
+    "context": "Points",
+    "data": "// -------------------------------------------------------------------------\n// PointWrangle 1\n// VEX surfacedist - Point Wrangle example\n\nint closest_pt;\n\n// Find the distance from point along edges to the target point group.\nf@surfdist = surfacedist(0, \"end_pts\", \"P\", @ptnum, closest_pt, \"edge\");\n\n// Store the max point edge distance as detail attribute.\nsetdetailattrib(0, \"surfdist_max\", f@surfdist, \"max\");\n\n\n// -------------------------------------------------------------------------\n// PointWrangle 2\n\n\n// Fit the distance to end_pts in a 0-1 range.\n\nfloat sd_min = 0;\nfloat sd_max = detail(0, \"surfdist_max\");\n\n// Fit the edge distance into a 0-1 range.\n@u = fit(f@surfdist, sd_min, sd_max, 0, 1);\n"
+}

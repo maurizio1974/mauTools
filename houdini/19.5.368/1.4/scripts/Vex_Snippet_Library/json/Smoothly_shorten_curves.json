@@ -1,0 +1,5 @@
+{
+    "label": "Smoothly_shorten_curves",
+    "context": "Points",
+    "data": "// This will shorten and cubicly interpolate in-between point positions an open curve by a custom percentage\nfloat amount = chf('amount');\n\nfloat u = vertexcurveparam(0, i@vtxnum);\nfloat um = fit01(u, amount, 1.0 - amount);\nvector uvw = set(um, 0.0, 0.0);\n\nint pts[] = expandpointgroup(0, '*');\ninsert(pts, 0, 0);\nappend(pts, npoints(0)-1);\n\nvector pos[];\nforeach(int pt; pts){\n    vector pos_pt = point(0, 'P', pt);\n    append(pos, pos_pt);\n}\n\nv@P = spline('cubic', um, pos);\n"
+}

@@ -1,0 +1,5 @@
+{
+    "label": "Ray-Cast_Ambient_Occlusion",
+    "context": "Points",
+    "data": "// VEX sample_hemisphere & intersect - Point Wrangle example\n\n// Assign initial variables, including P with small surface offset.\nvector pos = @P + (@N * pow(10, -6));\nint samples = 256; float radius = 0.1; float ao;\n\nfor(int i = 0; i < samples; i++)\n{\n    // For each sample, create a random hemispherical direction using N.\n    vector2 seed = rand(@ptnum + i);\n    vector dir = sample_hemisphere(@N, seed);\n\n    // Export position of directional intersection, limited to radius.\n    vector ipos; vector iuvw;\n    float isect = intersect(0, pos, dir * radius, ipos, iuvw);\n\n    // If intersection is found, fit ray length into a 1-0 range and\n    // add the result to the accumulating variable 'ao'.\n    if(isect != -1)\n    {\n        ao += fit(distance(ipos, pos), 0, radius, 1, 0);\n    }\n}\n// When all samples are iterated over, divide the total ao sum by\n// total number of samples, then returning its complement.\nf@ao = 1 - (ao / samples);\n"
+}

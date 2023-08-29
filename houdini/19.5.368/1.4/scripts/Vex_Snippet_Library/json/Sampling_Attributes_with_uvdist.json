@@ -1,0 +1,5 @@
+{
+    "label": "Sampling_Attributes_with_uvdist",
+    "context": "Points",
+    "data": "// VEX uvdist & primuv - Primitive Wrangle example\n\n// Assign u sample variable from spare parameter.\nvector spos = set(chf(\"sample_u\"), 0, 0);\n\n// Assign current primitive as variable group name.\nstring prnum = itoa(@primnum);\n\n// Export UV distance, parametric coordinates at UV position.\nint dprim; vector duv;\nfloat dist = uvdist(0, prnum, \"uv\", spos, dprim, duv);\n\n// Assign variable minimum tolerance for uv distance sampling.\nfloat tol = pow(10, -8);\n\nif(dist < tol)\n{\n    // Sample world position using parametric coordinates.\n    vector pos = primuv(0, \"P\", dprim, duv);\n\n    // Add a new point, with point group at sampled world position\n    int newpt = addpoint(geoself(), pos);\n    setpointgroup(geoself(), \"uv_sampled_pts\", newpt, 1, \"set\");\n}\n"
+}

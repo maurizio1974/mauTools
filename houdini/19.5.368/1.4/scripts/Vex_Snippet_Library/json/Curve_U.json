@@ -1,0 +1,5 @@
+{
+    "label": "Curve_U",
+    "context": "Points",
+    "data": "// Parametric U on curve:\nfloat u = vertexcurveparam(0, i@vtxnum);\n// Symmetrical U:\nfloat us = 1.0 - abs(u - 0.5) * 2.0;\n"
+}
