@@ -1,0 +1,5 @@
+// eigenFrameWindow;  - opens the eigenFrame window (create locators from the selection, set up / aim / pivot options)
+global proc eigenFrameWindow()
+{
+    python("import eigenFrameTools; eigenFrameTools.show_window()");
+}

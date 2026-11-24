@@ -1,0 +1,520 @@
+/* This file downloaded from Highend3d.com
+''  
+''  Highend3d.com File Information:
+''  
+''    Script Name: rcPowerSearch
+''    Author:  
+''    Last Updated: Jun 29, 2008
+''    Update/Change this file at:
+''    http://Highend3d.com/maya/downloads/mel_scripts/data_management/3791.html
+''  
+''  Please do not alter any information above this line
+''  it is generated dynamically by Highend3d.com and will
+''  be changed automatically on any updates.
+*/
+/*
+rcPowerSearch v 1.3
+
+Date: 01 6 2008
+Author: Roberto Clochiatti
+Contacts: clochiatti@hotmail.com
+Description: This Mel-script is a powerful tool to search and rename 
+nodes inside maya scenes
+Usage: run rcPowerSearch;
+Maya version: Tested on maya 7.0
+
+Features: 
+
+-Search with wildcards
+-Exclude by searching
+-Search by type
+-Search by custom type
+-Find duplicates
+-Add to exist list
+-Manage list
+-Select found nodes
+-Set to a shelf
+-Print output
+-Rename from list
+-Rename selected
+-Substitude part of name
+-Add prefix and suffix
+-Renumbering
+-Unlock nodes
+-dragable window
+
+renaming bugs fixed
+To report bugs and suggestion send me an email to clochiatti@hotmail.com
+*/
+
+global string $listAdd[];
+global string $windowSearchMain;
+global string $tabsSearchX;
+
+global proc rcPowerSearch()
+{
+	if (`window -exists "windowSearchMain"`) deleteUI "windowSearchMain";
+	windowSearch;
+}
+
+
+//--------------------------------------------------------SEARCH PROC----------------------------------------------------------------------
+global proc cerca()
+{
+	global string $listAdd[];
+	string $addList[];
+	string $nome = `textField -q -text datiFondamentali`;
+	int $valoreAdd = `checkBox -q -value addSearchCheckBox`;
+	string $flags = searchFlags();
+	string $flagsCustomType = searchCustomType();
+
+	//se aggiungere o sostituire la ricerca (ADD CHECKBOX)
+	if ($valoreAdd){
+		$addList = eval ("ls -r 1 " + $flagsCustomType + $flags +"\"" + $nome +"\"" );
+		int $dimensione = (`size $addList`) + (`size $listAdd`);
+		appendStringArray($listAdd, $addList, $dimensione);
+	}
+	else{
+		clear $listAdd;
+		$listAdd = eval ("ls -r 1 " +  $flagsCustomType + $flags +"\"" + $nome +"\"" );
+		print ("Search Command : ls -r 1 " +  $flagsCustomType + $flags +"\"" + $nome +"\"" +"\n");
+	}
+
+	//Exclude
+	//eliminare dalla ricerca 
+	string $nomeExclude = `textField -q -text escludiDati`;
+	if($nomeExclude  != ""){
+		string $listExclude[]= eval ("ls -r 1 " +  $flagsCustomType + $flags +"\"" + $nomeExclude +"\"" );
+		string $listDiff[] = stringArrayRemove($listExclude, $listAdd);
+		$listAdd = $listDiff;
+	}
+
+	//Duplicate 
+	if(`checkBox -q -v dupRadio`){ 
+		string $array[];
+		$array = stringToStringArray(findDuplicates(), " ");
+		string $nuovaLista[] = stringArrayRemoveDuplicates($array);
+
+	//trasformare in long
+		string $reListx[];
+		string $newArrayDup[]={};
+
+		for ($i = 0; $i < `size $nuovaLista`; $i++){
+			$reListx = `ls -r 1 -l $nuovaLista[$i]`;
+			for ($g in $reListx){
+				$newArrayDup[`size $newArrayDup`]=$g ;
+			}
+		}
+	//fine trasformare in long
+
+		$listAdd = $newArrayDup;
+	}
+
+	//Aggiornamento lista
+	textScrollList -e -ra searchTextScrollList; 
+	for ($r in $listAdd){textScrollList -e -append  $r searchTextScrollList;}
+	printSize();
+
+}
+
+global proc string findDuplicates()
+{
+	global string $listAdd[];
+	string $listone[]  = $listAdd ;
+	string $temp[] = {};
+
+	for ($item in $listone){
+		string $buffer[];
+		int $numTokens = `tokenize $item "|" $buffer`;
+		$temp[ size($temp) ] = $buffer[$numTokens -1];
+	}
+	
+	string $lungoNome;
+	for ($select in $temp ){
+		string $nuovaLista[] = {};
+		for ($select1 in $temp){
+			if ($select == $select1)$nuovaLista[`size $nuovaLista`] = $select;
+		}
+		if (`size $nuovaLista` > 1) $lungoNome = $lungoNome +" "+ $select ;
+	}
+	return $lungoNome;
+}
+
+global proc scriviNelMenu(string $nuovoTesto)
+{
+	global string $nameTextFieldPowerS;
+	textField -e -tx $nuovoTesto $nameTextFieldPowerS;
+}
+
+global proc doubleClickSelect()
+{
+	string $selezione[] = `textScrollList -q  -selectItem 
+	searchTextScrollList`;
+	select $selezione[0];
+	if(`isAttributeEditorVisible`) setChannelBoxVisible(1);
+	else{openAEWindow;}
+}
+
+global proc altriCheck(int $val)
+{
+	string $listaCheckBoxes[] = {
+	"checkBoxGeometry",
+	"checkBoxTransforms",
+	"checkBoxShapes",
+	"checkBoxLights",
+	"checkBoxCameras",
+	"checkBoxSet",
+	"checkBoxTextures",
+	"checkBoxMaterials",
+	"checkBoxVisible",
+	"checkBoxSelection", "checkBoxLong"};
+	for ($k in $listaCheckBoxes){checkBox -e   -enable $val $k;}
+}
+
+global proc string searchFlags()
+{
+	string $listaCheckBoxes[] = { 
+	"checkBoxGeometry",
+	"checkBoxTransforms",
+	"checkBoxShapes",
+	"checkBoxLights",
+	"checkBoxCameras",
+	"checkBoxSet",
+	"checkBoxTextures",
+	"checkBoxMaterials",
+	"checkBoxVisible",
+	"checkBoxSelection",
+	"checkBoxLong"	};
+	string $searchFlags ="";
+
+	if (!`checkBox -q -v checkBoxAll`){
+		for ($k in $listaCheckBoxes){
+			if (`checkBox -q -v $k`)	$searchFlags = $searchFlags + " " +(`checkBox -q -label $k`) + " ";
+		}
+	}	
+	return $searchFlags;
+}
+
+global proc string searchCustomType()
+{
+	string $searchCustomType = "";
+	string $catturaDati = `textField  -q -text  customTypeDati`;
+	if($catturaDati != "") $searchCustomType = (" -type " + (`textField  -q -text customTypeDati`)+" ");
+	else  {$searchCustomType = "";}
+	return $searchCustomType;
+}
+
+
+
+//---------------------------------------RENAME PROC----------------------------------------
+
+global proc renameTask()
+{
+	global string $listAdd[];
+	string $newListRen[]={};
+	string $sel[] =`textScrollList -q  -selectItem searchTextScrollList`;
+
+	//unlock nodes
+	int $unlockNodeValueCB =`checkBox -q -v unlockNodesToggle`;
+	if ($unlockNodeValueCB) psUnlockNodes $sel;
+
+	string $subName = `textField  -q -text  substitudeKeyRen`;
+	string $newName = `textField  -q -text  nuovoNomeRen`;
+	string $prefixName = `textField -q -text addPrefixRen` ;
+	string $suffixName = `textField -q -text addSuffixRen`;
+
+	string $finaleNumb;
+	int $numb;
+
+	if ($subName == ""){
+		for ($k in $sel){
+			$numb += 1;
+			$finaleNumb = finaleNumb ($numb);
+
+			if ($newName ==""){
+				$newName1 = `match "[^|]*$" $k`;
+				string $prefixSuffixName = ($prefixName + $newName1 + $suffixName + $finaleNumb);
+				string $test1 =`rename $k $prefixSuffixName `;
+				$newListRen[`size $newListRen`] = $test1;
+			}
+			else{
+				string $prefixSuffixName = ($prefixName + $newName + $suffixName + $finaleNumb);
+				string $test1 =`rename $k $prefixSuffixName `;
+				$newListRen[`size $newListRen`] = $test1;
+			}
+		}
+	}
+	else{
+		for ($k in $sel){
+			$numb += 1;
+			$finaleNumb = finaleNumb ($numb);
+			string $newSubName ;
+			$newSubName = `substitute $subName $k $newName`;
+			$newSubName1= `match "[^|]*$" $newSubName`;
+			string $prefixSuffixSubName = ($prefixName + $newSubName1 + $suffixName + $finaleNumb);
+			string $test2 =`rename $k $prefixSuffixSubName`;
+			$newListRen[`size $newListRen`] = $test2;
+		}
+	}
+
+	rimuoviSel();
+
+//aggiornamento lista
+	int $dimensione = (`size $newListRen`) + (`size $listAdd`);
+	appendStringArray($listAdd, $newListRen, $dimensione);
+	textScrollList -e -ra searchTextScrollList; 
+	for ($r in $listAdd){textScrollList -e -append  $r searchTextScrollList;}
+//aggiornamento lista fine
+
+	printSize();
+}
+
+
+//--------------------------------------- CUSTOM PROCS------------------------------------------
+
+// ADD HERE YOUR CUSTOM PROCS
+
+global proc psUnlockNodes(string $nodes[])
+{
+	for ($sigleNode in $nodes){
+		lockNode -lock off $sigleNode;
+		print ($sigleNode +" unlocked\n");
+	}
+}
+
+
+global proc printSel() 
+{ 
+	string $sel[] =`textScrollList -q  -selectItem searchTextScrollList`;
+	for ($r in  $sel){print ($r + "\n");}
+}
+
+global proc rimuoviSel()
+{
+	global string $listAdd[];
+	string $sel[] =`textScrollList -q  -selectItem searchTextScrollList`;
+	for ($r in  $sel){textScrollList -e -removeItem $r searchTextScrollList;}
+	clear $listAdd;
+	$listAdd=`textScrollList -q  -allItems  searchTextScrollList`;
+	printSize();
+}
+
+global proc selAll()
+{
+	string $sel[] =`textScrollList -q  -allItems  searchTextScrollList`;
+	for ($r in  $sel){textScrollList -e -selectItem $r searchTextScrollList;}
+}
+
+
+global proc setToShelf() 
+{
+
+	string $selezione[] = `textScrollList -q  -selectItem 
+	searchTextScrollList`;
+	string $comando="";
+	if (`size $selezione`>0){
+		for ($k=0; $k<(`size $selezione`); $k++){$comando = $comando + $selezione[$k] +" ";}
+
+		string $script = "select " + $comando;
+		global string $gShelfTopLevel;
+
+		if (`tabLayout -exists $gShelfTopLevel`){
+			string $currentShelf = `tabLayout -query -selectTab $gShelfTopLevel`;
+			setParent $currentShelf;
+			shelfButton
+			-command $script
+			-label "Power Selection"
+			-annotation $script
+			-imageOverlayLabel "Sel"
+			-image1 "commandButton.xpm"
+			-style `shelfLayout -query -style $currentShelf`
+			-width `shelfLayout -query -cellWidth $currentShelf`
+			-height `shelfLayout -query -cellHeight $currentShelf`;
+		}
+	}
+}
+
+global proc printSize()
+{
+	global string $listAdd[];
+	print ("Nodes: " + `size $listAdd` +"\n");
+}
+
+
+global proc deleteSelectedNodes() 
+{ 
+	string $sel[] =`textScrollList -q  -selectItem searchTextScrollList`;
+	for ($r in  $sel){
+		delete $r;
+		print ($r + " deleted\n");
+	}
+}
+
+//-------------------------------------------RENAMING------------------------------------------------------------------------------------------------------
+
+global proc  string finaleNumb (int $numb)
+{
+	string $finaleNumb;
+	if(`checkBox -q -v renumberingToggle`) {
+		int $start = `intField -q -v numberStartRen`;
+		int $pad = `intField -q -v numberPaddingRen`;
+		string $zeri = "";
+		int $numberPlusStart = $numb + $start - 1;
+		for ($z=1; $z < $pad; ++$z){
+			if ($numberPlusStart < pow(10, $z) ) $zeri += "0";
+		}
+		$finaleNumb = $zeri+$numberPlusStart;
+	}
+	else{$finaleNumb = "";}
+	return $finaleNumb;
+}
+
+
+global proc windowConfirm()
+{ 
+	string $text;
+	string $result = `confirmDialog 
+			-title "Renaming Confirm"  
+			-message "Are you sure?" 
+			-button "OK" 
+			-button "Cancel"
+	  		-defaultButton "OK" 
+	  		-cancelButton "Cancel"   
+	  		-dismissString "Cancel"`;
+
+	if ($result == "OK") renameTask;
+}
+
+//---------------------------------------------------WINDOW SEARCH/RENAME------------------------------------------------
+
+global proc windowSearch()
+{
+	global string $windowSearchMain;
+	$windowSearchMain = `window -title "Power Search" windowSearchMain` ;
+	string $form = `formLayout -numberOfDivisions 100`;
+
+	global string $tabsSearchX; $tabsSearchX = `tabLayout `;
+			//SEARCH TAB
+			string $child1 = `columnLayout -adjustableColumn true columLayoutSearch`;
+				rowColumnLayout -nc 2 -cw 1 80 -cw 2 120;
+					button -l "Search Key" -al "left" -command  cerca datiFondamentali; 
+					textField  -text "*" -w 200 -enterCommand  cerca datiFondamentali ;
+					text -l "Exclude Key" -al "left"; 
+					textField  -text ""  -enterCommand  cerca escludiDati;
+					text -l "Custom Type" -al "left"; 
+
+				//textField  -text ""  -enterCommand  cerca customTypeDati; versione vecchia
+
+				global string $nameTextFieldPowerS;
+				  $nameTextFieldPowerS = `textField  -text ""  -enterCommand  cerca customTypeDati`;
+				  popupMenu -parent  $nameTextFieldPowerS ;
+
+
+						//ADD HERE YOUR CUSTOM TYPE!!
+
+
+						menuItem -l "Cameras" -c "scriviNelMenu camera";
+
+						menuItem  -d 1;
+
+						menuItem -l "Maya Sets" -c "scriviNelMenu objectSet";
+
+				setParent ..;
+
+				separator -style "out";
+
+				rowColumnLayout -numberOfColumns 2;
+					checkBox -label "No Flags" -v 1 -onCommand "altriCheck 0" -offCommand "altriCheck 1" -align "left" checkBoxAll; 
+					checkBox -label "Duplicates"   -v 0 -align "left" dupRadio;
+				setParent ..;
+
+				separator -style "out";
+
+				rowColumnLayout -numberOfColumns 2;
+					checkBox -label "-geometry"   -v 0 -enable 0 -align "left" checkBoxGeometry;
+					checkBox -label "-transforms "  -v 0 -enable 0 -align "left" checkBoxTransforms;
+					checkBox -label "-shapes"   -v 0 -enable 0 -align "left" checkBoxShapes;
+					checkBox -label "-lights"   -v 0 -enable 0 -align "left" checkBoxLights;
+					checkBox -label "-cameras"   -v 0 -enable 0 -align "left" checkBoxCameras;
+					checkBox -label "-set"   -v 0 -enable 0 -align "left" checkBoxSet;
+					checkBox -label "-textures"   -v 0 -enable 0 -align "left" checkBoxTextures;
+					checkBox -label "-materials"   -v 0 -enable 0 -align "left" checkBoxMaterials;
+				setParent ..;
+
+				separator -style "out";
+
+				rowColumnLayout -numberOfColumns 2;
+					checkBox -label "-visible"   -v 0 -enable 0 -align "left" checkBoxVisible;
+					checkBox -label "-selection"   -v 0 -enable 0 -align "left" checkBoxSelection;
+					checkBox -label "-long"   -v 0 -enable 0 -align "left" checkBoxLong;
+				setParent ..;
+
+				separator -style "out";
+
+				checkBox -label "Add To Already Searched"   -align "left" -value 0 addSearchCheckBox;
+				setParent ..;
+
+				//RENAME TAB
+				string $child2 = `columnLayout -adjustableColumn true columLayoutRename`;
+					rowColumnLayout -nc 2 -cw 1 80 -cw 2 120;
+						button -l "New Name" -al "left" -command  windowConfirm nuovoNomeRen; 
+						textField  -text ""  -enterCommand  windowConfirm nuovoNomeRen;
+						text -l "Substitude Key" -al "left"; 
+						textField  -text "" -enterCommand  windowConfirm substitudeKeyRen ;
+						text -l "Add Prefix" -al "left"; 
+						textField  -text "" -enterCommand  windowConfirm addPrefixRen ;
+						text -l "Add Suffix" -al "left"; 
+						textField  -text "" -enterCommand  windowConfirm addSuffixRen;
+						text -l "" -al "left";
+						checkBox -label "Unlock Nodes" -v 0 -align "left" unlockNodesToggle; 
+						text -l "" -al "left";
+						checkBox -label "Renumbering" 
+							-v 0 
+							-onCommand "intField -e -enable 1 numberStartRen;intField -e -enable 1 numberPaddingRen;"
+							-offCommand "intField -e -enable 0 numberStartRen;intField -e -enable 0 numberPaddingRen;"
+							-align "left" renumberingToggle; 
+
+						text -l "Start Number" -al "left"; 
+						intField -v 1 -min 0 -enable 0 -enterCommand  windowConfirm numberStartRen;
+						text -l "Padding" -al "left"; 
+						intField -v 3 -min 0 -enable 0 -enterCommand  windowConfirm numberPaddingRen;
+
+						setParent..;
+				setParent ..;
+
+				tabLayout -edit -tabLabel $child1 "Search" -tabLabel $child2 "Rename" $tabsSearchX;
+				setParent..;
+
+
+				textScrollList -allowMultiSelection true  -doubleClickCommand doubleClickSelect searchTextScrollList;
+					popupMenu -parent  "searchTextScrollList" ;
+						
+						menuItem -label "Select All" -c selAll;
+						menuItem -label "Unselect All"  -c ("textScrollList -e -deselectAll searchTextScrollList");
+						menuItem -label "Remove From List" -c rimuoviSel;
+						menuItem -label "Print Selected" -c printSel;
+						menuItem -label "Select Nodes"   -c ("select `textScrollList -q -selectItem searchTextScrollList`");
+						menuItem -label "Selection To Shelf"  -c setToShelf;						
+						menuItem  -d 1;
+						menuItem -label "Unlock Nodes"   -c "psUnlockNodes (`textScrollList  -q  -selectItem searchTextScrollList`)";
+						//menuItem -label "Delete  Nodes" -c deleteSelectedNodes;
+						
+						//ADD HERE YOUR CUSTOM PROC COMMAND
+						
+					setParent ..;
+				setParent ..;
+
+				formLayout -edit
+					  -attachForm     $tabsSearchX   "top"    5
+					  -attachForm     $tabsSearchX   "left"   5
+					  -attachNone     $tabsSearchX   "bottom"
+					  -attachForm $tabsSearchX   "right"  5
+					  -attachControl  "searchTextScrollList"     "top" 5 $tabsSearchX
+					  -attachForm     "searchTextScrollList"     "left"   5
+					  -attachForm     "searchTextScrollList"     "bottom" 5
+					  -attachForm     "searchTextScrollList"     "right"  5  $form;
+
+	showWindow $windowSearchMain;
+	window -e -topLeftCorner 300 600 -wh 220 500 -sizeable 1 $windowSearchMain;
+
+}

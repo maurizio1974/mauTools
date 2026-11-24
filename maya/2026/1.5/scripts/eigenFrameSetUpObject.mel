@@ -1,0 +1,10 @@
+// eigenFrameSetUpObject "headCtrl";        - selected eigen locators take their up vector from headCtrl's position
+// eigenFrameSetUpObjectRotation "headCtrl"; - ... from headCtrl's rotation (applied to worldUpVector)
+global proc eigenFrameSetUpObject(string $upObject)
+{
+    python("import eigenFrameTools; eigenFrameTools.set_up_object('" + $upObject + "')");
+}
+global proc eigenFrameSetUpObjectRotation(string $upObject)
+{
+    python("import eigenFrameTools; eigenFrameTools.set_up_object('" + $upObject + "', rotation=True)");
+}

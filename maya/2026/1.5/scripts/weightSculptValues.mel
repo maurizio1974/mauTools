@@ -1,0 +1,90 @@
+//	Description:	initializes weightSculptContext tool property sheet values
+//
+//	Input Arguments:
+//		toolName  - this is the name of the instance of the tool
+//					that the property sheet is modifying.
+//
+//	Return Value:
+//		None.
+
+
+global proc weightSculptValues(string $toolName) 
+{
+	string $parent = 
+		(`toolPropertyWindow -q -location` + "|weightSculpt|weightSculptFrame|weightSculptOptions");
+	setParent $parent;
+
+	string $icon = "weightSculptTool.xpm";
+	string $help = "";
+	toolPropertySetCommon $toolName $icon $help;
+
+	frameLayout -e -en true -cl false weightSculptFrame;
+	weightSculptOptionValues($toolName);
+
+	toolPropertySelect weightSculpt;
+}
+
+//the function that gets evaluated when the tool is activated
+global proc weightSculptOptionValues(string $toolName)
+{
+	int $set;
+	
+ 	// displayPrecision
+ 	$set = eval("weightSculptContext -q -dp " + $toolName);
+ 	intSliderGrp -e -value $set displayPrecision;
+
+    // Font Color
+    $setR = eval("weightSculptContext -q -fcr " + $toolName);
+    $setG = eval("weightSculptContext -q -fcg " + $toolName);
+    $setB = eval("weightSculptContext -q -fcb " + $toolName);
+    // FIX: the original passed $setR $setB $setG, swapping green and blue.
+    colorSliderGrp -e -rgbValue $setR $setG $setB fontColor;
+
+    // fontSize (added: the original never synced this slider)
+    $set = eval("weightSculptContext -q -fs " + $toolName);
+    intSliderGrp -e -value $set fontSize;
+
+    // labelSpacing
+    $set = eval("weightSculptContext -q -lsp " + $toolName);
+    floatSliderGrp -e -value $set labelSpacing;
+
+    // fontOpacity
+    $set = eval("weightSculptContext -q -fop " + $toolName);
+    floatSliderGrp -e -value $set fontOpacity;
+
+    // displayWeights
+    $set = eval("weightSculptContext -q -dw " + $toolName);
+
+    if ($set) {
+        checkBoxGrp -e -value1 1 displayWeights;
+    }
+    else {
+        checkBoxGrp -e -value1 0 displayWeights;
+    }
+
+	// clampMin
+	$set = eval("weightSculptContext -q -cmn " + $toolName);
+ 	if ($set) {
+ 		checkBoxGrp -e -value1 1 clampMin;
+ 	}
+ 	else {
+ 		checkBoxGrp -e -value1 0 clampMin;
+ 	}
+
+	// clampMax
+	$set = eval("weightSculptContext -q -cmx " + $toolName);
+ 	if ($set) {
+ 		checkBoxGrp -e -value1 1 clampMax;
+ 	}
+ 	else {
+ 		checkBoxGrp -e -value1 0 clampMax;
+ 	}
+
+	// weightMin
+	$set = eval("weightSculptContext -q -wmn " + $toolName);
+	floatField -e -value $set weightMin;
+
+	// weightMax
+	$set = eval("weightSculptContext -q -wmx " + $toolName);
+	floatField -e -value $set weightMax;
+}

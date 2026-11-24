@@ -1,0 +1,97 @@
+// win 1.0
+
+global proc DM_win()
+{
+    if (`window -ex "Floating Perspective"` == 1)
+        deleteUI -window  "Floating Perspective";
+ 
+    string $window = `window -mb 1 -s 1 -rtf 1 -w 100 -h 110 "Floating Perspective"`;
+    menu -label "Actions" -helpMenu true;
+    menuItem -c DM_blast_win -label "Playblast >";
+    menuItem -c DM_blast_f -label "Playblast >>";
+    
+    menu -label "Overscan" -helpMenu true;
+    menuItem -c DM_over_25 -label "25%";
+    menuItem -c DM_over_50 -label "50%";
+    menuItem -c DM_over_100 -label "100%";
+    menuItem -c DM_over_150 -label "150%";
+    
+    
+    paneLayout -cn horizontal2 -ps 1 100 100;
+    string $model = `modelPanel -l "Floating Parspective" -cam "persp"`;
+    setParent ..;
+        
+    //$timesliderfloat = `timePort -h 5`;
+    //TimeSliderMenu($timesliderfloat);
+
+    setParent ..;
+    
+    modelEditor -e -allObjects 0 $model;
+    modelEditor -e -nurbsCurves 0 -nurbsSurfaces 1 -polymeshes 1 -locators 1 $model;
+    
+    showWindow $window;
+}
+
+    
+global proc DM_blast_win()
+{
+    
+    string $selected[] = `ls -sl`;
+    float $time = `currentTime -query`;
+    
+    int $width = `getAttr defaultResolution.width`;
+    int $height = `getAttr defaultResolution.height`;
+    
+    select -cl;
+    
+    
+    
+    playblast -f "play" -wh $width $height -fmt "image" -percent 50 -orn 0 -cc 1;
+    
+    
+    
+    select $selected;
+    
+    currentTime $time;
+
+}
+
+global proc DM_over_150()
+{
+    camera -e -overscan 1.5 persp;
+}
+
+global proc DM_over_100()
+{
+    camera -e -overscan 1.0 persp;
+}
+
+global proc DM_over_50()
+{
+    camera -e -overscan 0.5 persp;
+}
+
+global proc DM_over_25()
+{
+    camera -e -overscan 0.25 persp;
+}
+
+
+global proc DM_blast_f()
+{
+    string $selected[] = `ls -sl`;
+    float $time = `currentTime -query`;
+    
+    int $width = `getAttr defaultResolution.width`;
+    int $height = `getAttr defaultResolution.height`;
+    
+    select -cl;
+    
+    
+    playblast -f "play" -st $time -wh $width $height -fmt "image" -percent 50 -orn 0 -cc 1;
+    
+    
+    select $selected;
+    
+    currentTime $time;
+}

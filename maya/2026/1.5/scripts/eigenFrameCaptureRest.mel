@@ -1,0 +1,6 @@
+// eigenFrameCaptureRest;  - selected eigenFrame locators (or nodes): the current pose becomes the rest shape
+//                           (same as: eigenLocator -captureRest "<locator>_eigenFrame";)
+global proc eigenFrameCaptureRest()
+{
+    python("import eigenFrameTools; eigenFrameTools.capture_rest()");
+}

@@ -1,0 +1,224 @@
+//  Description:	defines behaviour and layout of weightSculptContext
+//					tool property sheet
+
+global proc weightSculptProperties ()
+//	Procedure Name:
+//		weightSculptProperties
+//
+//	Description:
+//		layout of tool property sheet
+//
+//	Input Arguments:
+//		None.
+//
+//	Return Value:
+//		None.
+{
+	setUITemplate -pushTemplate DefaultTemplate;
+
+	string $parent = `toolPropertyWindow -q -location`;
+    setParent $parent;
+	string $curctx = `currentCtx`;
+
+	columnLayout weightSculpt;
+			frameLayout -cll true -cl false -l "weightSculpt Settings" weightSculptFrame;
+				columnLayout 
+					weightSculptOptions;
+					separator -style "none";
+              
+					intSliderGrp
+						-field 1
+						-label "Weight Display Precision"
+						-minValue 0
+						-maxValue 5
+						-value 2
+						displayPrecision;
+                    
+					intSliderGrp
+						-field 1
+						-label "Font Size"
+						-minValue 1
+						-maxValue 1000
+						-value 12
+						fontSize;
+
+					floatSliderGrp
+						-field 1
+						-label "Font Opacity"
+						-minValue 0
+						-maxValue 1
+						-value 0.5
+						fontOpacity;
+
+					colorSliderGrp
+						-label "Font Color"
+						-rgb 0 0 1
+						fontColor;
+
+					floatSliderGrp
+						-field 1
+						-label "Label Spacing (px)"
+						-annotation "Minimum distance between weight labels while dragging. -1 = automatic, 0 = draw every label (slow on dense meshes)."
+						-minValue -1
+						-maxValue 100
+						-fieldMinValue -1
+						-fieldMaxValue 1000
+						-value -1
+						labelSpacing;
+
+					checkBoxGrp
+						-label "Display Weights Values"
+						-numberOfCheckBoxes 1
+						-l1 " "
+						-v1 1
+						displayWeights;
+
+					checkBoxGrp
+							-label "Clamp Min"
+							-numberOfCheckBoxes 1
+							-l1 " "
+							clampMin;
+
+					checkBoxGrp
+						-label "Clamp Max"
+						-numberOfCheckBoxes 1
+						-l1 " "
+						clampMax;
+
+                    rowLayout 
+                    	-nc 2
+                    	clampMinLayout;
+
+                    	text "Value Min";
+	
+						floatField
+							-min -100
+							-max 100
+							-value 0
+							weightMin;
+
+					setParent ..;
+		
+                    rowLayout 
+                    	-nc 2
+                    	clampMaxLayout;
+					
+                    	text "Value Max";
+
+						floatField
+							-min -100
+							-max 100
+							-value 0
+							weightMax;
+        
+					setParent ..;
+
+                    rowLayout 
+						-nc 2
+                    	buttonsLayout;
+
+						button -label "Launch SkinWeights UI"
+						-c "python(\"import sculptSkinWeights_UI\"); python(\"sculptSkinWeights_UI.DockableSculptSkinWeightsUI().show()\");";
+
+						button -label "Launch Deformer UI"
+						-c "python(\"import sys\\nif 'deformer_utils_ui' in sys.modules:\\n    sys.modules['deformer_utils_ui'].show()\\nelse:\\n    import deformer_utils_ui\");";
+
+					setParent ..;
+
+                	//text "Select Weight Map:";
+
+
+					//textScrollList
+					//deformerList;
+
+			setParent ..; // weightSculptOptions
+		setParent ..; // weightSculptFrame
+	setParent ..; // weightSculpt
+
+	// Name the tabs; -tl does not allow tab labelling upon creation
+	//tabLayout -e -tl weightSculptTab "Tool Defaults" weightSculptTabs;
+
+	setUITemplate -popTemplate;
+
+	weightSculptSetCallbacks($parent);
+}
+
+global proc weightSculptSetCallbacks(string $parent)
+//
+//	Procedure Name:
+//		weightSculptSetCallbacks
+//
+//	Description:
+//		associate control events with callbacks
+//
+//	Input Arguments:
+//		parent name.
+//
+//	Return Value:
+//		None.
+//
+{
+	setParent	$parent;
+	string		$whichCtx = `currentCtx`;
+
+	// Clamp min
+ 	checkBoxGrp -e
+ 		-on1 ("weightSculptContext -e -clampMin true `currentCtx`")
+ 		-of1 ("weightSculptContext -e -clampMin false `currentCtx`")
+ 		clampMin;
+
+ 	// Clamp max
+ 	checkBoxGrp -e
+ 		-on1 ("weightSculptContext -e -clampMax true `currentCtx`")
+ 		-of1 ("weightSculptContext -e -clampMax false `currentCtx`")
+ 		clampMax;
+
+ 	// Display weights
+ 	checkBoxGrp -e
+ 		-on1 ("weightSculptContext -e -displayWeights true `currentCtx`")
+ 		-of1 ("weightSculptContext -e -displayWeights false `currentCtx`")
+ 		displayWeights;
+
+ 	// Display Precision
+ 	intSliderGrp -e
+ 		-cc ("weightSculptContext -e -displayPrecision #1 `currentCtx`")
+ 		displayPrecision;
+
+ 	// Font Size
+ 	intSliderGrp -e
+ 		-cc ("weightSculptContext -e -fontSize #1 `currentCtx`")
+ 		fontSize;
+
+ 	// Font Opacity
+ 	floatSliderGrp -e
+ 		-cc ("weightSculptContext -e -fontOpacity #1 `currentCtx`")
+ 		fontOpacity;
+
+ 	// Label Spacing
+ 	floatSliderGrp -e
+ 		-cc ("weightSculptContext -e -labelSpacing #1 `currentCtx`")
+ 		labelSpacing;
+
+ 	// Font Color
+ 	colorSliderGrp -e
+ 		-cc ("setColors;")
+ 		fontColor;
+
+ 	// Weight Min
+ 	floatField -e
+ 		-cc ("weightSculptContext -e -weightMin #1 `currentCtx`")
+ 		weightMin;
+
+ 	// Weight Max
+ 	floatField -e
+ 		-cc ("weightSculptContext -e -weightMax #1 `currentCtx`")
+ 		weightMax;
+}
+
+global proc setColors ()
+{
+	$x = `colorSliderGrp -q -rgb fontColor`;
+	weightSculptContext -e -fontColorR $x[0] `currentCtx`; 
+	weightSculptContext -e -fontColorG $x[1] `currentCtx`; 
+	weightSculptContext -e -fontColorB $x[2] `currentCtx`;
+}
