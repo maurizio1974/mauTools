@@ -1,0 +1,1 @@
+python("from ngSkinTools2.ui import shelf; shelf.install_shelf()");

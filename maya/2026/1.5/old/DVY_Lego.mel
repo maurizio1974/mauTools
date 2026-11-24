@@ -1,0 +1,598 @@
+/* This file downloaded from Highend3d.com
+''  
+''  Highend3d.com File Information:
+''  
+''    Script Name: Davveys Lego Generator
+''    Author:  
+''    Last Updated: Jun 30, 2007
+''    Update/Change this file at:
+''    http://Highend3d.com/maya/downloads/mel_scripts/modeling/poly_tools/4782.html
+''  
+''  Please do not alter any information above this line
+''  it is generated dynamically by Highend3d.com and will
+''  be changed automatically on any updates.
+*/
+
+
+/////////////////////////////////////////////////////////////////////////////			
+/*				
+	Copyright © 2007 DVY_Lego. All rights reserved davvey@ntlworld.com
+
+						- DVY_Lego -
+						
+/////////////////////////////////////////////////////////////////////////////
+						
+	Usage
+
+	Type DVY_Lego in command line or middle mouse drag it to a shelf.
+	There is an Icon file supplied to use with the Shelf Button.
+	
+	Installation
+	
+	Install all scripts in any Maya Script folder and install all
+	image files in Maya's Icon folder.
+	
+	Description	
+
+	This script calls a GUI where relevant options can be entered to
+	generate dimensionally accurate Lego Parts. 
+	
+	After construction the Parts are named according to Part type,
+	and Number of Pitches of Lego and a sequential number.
+	If there is a Part of exactly the same size and type the script will
+	automatically number the Part with next available number.
+	The Names used in the naming are based on the naming convention used
+	in the Option Menu list which are based on the standard Parts from
+	the Lego Parts List.
+	
+	The pitch of Lego parts are 8 mm in X and Z Axis and either
+	3.2 or 9.6 mm in Y Axis  (Plate and Brick height)
+	
+	Note:- The Scale of the Parts will be adjusted to set correct size 
+	relevant to the correct size for the Users Maya Unit settings
+	i.e mm, cm, m, in, ft, yd.
+	
+	If there are any additional Lego Parts you would like added to
+	the list please let me know at Davvey@ntlworld.com and I will try
+	and add them to the scripts.	
+	
+		
+*****************************************************************************************
+
+	 "Lego" is a trademark of The Lego Group.  These scripts etc are not 
+	 endorsed  by The Lego Group nor does it receive endorsement from it. 
+	 It is just for fun.
+	 All trademarks and copyrights are respected.
+	 
+*****************************************************************************************
+
+*/	
+///////////////////////////////////////////////////////////////////////////////
+//					DVY_Lego Procedure
+////////////////////////////////////////////////////////////////////////////////
+
+
+global proc DVY_Lego()
+{
+// ******************************************************************************** //	
+//	Global Variables
+	 
+	global string $StTabs[];
+	global string $DVY_LegoImage[];
+	
+// -------------------------------------------------------------------------------- //
+	
+// ******************************************************************************** //	
+//	Local Variables
+	
+	int $a, $b, $c, $e, $i, $j, $k, $N;
+	
+	int $K = 0; int $S = 0; int $D = 0;
+	
+// ******************************************************************************** //	
+//		
+	//	Check for any "Window History" and delete if it exists.
+	 	if (`windowPref -exists DVY_LegoWindow`)
+			{ windowPref -edit -topLeftCorner 125 700 -widthHeight 455 670 DVY_LegoWindow;}
+	
+	//Check for multiple similar windows.
+		if (`window -q -ex DVY_LegoWindow`) deleteUI DVY_LegoWindow;
+	//Build window.
+		window -w 455 -h 670 -mnb 1 -mxb 0 -sizeable 1 -title "Davvey's Lego Parts Generator ver 1.0.0" DVY_LegoWindow;
+	
+	//Build 'Edit' menu.
+	
+	string $menuBarLayout = `menuBarLayout`;
+		menu -label "File"; 
+ 			menuItem -label "Close" -command "deleteUI DVY_LegoWindow";		
+		menu -label "About"; 
+	 		menuItem -label "About Lego Parts Generator" -command "DVY_AboutLegoPartsWin;";		
+
+	// Create Main Layout column
+	string $MainPane = `paneLayout -configuration "horizontal2" -paneSize 1 100 90`;
+	string $MainPanel = `columnLayout -width 440 -adj 1 -cal "center" "Main Panel"`;
+
+	// Title and Info Parts for the "Main Column Setup" tab. 
+		
+	string $Title = `columnLayout -width 440 -adj 1 -cal "center" "Title"`;
+		separator -h 5 -style "none";
+	
+		iconTextStaticLabel -w 360 -h 50 -st "iconOnly" -i1 "DavveyLogo.xpm" LegoImage00 ;	
+
+		text -height 5 -label " " ;	//Spacer
+		separator -height 5 -style "double" ;
+		text -bgc .5 .5 1 -height 20 -align "center" -font "boldLabelFont"
+			-label "Davvey's Lego Parts Generator.";
+		separator -height 5 -style "double";
+		text -height 5 -label " " ;	//Spacer
+	
+	setParent $MainPanel;	
+		
+//////////////////////////////////////////////////////////////////////////////////
+//					Lego Parts Tab.
+//////////////////////////////////////////////////////////////////////////////////	
+// Tab Layout for LegoParts
+	
+	string $StTab = `tabLayout -imw 1 -imh 1 "Options"`;
+	
+	$StTabs[0] = `columnLayout -adj 1 "LegoParts"`;
+				
+	columnLayout -adj 1 -cat "both" 5 -cal "left" "POptionsCol";	
+
+	separator -h 10 -style "double";
+		separator -h 2  -bgc 1 1 0.85 -style "none";
+		text -height 15 -bgc 1 1 0.85  -align "left" -label " Use Option Menus to select Lego Part required.";
+		text -height 15 -bgc 1 1 0.85  -align "left" -label " Each part is designated by Pitch sizes based on Lego Factory Identities.";
+		separator -h 2  -bgc 1 1 0.85 -style "none";
+		
+	separator -h 10 -style "double";
+	text -height 2 -label "";
+	
+	rowColumnLayout -enable 1 -nc 2
+					-cw 1 70 -cal 1 "center" -cat 1 "both" 5
+					-cw 2 140 -cal 2 "center" -cat 2 "both" 5
+				"LegoColourCol";
+
+		text -height 15 -align "center" -label " Colour ";
+
+		optionMenu -width 140  DVY_LegoColourOption;
+			menuItem -l "Lego Part Colour               ";
+			menuItem -l "White";
+			menuItem -l "Red";
+			menuItem -l "Yellow";
+			menuItem -l "Green";
+			menuItem -l "BlueGreen";
+			menuItem -l "Blue";
+			menuItem -l "Purple";
+			menuItem -l "Brown";
+			menuItem -l "LightGrey";
+			menuItem -l "DarkGrey";
+			menuItem -l "Black";
+			menuItem -l "Glass";
+
+	setParent $StTabs[0];
+	
+		separator -h 10 -style "double";
+		
+		text -height 2 -label " " ;	//Spacer
+		text -height 15 -font "boldLabelFont" -align "center" -label "Lego Parts Options" ;	
+		text -height 2 -label " " ;	//Spacer
+		
+	frameLayout -bs "in" -height 320 -width 440 -mh 3 -mw 3 -collapsable false -collapse false
+			-labelVisible false -label "Standard Window Options" StandardWinFrame;
+		
+	rowColumnLayout -enable 1 -nc 2
+					-cw 1 210 -cal 1 "center" -cat 1 "both" 1
+					-cw 2 210 -cal 2 "center" -cat 2 "both" 1
+				CylinderStyle1Col;
+	
+	columnLayout -adj 1 "LegoOptions";
+	
+		separator -h 10 -style "none";
+			optionMenu -width 205 -cc ("DVY_LegoCallback(1)") DVY_LegoBrickOption;
+				menuItem -l "Bricks (Width x Length)                    ";
+				menuItem -l "Brick 1x1";		menuItem -l "Brick 1x2";
+				menuItem -l "Brick 1x3";		menuItem -l "Brick 1x4";
+				menuItem -l "Brick 1x6";		menuItem -l "Brick 1x8";
+				menuItem -l "Brick 1x10";
+				menuItem -l "Brick 2x2";		menuItem -l "Brick 2x3";
+				menuItem -l "Brick 2x4";		menuItem -l "Brick 2x6";
+				menuItem -l "Brick 2x8";		menuItem -l "Brick 2x10";
+				
+		separator -h 5 -style "none";
+			optionMenu -en 0 -width 205 -cc ("DVY_LegoCallback(1)") DVY_LegoSpBrickOption;
+				menuItem -l "Special Bricks (Width x Length)       ";
+				
+		separator -h 5 -style "none";
+			optionMenu -en 1 -width 205 -cc ("DVY_LegoCallback(2)") DVY_LegoPlateOption;
+				menuItem -l "Plates (Width x Length)                    ";
+				menuItem -l "Plate 1x1";		menuItem -l "Plate 1x2";
+				menuItem -l "Plate 1x3";		menuItem -l "Plate 1x4";
+				menuItem -l "Plate 1x6";		menuItem -l "Plate 1x8";
+				menuItem -l "Plate 1x10";
+				menuItem -l "Plate 2x2";		menuItem -l "Plate 2x3";
+				menuItem -l "Plate 2x4";		menuItem -l "Plate 2x6";	
+				menuItem -l "Plate 2x8";		menuItem -l "Plate 2x10";
+				menuItem -l "Plate 2x12";		menuItem -l "Plate 2x16";
+				menuItem -l "Plate 4x4";		menuItem -l "Plate 4x6";
+				menuItem -l "Plate 4x8";		menuItem -l "Plate 4x12";
+				menuItem -l "Plate 6x6";		menuItem -l "Plate 6x8";
+				menuItem -l "Plate 6x16";
+
+		separator -h 5 -style "none";
+			optionMenu -en 1 -width 205 -cc ("DVY_LegoCallback(3)") DVY_LegoFlatTileOption;
+				menuItem -l "Flat Tiles (Width x Length)                ";
+				menuItem -l "FlatTile 1x1";		menuItem -l "FlatTile 1x2";
+				menuItem -l "FlatTile 1x4";		menuItem -l "FlatTile 1x6";
+				menuItem -l "FlatTile 1x8";		menuItem -l "FlatTile 2x2";
+				
+		separator -h 5 -style "none";
+			optionMenu -en 1 -width 205 -cc ("DVY_LegoCallback(4)") DVY_LegoTileOption;
+				menuItem -l "Roof Tiles (Width x Length)              ";
+				menuItem -l "RidgeTile 2x1x45";	menuItem -l "RidgeTile 2x2x45";
+				menuItem -l "RidgeTile 2x4x45";
+				menuItem -l "RoofTile 2x1x45";	menuItem -l "RoofTile 2x2x45";
+				menuItem -l "RoofTile 2x3x45";	menuItem -l "RoofTile 2x4x45";
+				menuItem -l "RoofTile 3x1x25";	menuItem -l "RoofTile 3x2x25";
+				menuItem -l "RoofTile 3x3x25";	menuItem -l "RoofTile 3x4x25";
+		//		menuItem -l "RoofTile 6x6x25";
+				
+				
+		separator -h 5 -style "none";
+			optionMenu -en 1 -width 205 -cc ("DVY_LegoCallback(5)") DVY_LegoWinDoorOption;
+				menuItem -l "Window & Doors (Length x Height)   ";
+				menuItem -l "WindowFrame 4x3";
+				menuItem -l "ContainerFrame 4x3";
+				menuItem -l "DoorFrame 4x6";
+				
+				menuItem -l "DoorLf 3x3";		menuItem -l "DoorRt 3x3";
+				menuItem -l "DoorLf 4x5";		menuItem -l "DoorRt 4x5";
+				menuItem -l "DoorLf 3x4";		menuItem -l "DoorRt 3x4";
+				
+				menuItem -l "DoorKnobLf 3x4";	menuItem -l "DoorKnobRt 3x4";
+				menuItem -l "DoorKnobLf 4x5";	menuItem -l "DoorKnobRt 4x5";
+
+				menuItem -l "Door 4x5";
+//				menuItem -l "Door 4x6";
+//				menuItem -l "ShopDoorLf 4x5";	menuItem -l "ShopDoorRt 4x5";
+				
+//				menuItem -l "Shutter 2x3";		menuItem -l "SlidingGate 6x5";
+				
+				
+		separator -h 5 -style "none";
+			optionMenu -en 1 -width 205 -cc ("DVY_LegoCallback(6)") DVY_LegoWallOption;
+				menuItem -l "Wall Elements (Width x Length)        ";
+				menuItem -l "WallElement 2x3";
+				menuItem -l "WallElement 4x3";
+				menuItem -l "WindowWallElement 2x2";
+				menuItem -l "WindowWallElement 4x2";
+				
+		separator -h 5 -style "none";
+			optionMenu -en 0 -width 205 -cc ("DVY_LegoCallback(7)") DVY_LegoFenceOption;
+				menuItem -l "Fence & Ladders (Width x Length)    ";
+				
+		separator -h 5 -style "none";
+			optionMenu -en 0 -width 205 -cc ("DVY_LegoCallback(8)") DVY_LegoArchOption;
+				menuItem -l "Bow & Arch Bricks (Width x Length)  ";
+				
+		separator -h 5 -style "none";
+
+	setParent..;	
+	
+	columnLayout -adj 1 "LegoOptions1";
+	
+		separator -h 10 -style "none";
+			optionMenu -en 1 -width 205 -cc ("DVY_LegoCallback(9)") DVY_LegoTechnicOption;
+				menuItem -l "Technic Bricks (Width x Length)           ";
+				menuItem -l "TechnicBrick 1x1";
+				menuItem -l "TechnicBrick 1x2";
+				menuItem -l "TechnicBrick 1x6";
+				menuItem -l "TechnicBrick 1x14";
+				menuItem -l "Knob2Brick 1x1";
+				menuItem -l "Knob4Brick 1x1";
+				menuItem -l "Knob4Brick 1x2";
+				menuItem -l "Knob4Brick 1x4";
+	//			menuItem -l "XHoleBrick 1x2";
+				
+		separator -h 5 -style "none";
+			optionMenu -en 1 -width 205 -cc ("DVY_LegoCallback(10)") DVY_LegoTechAxleOption;
+				menuItem -l "Technic Axles etc (Width x Length)      ";
+				menuItem -l "GroovedCrossAxle 1x2";
+				menuItem -l "CrossAxle 1x4";
+				menuItem -l "CrossAxle 1x6";
+				menuItem -l "CrossAxle 1x8";
+				menuItem -l "CrossAxleExt 1x2";
+			
+		separator -h 25 -style "none";
+			$DVY_LegoImage[1] = `iconTextStaticLabel -w 120 -h 120 -st "iconOnly" -i1 "DVY_LegoBlank.xpm" LegoImage01` ;		
+		
+		setParent $StTabs[0];
+	setParent $StTab;
+	
+//////////////////////////////////////////////////////////////////////////////////
+//					Help and Info Tab.
+//////////////////////////////////////////////////////////////////////////////////	
+// Tab Layout for Help and Info Tab
+	
+	$StTabs[1] = `columnLayout -adj 1 "Help and Info "`;
+
+		string $HelpM = `frameLayout -height 430 -labelVisible 0 -label "Help & Info" -bs "in" "Help"`;
+	
+			columnLayout -adj 1 ;
+			
+				text -height 5 -label "";
+				separator -h 10 -style "double";
+				text -bgc 0.7 1 0.7  -height 20 -align "center" -label "Help Parts ";
+				
+				separator -h 10 -style "double";
+				text -height 5 -label "";
+		
+				scrollField -height 370 -bgc 1 1 0.85 -wordWrap true -editable false
+					-text "This script calls a GUI where relevant Info can be entered to generate dimensionally accurate Lego Parts. \n\nAfter construction the Parts are named according to Colour (if selected) Part type, and Number of Pitches of Lego and a sequential number. If there is a Part of exactly the same size and type the script will automatically number the Part with next available number. \nThe Names used in the naming are based on the naming convention used in the Option Menu list which are based on the standard Parts from the Lego Parts List. \n\nThe pitch of Lego parts are 8 mm in X and Z Axis and either 3.2 or 9.6 mm in Y Axis (Plate and Brick height) \n\nNote:- The Scale of the Parts will be adjusted to set correct size relevant to the correct size for the Users Maya Unit settings i.e mm, cm, m, in, ft, yd. \n\nIf there are any additional Lego Parts you would like added to the list please let me know at Davvey@ntlworld.com and I will try and add them to the scripts. \n\nSee www.factory.lego.com and check out \"Get a Brick\" link to locate required parts. Drop me an e-mail with part no. required. \n";				
+				text -height 5 -label "";
+	
+		setParent $StTabs[1];
+
+	setParent $MainPane;	
+
+// Build it.
+
+	frameLayout -cll 0 -vis 1 -lv 0 -label "Build" -la "center" -bs "out";
+	
+	columnLayout -enable 1 -adj 1 -cat "left" 1 -cal "center" ;
+		
+		separator -h 5 -style "none";
+
+		button -height 40 -bgc 0.7 0.7 1 -label "Build Lego Parts"
+			-command " print \"\\n Building Lego Parts as Required Davvey © 2006..\\n\"; DVY_BuildLego;"
+				Lego_Builder;	
+
+		separator -h 10 -style "none";
+
+	setParent..;		
+	
+	//Show the DVY_Lego UI Window.
+	showWindow DVY_LegoWindow;
+
+}
+ 
+// -------------------------------------------------------------------------------- //
+
+global proc DVY_LegoCallback (int $S)
+{
+	
+// ******************************************************************************** //	
+//	Global Variables
+	
+	global string $DVY_LegoImage[];
+
+// -------------------------------------------------------------------------------- //
+	
+// ******************************************************************************** //	
+	
+	string $LegoType, $buffer[];
+	
+	int $T = 0;
+	int $S1 = `optionMenu -q -sl DVY_LegoBrickOption`;
+	
+	if (($S == 1) && ($S1 > 1))
+		{	$T = `optionMenu -q -sl DVY_LegoBrickOption` - 2;
+			$LegoType = `optionMenu -q -v DVY_LegoBrickOption`;
+			$numTokens = tokenize( $LegoType, " ", $buffer);
+//			print $buffer;
+			
+			optionMenu -edit -sl 1 DVY_LegoPlateOption;
+			optionMenu -edit -sl 1 DVY_LegoFlatTileOption;
+			optionMenu -edit -sl 1 DVY_LegoTileOption;
+			optionMenu -edit -sl 1 DVY_LegoWinDoorOption;	
+			optionMenu -edit -sl 1 DVY_LegoWallOption;
+			optionMenu -edit -sl 1 DVY_LegoTechnicOption;
+			optionMenu -edit -sl 1 DVY_LegoTechAxleOption;			
+			
+			$DVY_LegoImage[1] = `iconTextStaticLabel -e -i1 ("DVY_" + $buffer[0] + "_" + $buffer[1] + ".xpm") LegoImage01`;
+		}
+		
+	int $S2 = `optionMenu -q -sl DVY_LegoPlateOption`;
+		
+	if (($S == 2) && ($S2 > 1))
+		{	$T = `optionMenu -q -sl DVY_LegoPlateOption` - 2;
+			$LegoType = `optionMenu -q -v DVY_LegoPlateOption`;
+			$numTokens = tokenize( $LegoType, " ", $buffer);
+//			print $buffer;
+			
+			optionMenu -edit -sl 1 DVY_LegoBrickOption;
+			optionMenu -edit -sl 1 DVY_LegoFlatTileOption;
+			optionMenu -edit -sl 1 DVY_LegoTileOption;
+			optionMenu -edit -sl 1 DVY_LegoWinDoorOption;	
+			optionMenu -edit -sl 1 DVY_LegoWallOption;
+			optionMenu -edit -sl 1 DVY_LegoTechnicOption;
+			optionMenu -edit -sl 1 DVY_LegoTechAxleOption;			
+
+			$DVY_LegoImage[1] = `iconTextStaticLabel -e -i1 ("DVY_" + $buffer[0] + "_" + $buffer[1] + ".xpm") LegoImage01`;
+		}
+		
+	int $S3 = `optionMenu -q -sl DVY_LegoFlatTileOption`;
+		
+	if (($S == 3) && ($S3 > 1))
+		{	$T = `optionMenu -q -sl DVY_LegoFlatTileOption` - 2;
+			$LegoType = `optionMenu -q -v DVY_LegoFlatTileOption`;
+			$numTokens = tokenize( $LegoType, " ", $buffer);
+//			print $buffer;
+
+			optionMenu -edit -sl 1 DVY_LegoBrickOption;
+			optionMenu -edit -sl 1 DVY_LegoPlateOption;
+			optionMenu -edit -sl 1 DVY_LegoTileOption;
+			optionMenu -edit -sl 1 DVY_LegoWinDoorOption;	
+			optionMenu -edit -sl 1 DVY_LegoWallOption;
+			optionMenu -edit -sl 1 DVY_LegoTechnicOption;
+			optionMenu -edit -sl 1 DVY_LegoTechAxleOption;			
+			
+			$DVY_LegoImage[1] = `iconTextStaticLabel -e -i1 ("DVY_" + $buffer[0] + "_" + $buffer[1] + ".xpm") LegoImage01`;
+		}
+	
+	int $S4 = `optionMenu -q -sl DVY_LegoTileOption`;
+
+	if (($S == 4) && ($S4 > 1))
+		{	$T = `optionMenu -q -sl DVY_LegoTileOption` - 2;
+			$LegoType = `optionMenu -q -v DVY_LegoTileOption`;
+			$numTokens = tokenize( $LegoType, " ", $buffer);
+//			print $buffer;
+
+			optionMenu -edit -sl 1 DVY_LegoBrickOption;
+			optionMenu -edit -sl 1 DVY_LegoPlateOption;
+			optionMenu -edit -sl 1 DVY_LegoFlatTileOption;
+			optionMenu -edit -sl 1 DVY_LegoWinDoorOption;	
+			optionMenu -edit -sl 1 DVY_LegoWallOption;
+			optionMenu -edit -sl 1 DVY_LegoTechnicOption;
+			optionMenu -edit -sl 1 DVY_LegoTechAxleOption;	
+			
+			
+			$DVY_LegoImage[1] = `iconTextStaticLabel -e -i1 ("DVY_" + $buffer[0] + "_" + $buffer[1] + ".xpm") LegoImage01`;
+			
+		}
+		
+		
+	int $S5 = `optionMenu -q -sl DVY_LegoWinDoorOption`;
+
+	if (($S == 5) && ($S5 > 1))
+		{	$T = `optionMenu -q -sl DVY_LegoWinDoorOption` - 2;
+			$LegoType = `optionMenu -q -v DVY_LegoWinDoorOption`;
+			$numTokens = tokenize( $LegoType, " ", $buffer);
+//			print $buffer;
+
+			optionMenu -edit -sl 1 DVY_LegoBrickOption;
+			optionMenu -edit -sl 1 DVY_LegoPlateOption;
+			optionMenu -edit -sl 1 DVY_LegoFlatTileOption;
+			optionMenu -edit -sl 1 DVY_LegoWallOption;
+			optionMenu -edit -sl 1 DVY_LegoTechnicOption;
+			optionMenu -edit -sl 1 DVY_LegoTechAxleOption;			
+			
+			$DVY_LegoImage[1] = `iconTextStaticLabel -e -i1 ("DVY_" + $buffer[0] + "_" + $buffer[1] + ".xpm") LegoImage01`;
+			
+		}
+		
+		
+	int $S6 = `optionMenu -q -sl DVY_LegoWallOption`;
+
+	if (($S == 6) && ($S6 > 1))
+		{	$T = `optionMenu -q -sl DVY_LegoWallOption` - 2;
+			$LegoType = `optionMenu -q -v DVY_LegoWallOption`;
+			$numTokens = tokenize( $LegoType, " ", $buffer);
+//			print $buffer;
+
+			optionMenu -edit -sl 1 DVY_LegoBrickOption;
+			optionMenu -edit -sl 1 DVY_LegoPlateOption;
+			optionMenu -edit -sl 1 DVY_LegoFlatTileOption;
+			optionMenu -edit -sl 1 DVY_LegoTechnicOption;
+			optionMenu -edit -sl 1 DVY_LegoTechAxleOption;			
+			
+			$DVY_LegoImage[1] = `iconTextStaticLabel -e -i1 ("DVY_" + $buffer[0] + "_" + $buffer[1] + ".xpm") LegoImage01`;
+			
+		}
+		
+		
+		
+		
+		
+		
+		
+		
+	int $S9 = `optionMenu -q -sl DVY_LegoTechnicOption`;
+
+	if (($S == 9) && ($S9 > 1))
+		{
+			$T = `optionMenu -q -sl DVY_LegoTechnicOption` - 2;
+			$LegoType = `optionMenu -q -v DVY_LegoTechnicOption`;
+			$numTokens = tokenize( $LegoType, " ", $buffer);
+//			print $buffer;
+
+			optionMenu -edit -sl 1 DVY_LegoBrickOption;
+			optionMenu -edit -sl 1 DVY_LegoPlateOption;
+			optionMenu -edit -sl 1 DVY_LegoFlatTileOption;
+			optionMenu -edit -sl 1 DVY_LegoTileOption;
+			optionMenu -edit -sl 1 DVY_LegoWinDoorOption;	
+			optionMenu -edit -sl 1 DVY_LegoWallOption;
+			optionMenu -edit -sl 1 DVY_LegoTechAxleOption;			
+			
+			$DVY_LegoImage[1] = `iconTextStaticLabel -e -i1 ("DVY_" + $buffer[0] + "_" + $buffer[1] + ".xpm") LegoImage01`;
+		}
+		
+	int $S10 = `optionMenu -q -sl DVY_LegoTechAxleOption`;
+
+	if (($S == 10) && ($S10 > 1))
+		{
+			$T = `optionMenu -q -sl DVY_LegoTechAxleOption` - 2;
+			$LegoType = `optionMenu -q -v DVY_LegoTechAxleOption`;
+			$numTokens = tokenize( $LegoType, " ", $buffer);
+//			print $buffer;
+
+			optionMenu -edit -sl 1 DVY_LegoBrickOption;
+			optionMenu -edit -sl 1 DVY_LegoPlateOption;
+			optionMenu -edit -sl 1 DVY_LegoFlatTileOption;
+			optionMenu -edit -sl 1 DVY_LegoTileOption;
+			optionMenu -edit -sl 1 DVY_LegoWinDoorOption;	
+			optionMenu -edit -sl 1 DVY_LegoWallOption;
+			optionMenu -edit -sl 1 DVY_LegoTechnicOption;
+			
+			$DVY_LegoImage[1] = `iconTextStaticLabel -e -i1 ("DVY_" + $buffer[0] + "_" + $buffer[1] + ".xpm") LegoImage01`;
+		}
+		
+		
+	if ((`optionMenu -q -sl DVY_LegoBrickOption` == 1) && (`optionMenu -q -sl DVY_LegoPlateOption` == 1)
+		&& (`optionMenu -q -sl DVY_LegoFlatTileOption` == 1) && (`optionMenu -q -sl DVY_LegoTileOption` == 1)
+		&& (`optionMenu -q -sl DVY_LegoTechnicOption` == 1) && (`optionMenu -q -sl DVY_LegoTechAxleOption` == 1)
+		&& (`optionMenu -q -sl DVY_LegoWinDoorOption` == 1) && (`optionMenu -q -sl DVY_LegoWallOption` == 1))
+		{
+			$DVY_LegoImage[1] = `iconTextStaticLabel -e -i1 ("DVY_LegoBlank.xpm") LegoImage01`;
+			
+		}
+
+}// End of DVY_WindowCallback Procedure
+
+global proc DVY_AboutLegoPartsWin()
+ {
+	global float $DVYTol;
+	if ((`window -ex DavveyAboutLegoPartsWindow`) == true) 
+		{
+			deleteUI DavveyAboutLegoPartsWindow;
+		}
+		if (`windowPref -ex DavveyAboutLegoPartsWindow`) windowPref -remove DavveyAboutLegoPartsWindow;
+		window -t " About:-  Davvey's Lego Parts Generator." -width 425 -height 300 -sizeable 0 DavveyAboutLegoPartsWindow;
+		//Build 'Edit' menu.
+	
+	string $menuBarLayout = `menuBarLayout -height 20`;
+		menu -label "File"; 
+ 			menuItem -label "Close" -command "deleteUI DavveyAboutLegoPartsWindow";		
+
+	setParent;
+	setParent;
+
+		columnLayout -adjustableColumn true -columnAttach "both" 5 -columnWidth 350; 
+	
+		text -height 2 -label " " ;	//Spacer
+		separator -height 10 -style "double" ;
+			text -bgc 0.5 0.5 1 -height 20 -align "center" -fn "boldLabelFont" -l "Davvey's Lego Parts Generator..";
+			text -bgc 0.5 0.5 1 -height 20 -align "center" -fn "boldLabelFont" -l "copyright (c) 2007 Dave Lake..";
+		separator -height 8 -style "double" ;
+		text -height 2 -label " " ;	//Spacer
+		
+	frameLayout -cl 0 -label "" -labelAlign "center" -borderStyle "etchedOut";
+		columnLayout -adjustableColumn true -columnAttach "both" 2 -columnWidth 250; 
+		
+		text -bgc 1 1 0.8 -height 5 -align "left" -l " ";
+		text -bgc 1 1 0.8 -height 20 -align "left" -fn "boldLabelFont" -l "  Special Thanks:- ";
+		text -bgc 1 1 0.8 -height 20 -align "left" -fn "plainLabelFont" -l "  Thanks to my wife Jan for her support and patience during the time";
+		text -bgc 1 1 0.8 -height 20 -align "left" -l "   its taken to learn Maya and how to write these scripts.";
+		text -bgc 1 1 0.8 -height 10 -align "left" -l " ";
+		text -bgc 1 1 0.8 -height 20 -align "left" -l "  Also dedicated to Jackie and Joanna (my expensive pride and joys!!)";
+		text -bgc 1 1 0.8 -height 20 -align "left" -l "  Finally these Collected works are dedicated to the memory of Darryl.";
+		text -bgc 1 1 0.8 -height 5 -align "left" -l " ";
+		setParent ..;	
+		setParent ..;	
+		text -align "center" -l "email :- Davvey@ntlworld.com";
+		text -align "center" -l "website :- www..............";
+	setParent ..; 
+
+	showWindow DavveyAboutLegoPartsWindow;
+	
+}// End of DVY_AboutLegoPartsWin Procedure

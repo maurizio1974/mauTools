@@ -1,0 +1,162 @@
+/*
+
+--------------- Grow Selections Within Region --------------
+
+Author: Buwaneka Saranga
+Email: bsaranga@gmail.com
+License Type: Freeware
+
+Please do not sell, this is a simple tool made by an artist for the artists.
+
+*/
+
+global proc growFacesWithinRegion1_3()
+{
+    ConvertSelectionToVertices;
+    ConvertSelectionToFaces;
+    global string $poly_a1[];
+    global int $compensated;
+    $compensated = 0; 
+    $poly_a1 = `ls -sl -fl`;
+    select -cl;
+}
+
+global proc storeIterVal()
+{
+    global int $gsrGrowIter;
+    $gsrGrowIter = `intField -q -v intergerField`;        
+}
+
+global proc growTimesFive()
+{
+    global string $poly_a1[];
+    global int $compensated;
+    global int $gsrGrowIter;
+    global int $gsrLastSel;
+    $selCount = size($poly_a1);
+    global int $selSize[];
+    if($selCount != 0)
+    {
+        if($compensated == 0)
+        {
+            for($i=0; $i<$gsrGrowIter; $i++)
+            {
+              PolySelectTraverse 1;
+              select -d $poly_a1;
+              $selSize[size($selSize)] = size(`ls -sl -fl`);
+              $selArrSize = size($selSize);
+              if($selArrSize>2)
+              {
+                  $nE = size($selSize) - 1;
+                  $mE = $nE - 1;
+                  $Vz = $selSize[$nE];
+                  $Vy = $selSize[$mE];
+                  //print ("nth val = " + $selSize[$nE] + "\n");
+                  //print ("mth val = " + $selSize[$mE] + "\n");
+                  if($Vz == $Vy)
+                  {
+                      PolySelectTraverse 1;
+                      $compensated = 1;            
+                  }    
+              }
+            }
+        }else{
+            clear($selSize);
+            inViewMessage -smg "Growth has already reached defined border." -fts 9 -ta 1 -pos botCenter -fof 80 -fst 500 -bkc 0x00991000 -fade;
+        }    
+    }else{
+        inViewMessage -smg "Select a closed border with edges." -fts 9 -ta 1 -pos botCenter -fof 80 -fst 500 -bkc 0x00991000 -fade;
+    }
+}
+
+global proc clear_gsr()
+{
+    global string $poly_a1[];
+    global string $storedSelections_gsr[];
+    select -cl;
+    clear $poly_a1;
+    clear $storedSelections_gsr;
+    inViewMessage -smg "All Cleared." -fts 9 -ta 1 -pos botCenter -fof 80 -fst 500 -bkc 0x00002555 -fade;
+}
+
+global proc saveSel_gsr()
+{
+    global string $storedSelections_gsr[];
+    global string $currentSelection_gsr[];
+    $currentSelection_gsr = `ls -sl`;
+    $sizecsgsr = size($currentSelection_gsr);
+    appendStringArray($storedSelections_gsr, $currentSelection_gsr, $sizecsgsr);
+    inViewMessage -smg "Selection Saved." -fts 9 -ta 1 -pos botCenter -fof 80 -fst 500 -bkc 0x00458525 -fade;
+}
+
+global proc loadSel_gsr()
+{
+    global string $storedSelections_gsr[];
+    select $storedSelections_gsr;
+    inViewMessage -smg "Selected." -fts 9 -ta 1 -pos botCenter -fof 80 -fst 500 -bkc 0x00458525 -fade;
+}
+
+//-----------------------------------------------------------
+
+if (`window -exists gsr`)
+{
+  deleteUI gsr;
+  windowPref -remove gsr;
+}
+  
+window -tlb 1 -mnb 0 -mxb 0 -s 0 -bgc 0.2 0.22 0.23 -w 100 -h 100 -t "Grow Faces Within Region 1.3" gsr;
+
+inViewMessage -smg "Make a closed border edge selection and click on 'Set Region'." -fts 9 -ta 1 -pos botCenter -fof 80 -fst 2000 -bkc 0x00458525 -fade;
+
+global int $gsrGrowIter;
+
+formLayout -numberOfDivisions 100 myIntForm;
+          intField -min 1 -max 8 -s 1 -v 2 -h 19 -cc "storeIterVal()" -ec "storeIterVal()" -dc "storeIterVal()" -rfc "storeIterVal()" intergerField; 
+          text -fn "boldLabelFont" -l "Growth Iterations: " -align "left" textfield1;
+     formLayout -edit
+          -af intergerField "top" 6
+          -af intergerField "left" 109
+          -af textfield1 "left" 10
+          -af textfield1 "top" 8 
+     myIntForm;
+     
+$gsrGrowIter = `intField -q -v intergerField`;
+
+formLayout -numberOfDivisions 100 myForm;
+          button -l "Set Region" -bgc 0.8 0.85 0.86 -w 65 -c "growFacesWithinRegion1_3()" setRegBtn;
+          button -l "Grow" -bgc 0.95 0.89 0.86 -w 65 -c "growTimesFive()" growBtn;
+          button -l "Clear" -bgc 0.8 0.85 0.95 -w 50 -c "clear_gsr()" clearBtn;
+          button -l "Save Sel" -w 85 -c "saveSel_gsr()" savBtn;
+          button -l "Load Sel" -w 85 -c "loadSel_gsr()" LdBtn;
+          button -l "Vtx" -bgc 0.8 0.8 0.78 -w 30 -c "ConvertSelectionToVertices" Vtx;
+          button -l "VtxPr" -bgc 0.8 0.8 0.7 -w 30 -c "ConvertSelectionToVertexPerimeter" VtxPr;
+          button -l "CEdg" -bgc 0.6 0.75 0.8 -w 30 -c "ConvertSelectionToContainedEdges" CEdge;          
+          button -l "UV" -bgc 0.45 0.75 0.66 -w 30 -c "ConvertSelectionToUVs" UV;
+          button -l "Fcs" -bgc 0.55 0.7 0.5 -w 30 -c "ConvertSelectionToFaces" Fcs;
+     formLayout -edit
+          -af setRegBtn "top" 33
+          -af growBtn "top" 33
+          -af clearBtn "top" 33
+          -af clearBtn "left" 150
+          -af growBtn "left" 80
+          -af setRegBtn "left" 10
+          -af savBtn "left" 10
+          -af savBtn "top" 70
+          -af LdBtn "left" 115
+          -af LdBtn "top" 70
+          -af LdBtn "right" 10
+          -af Vtx "top" 108
+          -af Vtx "left" 10          
+          -af VtxPr "top" 108
+          -af VtxPr "left" 50          
+          -af CEdge "top" 108
+          -af CEdge "left" 90
+          -af UV "top" 108
+          -af UV "left" 130
+          -af Fcs "top" 108
+          -af Fcs "left" 170
+          -af Fcs "bottom" 10
+     
+     myForm;
+        
+showWindow gsr;

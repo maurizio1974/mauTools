@@ -1,0 +1,160 @@
+{
+  "source": "~/Documents/maya/2024/prefs/userRGBColors2.mel",
+  "attr": {
+    "Boolean": {
+      "maya": "#D9B58D",
+      "styled": "#E2C6A7"
+    },
+    "TwoDIntegerVector": {
+      "maya": "#639999",
+      "styled": "#8EBBBB"
+    },
+    "ThreeDIntegerVector": {
+      "maya": "#636C99",
+      "styled": "#8E96BB"
+    },
+    "FourDIntegerVector": {
+      "maya": "#060640",
+      "styled": "#3333CC"
+    },
+    "Integer": {
+      "maya": "#538078",
+      "styled": "#7FB2A9"
+    },
+    "String": {
+      "maya": "#0A28C3",
+      "styled": "#586CD5"
+    },
+    "Quaternion": {
+      "maya": "#80E6E6",
+      "styled": "#A2E8E8"
+    },
+    "TwoDNumericVector": {
+      "maya": "#6C9963",
+      "styled": "#96BB8E"
+    },
+    "ThreeDNumericVector": {
+      "maya": "#468046",
+      "styled": "#75B475"
+    },
+    "FourDNumericVector": {
+      "maya": "#38664F",
+      "styled": "#66AB89"
+    },
+    "Numeric": {
+      "maya": "#7A996B",
+      "styled": "#A0BD91"
+    },
+    "Rotation": {
+      "maya": "#7ACCCC",
+      "styled": "#9DD9D9"
+    },
+    "Matrix": {
+      "maya": "#507D8C",
+      "styled": "#80A9B6"
+    },
+    "Color": {
+      "maya": "#E80000",
+      "styled": "#D96565"
+    },
+    "Curve": {
+      "maya": "#419BFF",
+      "styled": "#8FB7E3"
+    },
+    "Array": {
+      "maya": "#C7CFD2",
+      "styled": "#BFD2D9"
+    },
+    "InOutMesh": {
+      "maya": "#8A8C7E",
+      "styled": "#ADAEA4"
+    },
+    "MultiAmbiguous": {
+      "maya": "#000000",
+      "styled": "#8C8C8C"
+    },
+    "UnitConversion": {
+      "maya": "#9C87C5",
+      "styled": "#B5A6D4"
+    }
+  },
+  "node": {
+    "Animation": {
+      "maya": "#1B6783",
+      "styled": "#23637B"
+    },
+    "Geometry": {
+      "maya": "#666666",
+      "styled": "#575757"
+    },
+    "Deformer": {
+      "maya": "#126B6B",
+      "styled": "#196666"
+    },
+    "Shader": {
+      "maya": "#555555",
+      "styled": "#555555"
+    },
+    "Cache": {
+      "maya": "#3C6C23",
+      "styled": "#3E6728"
+    },
+    "Asset": {
+      "maya": "#555555",
+      "styled": "#555555"
+    },
+    "Dynamic": {
+      "maya": "#753928",
+      "styled": "#6F3C2E"
+    },
+    "Camera": {
+      "maya": "#444444",
+      "styled": "#444444"
+    },
+    "Joint": {
+      "maya": "#195746",
+      "styled": "#225E4D"
+    },
+    "Lighting": {
+      "maya": "#9B8540",
+      "styled": "#756738"
+    },
+    "Utility": {
+      "maya": "#4F3A78",
+      "styled": "#4E3D70"
+    },
+    "Time": {
+      "maya": "#A26A32",
+      "styled": "#7E5730"
+    },
+    "Other": {
+      "maya": "#2E4076",
+      "styled": "#334371"
+    }
+  },
+  "canvas": {
+    "Grid": {
+      "maya": "#1A1A1A"
+    },
+    "Background": {
+      "maya": "#2F2F2F"
+    },
+    "UnconnectedMasterPort": {
+      "maya": "#FFFFFF"
+    },
+    "ExternalNodeNameBackground": {
+      "maya": "#444444"
+    }
+  },
+  "sel": {
+    "lead": {
+      "maya": "#43FFA3",
+      "styled": "#43FFA3"
+    },
+    "active": {
+      "maya": "#FFFFFF",
+      "styled": "#FFFFFF",
+      "index": 16
+    }
+  }
+}

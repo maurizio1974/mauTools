@@ -1,0 +1,79 @@
+// OPENS A WINDOW THAT GIVES YOU INFO ON THE SCENE
+
+global proc mgSceneInfo()
+{
+        string $win, $all[], $fr, $mi, $pmi, $tx;
+        int $allint, $iter = 0 ;
+        if (!`window -ex $win`)
+        {
+                $win = `window -rtf 1 "Scene Info"`;
+                $fr =`formLayout -p $win`;
+        }
+        string $set[] = { "camera","locator","cluster","lattice","wire","joint","nucleus","nCloth","nParticle",
+                                     "nRigid","follicle","mesh","nurbsSurface","wrap","attributeTransfer","textureToArray",
+                                     "multiAttributeTransfer","point","group","scatter","shatter","instancer" } ;
+        for($each in $set)
+        {
+                $all = `ls -typ $each`;
+                $allint = size(`ls -typ $each`);
+                if($allint != 0)
+                {
+                        $tx = buildInfoUI($each, $allint, $all, $fr, $iter);
+                        $iter = $iter + 1 ;
+                        $mi = `popupMenu -p $tx`;
+                        for($e in $all)
+                        {
+                                $pmi = `menuItem -l $e -p $mi`;
+                                menuItem -e -c ("select (`menuItem -q -l \""+$pmi+"\"`)") $pmi;
+                        }
+                }
+        }
+        showWindow $win;
+        window -e -rtf 1 $win ;
+}
+
+global proc string buildInfoUI(string $type,int $allint,string $all[],string $fr,int $iter)
+{
+	string $children[], $last, $one2last,
+                    $cmd = "select (`ls -typ \""+$type+"\"`)",
+                    $tx = `textFieldButtonGrp -cal 1 "left" -ad3 1 -cw3 120 50 60 -l $type -tx $allint -bl "Select All" -bc $cmd `;
+	if($allint != 0 )
+	{
+	        if($iter == 0 )
+	        {
+	                formLayout -e -af $tx "left" 5 -af $tx "top" 0 -af $tx "right" 5 $fr;
+	        }else{
+                        $children = `formLayout -q -ca $fr`;
+                        $one2last = $children[size($children)-2];
+                        $last = $children[size($children)-1];
+                        formLayout -e -af $last "left" 5 -ac $last "top" 0 $one2last -af $last "right" 5 $fr;
+                }
+        }
+        return $tx;
+}
+
+// SAVE A NEW VERSION OF THE SCENE IF IT NAME ENDS WITH A NUMBER
+global proc mgSceneVersion()
+{
+	string $type, $newVersion;
+	string $currentScene = `file -q -loc`;
+	string $fileType = endString ($currentScene, 3);
+	string $name = `substring $currentScene 1 (size($currentScene)-3)`;
+	int $numbers = endString ($name, 2); 
+ 	$numbers = $numbers + 1 ;
+	if($fileType == ".mb")
+		$type = "mayaBinary";
+	else if($fileType == ".ma")
+		$type = "mayaAsci";
+	
+	string $number = $numbers;
+	if(size($number) == 0)
+	    $newVersion = (`substring $name 1 $name`)+"v01"+$fileType;
+	if(size($number) == 1)
+	    $newVersion = (`substring $name 1 (size($name)-2)`)+"0"+$number+$fileType;
+	if(size($number) > 1)
+	    $newVersion = (`substring $name 1 (size($name)-2)`)+$number+$fileType;
+	print ($newVersion+"\n");
+	//file -rn $newVersion;
+	//file -save -type $type;
+}

@@ -1,0 +1,41 @@
+//------------------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------//
+//	SCRIPT:	mgRenameBox.mel
+//	VERSION: 0.1
+//	AUTHOR:	Maurizio Giglioli
+//		    maurizio1974@gmail.com
+//	DATE:         06 17 2010
+//  Last Updated: 06 17 2010
+//
+//
+//	DESCRIPTION:	a pop up window with fileds to easily rename selected objects
+//
+//
+//	INSTRUCTIONS:	source the srcript
+//			        call the procedure mgRenameBox()
+//
+//------------------------------------------------------------------------------------------------------------//
+//------------------------------------------------------------------------------------------------------------//
+
+global proc mgRenameBox()
+{
+    //CREATE THE WINDOW
+    string $RNM_Win = `window -t "Rename Box"`;
+    
+    //MAKE THE WINDOW A COLUMN LAYOUT ADJUSTABLE
+    columnLayout -adj 1;
+    
+    //GET SELECTION
+    string $sel[] = `ls -sl`;
+    
+    //LOOP TROU THE SELECTION TO GET OUR INFO
+    //MAKE AS MANY NAME FIELDS IN THE UI
+    for ($each in $sel)
+        nameField -o $each;
+    
+    //BUTTON TO CLOSE OUR RENAMING TOOL
+    button -l "CLOSE" -c ("deleteUI -window \""+$RNM_Win+"\"");
+    
+    //SHOW UI
+    showWindow $RNM_Win;
+}

@@ -1,0 +1,72 @@
+
+// THE PICK TAB   
+
+global proc string flipperPickerTabUI(int $lato, string $win, string $presets[], string $currentPanel, string $panelType)
+{
+    
+    string $mauUtyFLpick    =   `formLayout -p $win`;
+    string $pickFR          =       `frameLayout`;
+    string $pickFL          =           `formLayout`;
+    string $bttnMGIPclr     =           `button`;
+    string $sepaSTA1        =           `separator`;
+    string $listAttrTSL     =           `textScrollList`;
+    string $sepaSTA2        =           `separator`;
+    string $bttnMGIPsel     =           `button`;
+    string $bttnMGIPaddSel  =           `button`;
+                                         setParent..;
+                                     setParent..; 
+                                 setParent..;
+
+     //----------------------------------------------------------------------------------------------------------------------------
+    // THIS WE START THE PICKER TAB
+    //----------------------------------------------------------------------------------------------------------------------------
+    frameLayout -e -w $lato -h 320 -cll false -ec ("window -e -w "+$lato+" \""+$win+"\"") -cc ("window -e -w "+$lato+" \""+$win+"\"") -l "Picker" $pickFR;
+        formLayout -e $pickFL;
+            button -e -l "Clear" -h 40 -c ("pickerItems (2, \""+$listAttrTSL+"\")") $bttnMGIPclr;
+            separator -e -st doubleDash $sepaSTA1;
+            textScrollList -e -ams 1 -h 160 -sc ("pickerItems (3, \""+$listAttrTSL+"\")") -fn obliqueLabelFont $listAttrTSL;
+            separator -e -st doubleDash $sepaSTA2;
+            button -e -l "New" -h 40 -c ("pickerItems (1, \""+$listAttrTSL+"\")") $bttnMGIPsel;
+            button -e -l "Add" -h 40 -c ("pickerItems (4, \""+$listAttrTSL+"\")") $bttnMGIPaddSel;
+
+            formLayout -e
+
+                -af $bttnMGIPclr "top" 10
+                -af $bttnMGIPclr "left" 10
+                -af $bttnMGIPclr "right" 10
+    
+                -af $sepaSTA1 "left" 10
+                -af $sepaSTA1 "right" 10
+                -ac $sepaSTA1 "top" 5 $bttnMGIPclr
+    
+                -af $listAttrTSL "left" 10
+                -af $listAttrTSL "right" 10
+                -ac $listAttrTSL "top" 5 $sepaSTA1
+                -ac $listAttrTSL "bottom" 5 $sepaSTA2
+    
+                -af $sepaSTA2 "left" 10
+                -af $sepaSTA2 "right" 10
+                -ac $sepaSTA2 "bottom" 5 $bttnMGIPsel
+    
+                -af $bttnMGIPsel "left" 10
+                -ap $bttnMGIPsel "right" 0 50
+                -af $bttnMGIPsel "bottom" 10
+    
+                -ac $bttnMGIPaddSel "left" 0 $bttnMGIPsel
+                -af $bttnMGIPaddSel "right" 10
+                -af $bttnMGIPaddSel "bottom" 10
+
+           $pickFL;
+
+    // ARRANGEMENT FOR THE PICKER TAB
+    formLayout -e
+
+        -af $pickFR "left" 5
+        -af $pickFR "right" 5
+        -af $pickFR "top" 5
+        -af $pickFR "bottom" 5
+
+    $mauUtyFLpick;
+    
+    return $mauUtyFLpick;
+}

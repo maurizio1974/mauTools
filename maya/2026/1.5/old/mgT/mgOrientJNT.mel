@@ -1,0 +1,152 @@
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// Orient Joint procedures
+// -------------------------------------------------------------------------------------------------------------------------------
+
+global proc mgOrientJNT(int $dir, string $ui[])
+{
+    
+    float $t[3], $r[3];
+    string $jnt[]=`ls -sl`;
+    string $tx1 = `python("'"+$ui[12]+"'.split('|')[-1]")`;
+    string $babbo =`textField -q -tx $tx1`;
+    string $option2 = `python("'"+$ui[6]+"'.split('|')[-1]")`;
+    string $menuItems=`optionMenu -q -v $option2`;
+    string $radio1 = `python("'"+$ui[7]+"'.split('|')[-1]")`;
+    int $orientType1=`radioButtonGrp -q -sl $radio1`;
+    string $radio2 = `python("'"+$ui[8]+"'.split('|')[-1]")`;
+    int $orientType2=`radioButtonGrp -q -sl $radio2`;
+    string $cb1 = `python("'"+$ui[10]+"'.split('|')[-1]")`;
+    int $oriChild=`checkBox -q -v $cb1`;
+    string $cb2 = `python("'"+$ui[11]+"'.split('|')[-1]")`;
+    int $scaleJoint=`checkBox -q -v $cb2`;
+    string $bt1 = `python("'"+$ui[13]+"'.split('|')[-1]")`;
+    string $cmd, $child, $scale, $orientJoint;
+    
+    string $option1 = `python("'"+$ui[9]+"'.split('|')[-1]")`;
+    string $seconX=`optionMenu -q -v $option1`;
+    $seconX = substituteAllString($seconX," ", "");
+
+    if($seconX=="-x")
+        $seconX="xdown";
+    if($seconX=="+x")
+        $seconX="xup";
+
+    if($seconX=="-y")
+        $seconX="ydown";
+    if($seconX=="+y")
+        $seconX="yup";
+
+    if($seconX=="-z")
+        $seconX="zdown";
+    if($seconX=="+z")
+        $seconX="zup";
+
+    // COMMANDS TO ACTIVATE THE RIGHT PART OF THE UI
+    if($dir==0)
+        textField -e -tx $jnt[0] $tx1;
+
+    // COMMANDS TO ACTIVATE THE RIGHT PART OF THE UI
+    if($dir==1)
+    {
+        if($menuItems=="          World Axis      ")
+        {
+            textField -e -en 0 $tx1;
+            radioButtonGrp -e -en 1 $radio1;
+            radioButtonGrp -e -en 1 $radio2;
+            optionMenu -e -en 1 $option1;
+            textField -e -tx "" $tx1;
+            button -e -en 0 $bt1;
+        }
+
+        if($menuItems=="        Object Rotation   ")
+        {
+            radioButtonGrp -e -en 0 $radio1;
+            radioButtonGrp -e -en 0 $radio2;
+            optionMenu -e -en 0 $option1;
+            textField -e -en 1 $tx1;
+            button -e -en 1 $bt1;
+        }
+    }
+
+    // COMMANDS TO ORIENT THE JOINTS TO A SELECTED TRANSFORM
+    if($dir==2)
+    {
+        if($menuItems=="        Object Rotation   ")
+        {
+            if($babbo!="" && `objExists $babbo`)
+            {
+                $t = `xform -q -ws -t $babbo `;
+                $r = `xform -q -ws -ro $babbo `;
+                string $fa[1] =`listRelatives -p $babbo`;
+                string $fa1[1] =`listRelatives -p $jnt[0]`;
+                
+                parent $jnt[0] $babbo;
+                if(size($fa) != 0)
+                    parent -w $babbo;
+                setAttr ($babbo+".t") 0 0 0 ;
+                setAttr ($babbo+".r") 0 0 0 ;
+                joint -e -oj xyz -secondaryAxisOrient yup -ch -zso $jnt[0];
+                setAttr ($babbo+".t") $t[0] $t[1] $t[2] ;
+                setAttr ($babbo+".r") $r[0] $r[1] $r[2] ;
+                if(size($fa1) == 0)
+                    parent -w $jnt[0];
+                else
+                    parent $jnt[0] $fa1[0]; 
+
+                //  RESET THE ORIENTATION OF THE LAST JOINT IN THE CHAIN
+                string $mm[] =`ls -dag -tail 1 -sl`;
+
+                if( `nodeType $mm[0]` == "joint" && $mm[0] !=$jnt[0] )
+                    setAttr ($mm[0]+".jointOrient") 0 0 0;
+
+                //delete $locOri[0] $locWorld[0] $origL[0];
+
+            }else{
+                warning "------->>> make sure you select the transform that you want your chain to be oriented like. <<<-------\n";
+            }
+        }
+
+        if($menuItems=="          World Axis      ")
+        {
+            if($orientType1!=0)
+            {
+                if($orientType1==1)
+                    $orientJoint="xyz";
+                if($orientType1==2)
+                    $orientJoint="yzx";
+                if($orientType1==3)
+                    $orientJoint="zxy";
+            }
+
+            if($orientType2!=0)
+            {
+                if($orientType2==1)
+                    $orientJoint="zyx";
+                if($orientType2==2)
+                    $orientJoint="yxz";
+                if($orientType2==3)
+                    $orientJoint="xzy";
+                if($orientType2==4)
+                    $orientJoint="none";
+            }
+
+            if($oriChild==1)
+                $child = "-ch";
+
+            if($scaleJoint==1)
+                $scale = "-zso";
+
+            select -cl;
+            select $jnt[0];
+            
+            if($seconX=="None")
+                $cmd = "joint -e -oj " + $orientJoint + " " + $scale +" "+ $child;
+            else
+                $cmd = "joint -e -oj " + $orientJoint + " " + $scale +" -sao "+ $seconX +" "+ $child;
+
+            eval($cmd);
+        }
+    }
+}
+

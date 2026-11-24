@@ -1,0 +1,71 @@
+
+global proc HPGplus()
+{
+    HypershadeWindow;
+    string $hyperShadePanels[] =`getPanel -scriptType "hyperShadePanel"`;
+
+    if(`layout -ex $hyperShadePanels[0]`)
+    {
+        // CLEAN THE UI
+        string $UI[] = {"addHYPG","remHYPG","grpHYPG","prevHYPG","nextHYPG","intHYPG","soupHYPG","dynHYPG","thumbnailUpdatesColumnButton"};
+        for($u in $UI)
+        {
+            if(`button -q -ex $u`)
+                deleteUI $u;
+        }
+        symbolButton -w 30 -h 25 -ann ("toggle thumbnail updates") -c "HPGupdateThumb()" -p "hyperShadeToolbarForm" "thumbnailUpdatesColumnButton";
+        button -c "graphNode()" -p "hyperShadeToolbarForm" -l "[ NG ]"-w 30 -h 25 "dynHYPG";
+        button -c ("hyperShadePanelGraphCommand(\""+$hyperShadePanels[0]+"\", \"addSelected\")") -p "hyperShadeToolbarForm" -l "[ + ]"-w 30 -h 25 "addHYPG";
+        button -c ("hyperShadePanelGraphCommand(\""+$hyperShadePanels[0]+"\", \"removeSelected\")") -p "hyperShadeToolbarForm" -l "[ - ]" -w 30 -h 25 "remHYPG";
+        button -c ("GoToPreviousView") -p "hyperShadeToolbarForm" -l "[ <- ]" -w 30 -h 25 "prevHYPG";
+        button -c ("GoToNextView") -p "hyperShadeToolbarForm" -l "[ -> ]" -w 30 -h 25 "nextHYPG";
+        button -c ("string $clsTemp[] = `cluster`;delete $clsTemp") -p "hyperShadeToolbarForm" -l "[ Int ]" -w 30 -h 25 "intHYPG";
+        HPGupdateThumb();
+    }
+    renderThumbnailUpdate false;
+}
+
+global proc HPGupdateThumb()
+{
+    // Add command to buttons
+    if (`renderThumbnailUpdate -q`== 1)
+    {
+        renderThumbnailUpdate false;
+        symbolButton -e -i "thumbnailUpdatesGreyed.png" "thumbnailUpdatesColumnButton";
+    }else{
+        renderThumbnailUpdate true;
+        symbolButton -e -i "thumbnailUpdates.png" "thumbnailUpdatesColumnButton";
+    }
+}
+global proc duplicateChain()
+{
+    string $sel[] = `ls -sl`;
+    string $shB[] = `listRelatives -s $sel[0]`;
+    string $cons[] = `listConnections -s 0 -d 1 $shB[size($shB)-1]`;
+    string $dup[] = `duplicate -un $shB[0] `;
+    connectAttr -f ($shB[size($shB)-1]+".worldMesh[0]") ($dup[size($dup)-1]+".inputGeometry");
+    string $sh[] = `listRelatives -s $dup[0]`;
+    parent -r -s $sh $sel[0];
+    delete $dup[0];
+}
+global proc graphNode()
+{
+    string $sel[] = `ls -sl`;
+    if( size($sel) != 0 )
+    {
+        for( $s in $sel )
+        {
+            string $conn[] = `listConnections -s 0 -d 1 -type "shadingEngine" ($s+".outColor")`;
+            if( size($conn) != 0 )
+            {
+                select -r -ne $conn;
+                hyperShadePanelGraphCommand("hyperShadePanel1", "showUpAndDownstream");
+                select -cl;
+                select -r $conn;
+                hyperShadePanelGraphCommand("hyperShadePanel1", "removeSelected");
+                hyperShadePanelGraphCommand("hyperShadePanel1", "rearrangeGraph");
+                hyperShadePanelMenuCommand("hyperShadePanel1", "frameAll");
+            }
+        }
+    }
+}

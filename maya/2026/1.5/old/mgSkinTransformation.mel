@@ -1,0 +1,115 @@
+proc prefixHiearchyCmd( string $group, string $prefix ){
+	string $currentNodes[] = `listRelatives -pa -ad $group`;
+	if ( `size $currentNodes`) {
+		for( $i=0; $i < size( $currentNodes ); $i++ ) {
+			if (size(`ls -type transform $currentNodes[$i]`) ) {
+				string $nodeName = `substitute ".*|" $currentNodes[$i] ""`;
+				catch(`rename $currentNodes[$i] ($prefix+$nodeName)`);
+			}
+		}
+	}
+}
+
+global proc mgSkinTransformation( string $blendShapeGeo,string $skinnedGeo,string $blendJointsGp,string $skinnedJointsGp	 )
+{
+	string $skinCluster[] = ls("-type", "skinCluster", `listHistory $skinnedGeo`);
+	if(!`size $skinCluster`)
+    {
+        error "Couldnt find the skin cluster on the geometry.";
+        //break;
+    }
+	string $blendShape[] = `blendShape -frontOfChain $blendShapeGeo $skinnedGeo`;
+	string $origJoints[]=`duplicate $skinnedJointsGp`;
+	prefixHiearchyCmd( $origJoints[0], "OrigJnt_");
+	string $bindJoints[]=`duplicate $skinnedJointsGp`;
+	prefixHiearchyCmd( $bindJoints[0], "BindJnt_");
+	prefixHiearchyCmd( $blendJointsGp, "TransJnt_");
+
+	string $children[] = `listRelatives -f -c -ad $bindJoints[0]`;
+	$children = sort($children);
+	string $child;
+	for($path in $children){
+		$child = `substitute ".*|" $path ""`;
+		string $orig = `substitute "^[a-zA-Z]+_" $child "OrigJnt_"`;
+		string $trns = `substitute "^[a-zA-Z]+_" $child "TransJnt_"`;
+		string $sknjnt = `substitute "^[a-zA-Z]+_" $child ""`;
+        
+        //print ($child+"   <---->   "+$child+"   <--->   "+$child+"\n");
+        //print ($orig+"   <---->   "+$trns+"   <--->   "+$sknjnt+"\n");
+        
+		if(`objExists $orig` && `objExists $trns` && `objExists $sknjnt` )
+        {
+			string $attrs[]={".t",".tx",".ty",".tz",".r",".rx",".ry",".rz"};
+			for($attr in $attrs){ 
+				setAttr -lock false ($child+$attr); 
+				setAttr -lock false ($sknjnt+$attr);
+			}
+			
+			// set up bound skeleton blending
+			float $torig[] = `getAttr ($sknjnt+".t")`;
+			setAttr ($blendShape[0]+".w[0]") 1 ;
+			delete `pointConstraint $trns $sknjnt`;
+			setDrivenKeyframe -cd ($blendShape[0]+".w[0]") -dv 1 ($sknjnt+".t");
+            
+            //print ("setDrivenKeyframe -cd "+($blendShape[0]+".w[0]")+"    <--->   "+$sknjnt+".t\n");
+            
+			setAttr ($blendShape[0]+".w[0]") 0 ;
+			setAttr ($sknjnt+".t") $torig[0] $torig[1] $torig[2];
+			setDrivenKeyframe -cd ($blendShape[0]+".w[0]") -dv 0 ($sknjnt+".t");
+
+			// set up bind-state position blending
+			string $const[] = `parentConstraint $trns $orig $child`;
+			string $reverse = `createNode reverse`;
+			connectAttr ($const[0]+".w0") ($reverse+".inputX") ;
+			connectAttr ($reverse+".outputX") ($const[0]+".w1");
+			connectAttr ($blendShape[0]+".w[0]") ($const[0]+".w0");
+
+		}
+	}
+
+	string $skinCon[] = `listConnections -s 1 -d 0 -c 1 -p 1 ($skinCluster[0]+".matrix")`;
+	int $i;
+	for($i=0; $i<size($skinCon); $i+=2 )
+    {
+		string $jt[] = `ls -o -type transform $skinCon[$i+1]`;print($jt[0]+"\n\n");
+		if( `size $jt` )
+        {
+			//string $null = `createNode transform -p $jt[0] -name ($jt[0]+"_child")`;print($null+"\n");
+			string $component = `substitute "^[^.]*\\." $skinCon[$i] ""`;print($component+"\n\n");
+			string $ind = `match  "\\[[0-9]+\\]$" $component`;print ($ind+"\n");
+			$ind = `substitute "^\\[" $ind ""`;print ($ind+"\n");
+			$ind = `substitute "\\]$" $ind ""`;print ($ind+"\n");
+			connectAttr ("BindJnt_"+$jt[0]+".worldInverseMatrix") ($skinCluster[0]+".bindPreMatrix["+$ind+"]");
+		} 
+	}
+
+}
+
+
+/*
+
+// code to run:
+
+createSkinTransformation human beast human_joints beast_joints ;
+
+setAttr "blendShape1.human" 1;
+setAttr HRR_scapJARt_1.jointOrientX -115.848 ;
+setDrivenKeyframe -cd blendShape1.human HRR_scapJARt_1.jointOrientX;
+setAttr "blendShape1.human" 0;
+setAttr HRR_scapJARt_1.jointOrientX 64.152;
+setDrivenKeyframe -cd blendShape1.human HRR_scapJARt_1.jointOrientX;
+
+select HRR_thmbFngJEndRt_1 HRR_indFngJEndRt_1 HRR_midFngJEndRt_1 HRR_rngFngJEndRt_1 HRR_pnkyFngJEndRt_1 HRR_thmbFngJEndLf_1 HRR_indFngJEndLf_1 HRR_midFngJEndLf_1 HRR_rngFngJEndLf_1 HRR_pnkyFngJEndLf_1 HRR_toeAJEndLf_1 HRR_toeBJEndLf_1 HRR_toeCJEndLf_1 HRR_toeDJEndLf_1 HRR_toeEJEndLf_1 HRR_toeAJEndRt_1 HRR_toeBJEndRt_1 HRR_toeCJEndRt_1 HRR_toeDJEndRt_1 HRR_toeEJEndRt_1 ;
+string $endJoints[] = `ls -sl`;
+for($joint in $endJoints){
+	setAttr "blendShape1.human" 0;
+	setDrivenKeyframe -cd blendShape1.human ($joint+".s") ;
+	setAttr "blendShape1.human" 1;
+	setAttr ($joint+".s") 0 0 0 ;
+	setDrivenKeyframe -cd blendShape1.human ($joint+".s");
+}
+
+hide human_joints beast_joints1 beast_joints2  ;
+delete wwBeastTopN_|wwMouthN_ human ;
+ 
+*/

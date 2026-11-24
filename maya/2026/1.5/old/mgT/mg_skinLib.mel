@@ -1,0 +1,449 @@
+// ---------------------------------------------------------------------------------------------------------------------
+// PROCEDURES FOR THE AVERAGE WEIGHT
+// ---------------------------------------------------------------------------------------------------------------------
+
+global proc averageSkinWeights(float $weightChangeTolerance, int $numIterations)
+{
+    string $currentSelection[] = `ls -sl`;
+    $weightChangeTolerance /= 100.0;
+    
+    int $foundSkin = 0;              
+    string $buff[];
+    tokenize($currentSelection[0],".",$buff);
+    string $sCluster = findRelatedSkinCluster($buff[0]);
+    
+    if ("" != $sCluster)
+    {
+        $foundSkin = 1;
+        string $cmd = ("skinCluster -e -sw "+$weightChangeTolerance+" -swi "+ $numIterations + " " +$sCluster);
+        eval($cmd);         
+        int $vertsToSmooth[];
+        $vertsToSmooth = `eval($cmd)`;
+        select -cl;
+        string $geomName = $buff[0];
+        for($vert in $vertsToSmooth)
+        {
+            string $vtxName = $geomName + ".vtx[";
+            $vtxName += $vert;
+            $vtxName += "]";
+            select -add $vtxName;
+        }                  
+    }                                                  
+    select $currentSelection;
+}
+
+global proc avgWeights(int $v1, int $v2, float $v3)
+{
+    global string $gMainProgressBar; 
+
+    int $x = 1;
+
+    string $points[] =`ls -fl -sl`;
+    if(size($points)>0)
+        progressBar -e -bp -ii true -st "Averaging Weights ..." -min 0 -max (size($points)) $gMainProgressBar;
+     
+    for($p in $points)
+    {
+        if(`progressBar -q -ic $gMainProgressBar`)
+            break;
+
+        if(`gmatch $p "*.vtx*"` || `gmatch $p "*.cv*"`)
+        {
+            select -cl;
+            select $p;
+            
+            if( $v3 != 1 )
+            {
+                for($x = 1 ; $x < $v3 ; $x++)
+                    PolySelectTraverse 1;
+            }
+            
+            averageSkinWeights $v1 $v2;
+            progressBar -e -s 1 $gMainProgressBar;
+        }else{
+            kill_avgW;
+            break;
+        }
+    }
+    
+    progressBar -e -ep $gMainProgressBar;
+    print "\n------------------------------------\n";
+    print ( "averageSkinWeights "+$v1+" "+$v2+"\n");
+    print "------------------------------------\n\n";
+    
+    select $points;
+}
+
+global proc kill_avgW()
+{
+    confirmDialog -m "makesure to select either one or more vertex only !";
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// COPY PASTE SKIN WEIGHTS FROM A SELECTION OF VERTEX TO ANOTHER
+// ---------------------------------------------------------------------------------------------------------------------
+
+//this procedure just stores on the memory the source vertex that you want to copy the weights from. nothing fancy. 
+global proc storeSelectedVtxWeight() 
+{
+    string $sel[]=`ls -sl -fl`;
+    putenv ("STOREDVTX",$sel[0]);
+    string $storedVtx=getenv("STOREDVTX");
+    print ("\nStored the weights of vtx :"+$storedVtx);
+}
+
+//this procedure gets the stored vertex number, and then loops through selected vertexes and does the weight pasting on them
+global proc pasteStoredVtxWeight() 
+{
+    string $storedVtx=getenv("STOREDVTX");
+    if ($storedVtx!="") 
+    {
+		print ("\nStoredVTX is "+$storedVtx);
+		string $sel[]=`ls -sl -fl`;
+		int $a;
+		for ($a=0;$a<size($sel);$a++) 
+        {
+			print ("\n\nCopying the weights of "+$storedVtx+" to "+$sel[$a]);
+			copyVertexWeight($storedVtx,$sel[$a]);
+        }
+    } else {
+        print ("\nNo stored VTX!\n\n");
+    }
+}
+
+
+//this is the main function, that actually copies the weight from $src to $dest
+global proc copyVertexWeight(string $src,string $dest) 
+{
+    string $oldSelection[]=`ls -sl`;
+    string $buf[];string $srcGeo;string $destGeo;
+    //int $mirr = `checkBox -q -v copyVtxCB`;
+    
+    //by tokenizing the "." we retrieve the objects name of the src and dest
+    int $a=`tokenize $src "." $buf`; if ($a>0) {$srcGeo=$buf[0];}
+    int $a1=`tokenize $dest "." $buf`; if ($a>0) {$destGeo=$buf[0];}
+
+    ///now we find the related skinClusters
+    string $srcSkin=findRelatedSkinCluster($srcGeo);
+    string $destSkin=findRelatedSkinCluster($destGeo);
+    print ("\nSource skinCluster:"+$srcSkin+", Destination skinCluster:"+$destSkin);
+
+    //now we get the src and dest influence names array
+    select ($srcGeo+".vtx[*]");
+    string $srcInfluenceNames[]=`skinPercent -q -t $srcSkin`;
+    select ($destGeo+".vtx[*]");
+    string $destInfluenceNames[]=`skinPercent -q -t $destSkin`;
+
+    ///now we loop for each of the destinfluence names, querying its value on the src and copying it.
+    string $cmdString="skinPercent -nrm 1 ";
+    string $inf;
+    //print "\nCopy operation: Source influences should be ";
+    //print $srcInfluenceNames;
+    for ($inf in $destInfluenceNames) 
+    {
+        //if ( $mirr == 0 )
+            //$inf = $inf;
+        //if ( $mirr == 1 )
+        //{
+            if( `gmatch $inf "L*"`)
+                $inf = `substitute "L_" $inf "R_"`;
+            if( `gmatch $inf "R*"`)
+                $inf = `substitute "R_" $inf "L_"`;
+        //}
+        
+        //print ("\nChecking the weight of "+$inf+" on source influences");
+        if (stringArrayContains($inf,$srcInfluenceNames)) 
+        {
+            //print ("---Source influence contains "+$inf);
+            float $srcWeight=`skinPercent -t $inf -q $srcSkin $src`;
+            $cmdString=($cmdString +" -transformValue "+$inf+" "+$srcWeight); 
+        }
+    } 
+
+    $cmdString=$cmdString+" "+$destSkin+" "+$dest;
+    print ("\nEvaluating :"+$cmdString+"...");
+    eval($cmdString);
+    print ("\nDone copying the weights from "+$src+" to "+$dest);
+    select $oldSelection;
+}
+
+
+global proc copySimilarVertexWeights(string $srcVtxs[],string $destGeometry) 
+{
+    select ($destGeometry+".vtx[*]");
+    string $destVtxs[]=`ls -sl -fl`;
+    for ($source in $srcVtxs) 
+    {
+        float $srcPos[]=`xform -q -ws -t $source`;
+        float $shortestDist=10;
+        string $destVtxToCopyTo;
+        for ($dest in $destVtxs) {
+        float $destPos[]=`xform -q -ws -t $dest`;
+        float $currentDist=mag(<<($destPos[0]-$srcPos[0]),($destPos[1]-$srcPos[1]),($destPos[2]-$srcPos[2])>>);
+        if ($currentDist<$shortestDist) 
+        {
+            $shortestDist=$currentDist;$destVtxToCopyTo=$dest;
+        }
+    }
+    print ("\nSource vertex "+$source+" matches destination "+$destVtxToCopyTo);
+    copyVertexWeight($source,$destVtxToCopyTo);
+    }
+}
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// PROCEDURE TO SKIN BETWEEN TWO JOINTS ONLY SOME VERTEXES
+// -------------------------------------------------------------------------------------------------------------------------------
+
+global proc skinBtwn (int $dir)
+{
+    string $sel[] = `ls -type joint -sl`;
+    if($dir == 0)
+    {
+        if( size($sel) > 0)
+            textField -e -tx $sel[0] jnt01TF;
+        if (size($sel) > 1)
+            textField -e -tx $sel[1] jnt02TF;
+    }
+
+    if($dir == 1)
+    {
+        if (size($sel) > 0)
+            textField -e -tx $sel[0] jnt02TF;
+    }
+
+    if( $dir == 2 )
+    {
+        waitCursor -state on;
+        string $verts[] = `ls -sl`;
+        $verts = `filterExpand -sm 31 -sm 28 -sm 36`;
+        string $skinCLS[] = `ls -et skinCluster`;
+        string $leftJNT = `textField -q -tx jnt01TF`;
+        string $rightJNT = `textField -q -tx jnt02TF`;
+        float $leftValue = `floatField -q -v jnt01FF`;
+        float $rightValue = `floatField -q -v jnt02FF`;
+        skinPercent -tv $leftJNT $leftValue -tv $rightJNT $rightValue $skinCLS[0] $verts;
+        waitCursor -state off;
+    }
+}
+
+// -------------------------------------------------------------------------------------------------------------------------------
+// PROCEDURE TO WORK ON BIND POSES
+// -------------------------------------------------------------------------------------------------------------------------------
+
+global proc mauBindPose(int $dir)
+{
+    int $cV = `checkBox -q -v bindPoseCB`;
+    int $all;
+
+    if ( $cV == 0 )
+    {
+        $all = 0;
+    }
+    if ( $cV == 1 )
+    {
+        $all = 1;
+    }
+
+    // NEW BIND POSE FOR SELECTED JOINTS
+    if( $dir == 0 && $all == 0 )
+    {
+        string $sel[] = `ls -sl`;
+        string $previousPoses[];
+        string $poseNode;
+
+        // ERROR CHECK SELECTION
+        if (`size($sel)` == 0 || `nodeType $sel[0]` != "joint")
+            error "Invalid type of selection!";
+
+        // GET OLD POSES
+        $previousPoses = `listConnections -type dagPose $sel[0]`;
+
+        // DELETE OLD POSES
+        if (`size($previousPoses)` != 0)
+        {
+            if (`getAttr ($previousPoses[0] + ".bindPose")` == 1)
+            {
+                delete $previousPoses[0];
+            }
+        }
+
+        // CREATE NEW POSE
+        $poseNode = `dagPose -save -global -name "bindPose" $sel[0]`;
+
+        // DEFINA NEW POSE AS BINDPOSE
+        setAttr ($poseNode + ".bindPose") 1;
+
+        // FEEDBACK
+        print ("New bindPose \"" + $poseNode + "\" created for "+$sel[0]+" .\n");
+    }
+
+    // NEW BINDPOSE FOR EVERY JOINT IN THE SCENE
+    if ( $dir == 0 && $all == 1 )
+    {
+        string $sk[]=`ls "skinCluster*"`;
+        string $jntBind[];
+        int $z = 0;
+        for($eS in $sk)
+        {
+            if(`nodeType $eS ` == "skinCluster" )
+            {
+                string $rel[] = `listConnections -s 1 -d 0 -t "joint" $eS `;
+                for( $eR in $rel )
+                {
+                    string $fJ[1] =`listRelatives -p $eR`;
+                    if ( `nodeType $fJ[0]` != "joint" )
+                    {
+                        select -cl;
+                        select $eR;
+                        $jntBind[$z] = $eR;
+                        $z++;
+                    }
+                }
+            }
+        }
+
+        for($eJb in $jntBind)
+        {
+            select -cl;
+            select $eJb;
+            checkBox -e -v 0 bindPoseCB;
+            mauBindPose 0;
+        }
+    }
+
+    // RESET THE BINDPOSE FOR THE SELECTED JOINTS
+    if ( $dir == 1 && $all == 0 )
+    {
+        string $jnt[] = `ls -sl`;
+        for ($eJ in $jnt)
+        {
+            if ( `nodeType $eJ ` == "joint" )
+            {
+                string $bpJ[] =`dagPose -q -bindPose $eJ`;
+                for( $eBPJ in $bpJ )
+                {
+                    dagPose -reset -n $eBPJ $eJ;
+                    print (" --- Resetting bind Pose "+$eBPJ+" for "+$eJ+". --- \n");
+                }
+            }
+        }
+        print "ALL DONE ! \n";
+    }
+
+    // RESET ALL THE BINDPOSED IN THE SCENE
+    if ( $dir == 1 && $all == 1 )
+    {
+        string $sk[]=`ls "skinCluster*"`;
+        for($eS in $sk)
+        {
+            if(`nodeType $eS ` == "skinCluster" )
+            {
+                string $rel[] = `listConnections -s 1 -d 0 -t "joint" $eS `;
+                for( $eR in $rel )
+                {
+                    string $bP[] =`dagPose -q -bindPose $eR`;
+                    for ($eBP in $bP)
+                    {
+                        //select -cl;select $eR;gotoBindPose();
+                        dagPose -reset -n $eBP $eR;
+                        print (" --- Resetting bind Pose "+$eBP+" for "+$eR+". --- \n");
+                    }
+                }
+            }
+        }
+        print "ALL DONE ! \n";
+    }
+
+}
+
+// **********************************************************  
+// Returns All Deformers On A Mesh  
+global proc string[] mgReturnMeshDeformers (string $mesh) 
+{
+    // List History 
+    string $history[] = `listHistory $mesh` ;  
+    
+    // Loop And Check If It's A Deformer  
+    string $deformers[], $types[];  
+    for($node in $history) 
+    {  
+        $types = `nodeType -inherited $node`;  
+        if(stringArrayContains("geometryFilter",$types)) 
+            stringArrayInsertAtIndex(size($deformers),$deformers,$node) ;  
+    }  
+    return $deformers ;  
+}
+
+// **********************************************************  
+// Returns SkinCluster On A Mesh  
+global proc string[] mgFindInf()
+{
+    string $sel[] = `ls -sl`;
+    string $skin = `findRelatedSkinCluster $sel[0]`;
+    string $jnt[] = `skinCluster -q -inf $skin`;
+    return $jnt;
+}
+
+
+// **********************************************************  
+// Select the vertex of he selected joint or influence Object
+
+global proc inflencedVTX(float $min, float $max)
+{
+    
+    global string $gMainProgressBar; 
+    
+    string $sel[] = `ls -sl`;
+    string $last[1] =`ls -tail 1 -sl`;
+    
+    string $skinClusters, $inf[], $tr[], $sh[];
+    float $pr[] ;
+    int $i = 0;
+    int $x = 0;
+    int $poly[1];
+        
+    select -cl;
+        
+    if( size($sel) != 0 )
+    {
+        $sh = `listRelatives -s $last[0] `;
+        if(`objectType $sh[0] ` == "mesh")
+        {
+            $skinClusters = `findRelatedSkinCluster $last[0] `;
+            $inf = `skinCluster -q -inf $skinClusters`;
+            $poly =`polyEvaluate -f $last[0] `;
+            
+            progressBar -e -bp -ii true -st "Getting vertex ..." -min 0 -max $poly[0] $gMainProgressBar;
+            
+            for($i=0; $i<$poly[0]; $i++)
+            {
+                $pr = `skinPercent -q $skinClusters -v ($last[0]+".vtx["+$i+"]") `;
+                $tr = `skinPercent -q -t $skinClusters ($last[0]+".vtx["+$i+"]") `;
+                $x = 0;
+                for($e in $pr)
+                {
+                    if (`gmatch $tr[$x] $sel[0]`)
+                    {
+                        if($e>=$min && $e <= $max)
+                            select -add ($last[0]+".vtx["+$i+"]");
+                    }
+                    $x = $x+1;
+                }
+                progressBar -e -s 1 $gMainProgressBar;
+            }
+        }else{
+            warning "Make sure the last selection is a mesh with a skinCluster on it.\n";
+        }
+    }
+    progressBar -e -ep $gMainProgressBar;
+}
+
+
+
+
+
+
+
+
+
+	

@@ -1,0 +1,229 @@
+// ---------------------------------------------------------------------------------------------------------------------
+// VARIOUS UTILITIES
+// Creator : Maurizio Giglioli
+// date    : 01/04/2011
+// usage   : source the script and call the desired function
+// ---------------------------------------------------------------------------------------------------------------------
+
+// RETURN CURRENT SELECTION
+global proc string mgSingleSel()
+{
+    string $sel[] = `ls -fl -sl`;
+    if(size($sel)==0)
+        warning "Please select something";
+    return $sel[0];
+}
+
+// RETURN AND INVERT THE CURRENT SELECTION
+global proc string[] selInverter()
+{
+    string $sel[] =`ls -fl -sl`, $all[], $buf[], $diff[], $flag;
+    if(size($sel) != 0 )
+    {
+        tokenize($sel[0],".[]",$buf);
+
+        if($buf[1] == "vtx")
+            $flag = "-vertex";
+        else if($buf[1] == "f")
+            $flag = "-face";
+        else if($buf[1] == "e")
+            $flag = "-edge";
+
+        int $pol[] = `polyEvaluate $flag $buf[0]`;
+        for($i=0;$i<$pol[0];$i++)
+            $all[$i] = ($buf[0]+"."+$buf[1]+"["+$i+"]");
+
+        $diff = stringArrayRemove($sel, $all);
+        select $diff;
+        return $diff;
+    }else{
+        confirmDialog -m "Please selecty a mesh Component";
+        return $diff;
+    }
+}
+
+// PRINT UTILITIES
+// ---------------------------------------------------------------------------------------------------------------------
+// print mel array of the current selection
+global proc string printMSel()
+{
+	string $sel[] =`ls -fl -sl`, $array, $arrays[];
+	if(size($sel) > 0)
+	{
+        $array = "\"" ;
+        for($each in $sel)
+        {
+            if($each != $sel[size($sel)-1])
+                $array += ($each+"\",\"") ;
+            else
+                $array += ($each+"\"") ;
+        }
+    }
+	print ($array+"\n");
+	return $array ;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// print Python array of the current selection
+global proc string printPSel()
+{
+	string $sel[] =`ls -sl` ;
+	print "['" ;
+	string $array = "['" ;
+	for($each in $sel)
+	{
+		if($each != $sel[size($sel)-1])
+		{
+			print ($each+"','") ;
+			$array += ($each+"','") ;
+		}else{
+			print ($each+"'") ;
+			$array += ($each+"'") ;
+		}
+	}
+	print "] ;\n" ;
+	$array += "] ;" ;
+	return $array ;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// DISTANCE UTILITY
+// ---------------------------------------------------------------------------------------------------------------------
+
+// FIND THE CLOSEST AND FARTHEST DISTANCE OF THE SELECTED OBJECT AND THE LAST ONE
+global proc string[] distanceTransform( int $dir )
+{
+    // SELECT THE CENTER OBJECT AS LAST
+    string $sel[] = `ls -typ "transform" -sl`;
+    string $last = $sel[size($sel)-1];
+    float $center[] = `xform -q -ws -rp $last` ;
+    float $current[], $dist = 0 ;
+    float $measure, $allMeasures[];
+    string $closest[2] ;
+    int $i = 0, $x = 0 ;
+
+    for($e in $sel)
+    {
+        if( $e != $last )
+        {
+            $current = `xform -q -ws -rp $e` ;
+            $dist = sqrt( pow(($center[0] - $current[0]), 2) +
+                          pow(($center[1] - $current[1]), 2) +
+                          pow(($center[2] - $current[2]), 2) );
+            $allMeasures[$i] = $dist ;
+            $i = $i + 1 ;
+        }
+    }
+    $measure = $allMeasures[0] ;
+    for($am in $allMeasures)
+    {
+        if ( $dir == 0 )
+        {
+            if ($am < $measure )
+            {
+                $measure = $am ;
+                $closest[1] = $am ;
+                $closest[0] = $sel[$x] ;
+            }
+            $x = $x + 1;
+        }
+        else if ( $dir == 1 )
+        {
+            if ($am > $measure )
+            {
+                $measure = $am ;
+                $closest[1] = $am ;
+                $closest[0] = $sel[$x] ;
+            }
+            $x = $x + 1;
+        }
+    }
+    return $closest ;
+}
+
+// FIND THE CLOSEST COMPONENT AND FARTHEST ONE DISTANCE OF THE SELECTED OBJECTS AND THE LAST ONE
+global proc string distanceComponent( int $dir )
+{
+    // SELECT THE CENTER OBJECT AS LAST
+    string $sel[] = `ls -typ "transform" -sl`;
+    string $last = $sel[size($sel)-1];
+    string $cpm, $result, $obj[];
+    if($dir == 0)
+        $obj = `distanceTransform 0` ;
+    else if($dir == 1)
+        $obj = `distanceTransform 1` ;
+    string $sh[1] = `listRelatives -s $obj[0]`;
+    int $i = 0, $vtx ;
+    int $vtxA[] = `polyEvaluate -v $obj[0]`;
+    float $pos[3] = `xform -q -ws -rp $obj[0]`;
+    for($i = 0; $i < $vtxA[0]; $i ++)
+    {
+        $cmp = `createNode closestPointOnMesh -n "tempCPM"`;
+        connectAttr ($sh[0]+".outMesh") ($cpm+".inMesh");
+        setAttr ($cpm+".inPosition") $pos[0] $pos[1] $pos[2] ;
+        $vtx = `getAttr ($cpm+".closestVertexIndex")`;
+        delete $cmp ;
+    }
+    $result = ($obj[0]+".vtx["+$vtx+"]") ;
+    select -cl;
+    select $sel;
+    return $result ;
+}
+
+// LIST ALL THE NAMESPACE IN THE SCENE AND RETURN THEM
+global proc string[] mg_listNS()
+{
+	string $ns[] =`ls "|*:*"`,
+	       $buf[], $clean[], $end[];
+	int $i = 0;
+	for($n in $ns)
+	{
+		tokenize($n,":",$buf);
+		if(size($buf)>1)
+		{
+			$clean[$i] = $buf[0];
+			$i = $i + 1 ;
+		}
+	}
+	$end = stringArrayRemoveDuplicates($clean);
+	return $end;
+}
+
+// FILE BROWSER PROCEDURE
+global proc string[] mgPath(int $action)
+{
+    string $path[], $buf[], $buf1[];
+    string $slash = "/";
+    string $proj[] = `workspace -q -lfw`;
+    if ($action == 1)
+    {
+        $path = `fileDialog2 -fm 1 -rf 1`;
+        $path[0] = $path[0];
+    }else if ($action == 3)
+    {
+        $path = `fileDialog2 -fm 3 -rf 1`;
+        $path[0] = $path[0]+$slash;
+    }
+    print $path[0];
+    return $path;
+}
+
+
+// GET READY TO MESH OUT
+global proc wrapIT()
+{
+        string $sel[] =`ls -sl`, $rr[], $name, $def[];
+        for($e in $sel)
+        {
+            $rr = `duplicate -rr`;
+            select -cl;
+            select $rr[0] $e;
+            $def = `deformer -type wrap $rr[0]`;
+            setAttr ($e+".v") 0;
+            setAttr ($def[0]+".exclusiveBind") 1;
+            setAttr ($def[0]+".autoWeightThreshold") 1;
+            $name = `substitute "_geo" $e "_OUT"`;
+            parent -w $rr[0];
+            rename $rr[0] $name;
+        }
+}

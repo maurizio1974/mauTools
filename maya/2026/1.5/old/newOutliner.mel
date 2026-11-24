@@ -1,0 +1,48 @@
+// --MAYA-----------------------------------------------------------
+//   Maurizio Giglioli April 13, 2005
+// -----------------------------------------------------------------
+//  Description:
+//
+//  Modifications:  // -----------------------------------------------------------------
+
+
+//--------------------------------------------------------------------------------------------------------------------------------
+// GLOBAL PROC TO CREATE A NEW OUTLINER
+//--------------------------------------------------------------------------------------------------------------------------------
+global proc newOutliner()
+{
+    string $cmd = ("window -t (\"New Outliner\") -wh 300 750 outliner" + floor(rand(10000)) );
+    eval($cmd);
+    frameLayout -labelVisible false;
+    string $panel = `outlinerPanel`;
+    string $outliner = `outlinerPanel -query -outlinerEditor $panel`;
+    outlinerEditor -edit
+    -mainListConnection "worldList"
+    -selectionConnection "modelList"
+    -showShapes false
+    -showAttributes false
+    -showConnected false
+    -showAnimCurvesOnly false
+    -autoExpand false
+    -showDagOnly true
+    -ignoreDagHierarchy false
+    -expandConnections false
+    -showCompounds true
+    -showNumericAttrsOnly false
+    -highlightActive true
+    -autoSelectNewObjects false
+    -doNotSelectNewObjects false
+    -transmitFilters false
+    -showSetMembers true
+    -showNamespace 1
+    -setFilter defaultSetFilter
+    $outliner;      showWindow;
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------
+// GLOBAL DO
+//--------------------------------------------------------------------------------------------------------------------------------
+global proc do_newOutliner()
+{
+    newOutliner();
+}

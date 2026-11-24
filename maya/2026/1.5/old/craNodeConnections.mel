@@ -1,0 +1,615 @@
+/*
+'Node Connections' MEL script
+
+Author: Carlos Rico Adega - carlos.rico.3d@gmail.com
+First Release Date: November 2, 2014
+
+Copyright (c) 2014 Carlos Rico Adega
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+
+SCRIPT NAME:
+	craNodeConnections.mel
+
+	Main procedure:
+	    craNodeConnections;
+
+DESCRIPTION:
+		List node's source and destination connections
+		
+LAUNCH SCRIPT:
+       craNodeConnections;
+
+CHANGE LOG:
+
+        Version: 1.1.0
+        Date: November 8, 2014
+                - checkBox states are now stored in an optionVar       
+                - Small UI changes
+        
+        Version: 1.0.0
+        Date: November 5, 2014
+                - First release
+*/
+
+global proc craNodeConnections()
+{
+        if (`window -exists craNodeConnectionsWin`)
+                deleteUI craNodeConnectionsWin;
+        
+        if(!`optionVar -exists craNodeConnectionsCBStatesOV`)
+        {
+                int $craNodeConnectionsCBStates[] = {0, 1, 0, 0, 1, 0};
+                for($state in $craNodeConnectionsCBStates)
+                        optionVar -iva craNodeConnectionsCBStatesOV $state;
+        }
+        
+        int $craNodeConnectionsCBStates[] = `optionVar -q craNodeConnectionsCBStatesOV`;
+        
+        window -t " Node Connections" -tlb 0 -s 1 craNodeConnectionsWin;
+        frameLayout -lv 0 -mw 2 -mh 2 -bs "in" ;
+        frameLayout -lv 0 -mw 5 -mh 5 -bs "in" craNodeConnectionsMainFL;
+        text -manage 0 -l "" craNodeConnectionsNodeRealNameTF;
+        columnLayout -adj 1 -vis 1;
+                frameLayout -lv 0 -mw 2 -mh 2 -bs "out";
+                        rowLayout -nc 3 -adj 1;
+                                frameLayout -lv 0 -mw 2 -mh 2 -bs "in";
+                                        rowLayout -nc 5 -adj 2;
+                                                text -l "<font color=grey>&nbsp;Name</font>";
+                                                text -w 150 -al "left" -l "" craNodeConnectionsNodeNameTF;
+                                                text -w 1 -l " ";
+                                                nodeIconButton -h 20 -style "iconOnly" -l ("<font color=indianred>node</font>") -ann "select node" -i "redSelect.png" -c "catchQuiet(select(\"-r\", \"-noExpand\",`text -q -l craNodeConnectionsNodeRealNameTF`))" craSelectNodeINB;
+                                                button -h 20 -l "shape" -ann "select shape node" -c "catchQuiet(select(\"-r\", \"-noExpand\",`text -q -l craNodeConnectionsNodeRealNameTF`));select -r `listRelatives -f -s -ni`";
+                                        setParent ..;
+                                setParent ..;
+                                
+                                text -w 1 -l "";
+                                
+                                frameLayout -lv 0 -mw 2 -mh 2 -bs "in";
+                                        rowLayout -nc 4 -adj 3;
+                                                text -l "<font color=grey>&nbsp;&nbsp;Type&nbsp;</font>";
+                                                nodeIconButton -w 24 -h 22 -i "invisibleCursor.png" craNodeConnectionsNodeTypeITB;
+                                                text -al "left" -w 150 -l "" craNodeConnectionsNodeTypeTF;
+                                        setParent ..;
+                                setParent ..;
+                        setParent ..;
+                setParent ..;
+        setParent ..;
+
+        frameLayout -lv 0 -mw 2 -mh 2 -bs "out" -vis 1 craNodeConnectionsPaneLayoutFL;
+                paneLayout -cn "horizontal2" craNodeConnectionsPaneLayout;
+                        frameLayout -bv 0 -lv 0 -mw 3 -mh 2 -bs "in";
+                                rowLayout -nc 9 -adj 5;
+                                        image -w 20 -h 20 -i "hsDownStreamCon.png";
+                                        text -w 65 -l "<font color=darkseagreen>OUTPUTS&#x25BA;</font>" craOutConnectionsTXT;
+                                        optionMenu -cc "craNodeConnectionsInfoSelChange" -w 157 craNodeConnectionsFilterOutOM;
+                                                menuItem -l "all output attributes" -p craNodeConnectionsFilterOutOM;
+                                        setParent -m ..;
+                                        nodeIconButton -ann "clear output filter" -w 20 -h 20 -i "muted.png" -c "optionMenu -e -v \"all output attributes\" craNodeConnectionsFilterOutOM;craNodeConnectionsInfoSelChange";
+                                        text -l "";
+                                        checkBox -v $craNodeConnectionsCBStates[0] -l "attribute types" -ann "show attribute types" 
+                                                -cc "craNodeConnectionsInfoSelChange;craNodeConnectionsUpdateCBStates"
+                                                craOutConnectionsAttrTypesCB;
+                                        checkBox -v $craNodeConnectionsCBStates[1] -l "no conversions" -ann "skip unit conversion nodes" 
+                                                -cc "craNodeConnectionsInfoSelChange;craNodeConnectionsUpdateCBStates"
+                                                craOutConnectionsSCNCB;
+                                        checkBox -v $craNodeConnectionsCBStates[2] -l "swap sides"
+                                                -cc "craFillNodeConnections \"Out\" 0 1 #1;craNodeConnectionsUpdateCBStates"
+                                                craSwapOutConnectionsCB;
+                                        nodeIconButton -ann "maximize output connections" -w 16 -h 20 -i "arrowDown.png" -c "craNodeConnectionsPanelSize 1";
+                                setParent ..;
+                                scrollField -ed 0 -ann "Right-Click to load node from selected text" craOutConnectionsSF;
+                                popupMenu -pmc "select -r -noExpand `scrollField -q -sl craOutConnectionsSF`";
+                                setParent -m ..;
+                        setParent ..;
+                        
+                        frameLayout -bv 0 -lv 0 -mw 3 -mh 2 -bs "in";
+                                rowLayout -nc 9 -adj 5;
+                                        image -i "hsUpStreamCon.png";
+                                        text -w 65 -l "<font color=Khaki>INPUTS&#x25C4;</font>" craInConnectionsTXT;
+                                        optionMenu -cc "craNodeConnectionsInfoSelChange" -w 157 craNodeConnectionsFilterInOM;
+                                        menuItem -l "all input attributes" -p craNodeConnectionsFilterInOM;
+                                        setParent -m ..;
+                                        nodeIconButton -ann "clear input filter" -w 20 -h 20 -i "muted.png" -c "optionMenu -e -v \"all input attributes\" craNodeConnectionsFilterInOM;craNodeConnectionsInfoSelChange";
+                                        text -l "";
+                                        checkBox -v $craNodeConnectionsCBStates[3] -l "attribute types" -ann "show attribute types" 
+                                                -cc "craNodeConnectionsInfoSelChange;craNodeConnectionsUpdateCBStates"
+                                                craInConnectionsAttrTypesCB;
+                                        checkBox -v $craNodeConnectionsCBStates[4] -l "no conversions" -ann "skip unit conversion nodes"
+                                                -cc "craNodeConnectionsInfoSelChange;craNodeConnectionsUpdateCBStates"
+                                                craInConnectionsSCNCB;
+                                        checkBox -v $craNodeConnectionsCBStates[5] -l "swap sides"
+                                                -cc "craFillNodeConnections \"In\" 1 0 #1;craNodeConnectionsUpdateCBStates"
+                                                craSwapInConnectionsCB;
+                                        nodeIconButton -ann "maximize input connections" -w 16 -h 20 -i "arrowUp.png" -c "craNodeConnectionsPanelSize 2";
+                                setParent ..;
+                                scrollField -ed 0 -ann "Right-Click to load node from selected text" craInConnectionsSF;
+                                popupMenu -pmc "select -r -noExpand `scrollField -q -sl craInConnectionsSF`";
+                                setParent -m ..;
+                        setParent ..;
+                setParent ..;
+        setParent ..;
+        columnLayout -adj 1;
+        frameLayout -mw 3 -mh 3 -bs "out" -lv 0 craWeightAmountFL;
+        frameLayout -mw 3 -mh 3 -bs "in" -lv 0 craWeightAmountFL;
+        rowLayout -nc 7 -adj 4 -vis 1;
+                button -h 20 -w 160 -l "Hypergraph" -c "HypergraphDGWindow";
+                button -h 20 -w 160 -l "Hypershade" -c "HypershadeWindow;evalDeferred(\"hyperShadePanelGraphCommand(\\\"hyperShadePanel1\\\", \\\"showUpAndDownstream\\\")\");";
+                if(`getApplicationVersionAsFloat` > 2012)
+                        button -h 20 -w 160 -l "Node Editor" -c "NodeEditorWindow;evalDeferred(\"NodeEditorGraphUpDownstream\")";
+                else
+                        text -l "";
+                text -l "";
+                nodeIconButton -h 20 -w 40 -i "defaultTwoSideBySideLayout.png" -ann "Change UI Layout to Side by Side" -c "craNodeConnectionsLayout" craNodeConnectionsChangeLayoutITBTN;
+                text -l "";
+                nodeIconButton -h 20 -w 20 -i "pickOtherObj.png" -ann "About" -c "craNodeConnectionsAboutScript" craConnectionsAboutNIB;
+        setParent ..;
+        setParent ..;
+
+        craNodeConnectionsInfoSelChange;
+        
+        setFocus "craOutConnectionsTXT";
+        showWindow craNodeConnectionsWin;
+
+        scriptJob -e "SelectionChanged" "craNodeConnectionsInfoSelChange" -p "craNodeConnectionsWin";
+}
+
+global proc craNodeConnectionsInfoSelChange()
+{
+        string $mySel[] = `ls -sl`;
+        
+        if(size($mySel))
+        {
+                string $craNodeType = `nodeType $mySel[0]`;
+                text -e -l ("<b><font size=4 color=indianred>&nbsp;" + $mySel[0] + "&nbsp;&nbsp;</font></b>") -ann $mySel[0] craNodeConnectionsNodeNameTF;
+                text -e -l $mySel[0] -ann $mySel[0] craNodeConnectionsNodeRealNameTF;
+                text -e -l ("<b><font size=4 color=chocolate>&nbsp;" + `nodeType $mySel[0]` + "</font></b>") -ann `nodeType $mySel[0]` craNodeConnectionsNodeTypeTF;
+                nodeIconButton -e -i "out_default.png" craNodeConnectionsNodeTypeITB;
+                nodeIconButton -e 
+                        -i ("out_" + $craNodeType + ".xpm") 
+                        -ann ("Click for help on \"" + $craNodeType + "\" node")
+                        -c ("showHelp -docs \"Nodes/" + $craNodeType + ".html\"")
+                        craNodeConnectionsNodeTypeITB;
+                        
+                window -e -title ("Node Connections - " + $mySel[0]) craNodeConnectionsWin;
+        }
+        
+        craFillNodeConnections "Out" 0 1 `checkBox -q -v craSwapOutConnectionsCB`;
+        craFillNodeConnections "In" 1 0 `checkBox -q -v craSwapInConnectionsCB`;
+}
+
+global proc craNodeConnectionsUpdateCBStates()
+{
+        int $craNodeConnectionsCBStates[] = {int(`checkBox -q -v craOutConnectionsAttrTypesCB`), 
+                                                 int(`checkBox -q -v craOutConnectionsSCNCB`),
+                                                 int(`checkBox -q -v craSwapOutConnectionsCB`),
+                                                 int(`checkBox -q -v craInConnectionsAttrTypesCB`),
+                                                 int(`checkBox -q -v craInConnectionsSCNCB`),
+                                                 int(`checkBox -q -v craSwapInConnectionsCB`)};
+        optionVar -rm craNodeConnectionsCBStatesOV;
+        for($state in $craNodeConnectionsCBStates)
+                optionVar -iva craNodeConnectionsCBStatesOV $state;
+}
+
+global proc craFillNodeConnections(string $plugs, int $source, int $destination, int $swap)
+{
+        string $nodes[];
+        string $craNodeConnections[];
+        
+        if(size(`ls -sl`))
+                $nodes = `ls -sl`;
+        else
+                if(size(`text -q -l craNodeConnectionsNodeRealNameTF`))
+                        $nodes[0] = `text -q -l craNodeConnectionsNodeRealNameTF`;
+                
+        string $craCurrentAttribute = `optionMenu -q -v ("craNodeConnectionsFilter" + $plugs + "OM")`;
+        
+        if ($plugs == "Out")
+        {
+                if(`checkBox -q -v craSwapOutConnectionsCB`)
+                        text -e -l "<font color=darkseagreen>&#x25C4;OUTPUTS</font>" craOutConnectionsTXT;
+                else
+                        text -e -l "<font color=darkseagreen>OUTPUTS&#x25BA;</font>" craOutConnectionsTXT;
+                
+                string $attributes[] = `optionMenu -q -ils craNodeConnectionsFilterOutOM`;
+                
+                if ( size($attributes) )
+                        for ( $attribute in $attributes)
+                                deleteUI $attribute;
+                
+                menuItem -l "all output attributes" -p craNodeConnectionsFilterOutOM;
+        }
+        else
+        {
+                if(`checkBox -q -v craSwapInConnectionsCB`)
+                        text -e -l "<font color=Khaki>&#x25BA;INPUTS</font>" craInConnectionsTXT;
+                else
+                        text -e -l "<font color=Khaki>INPUTS&#x25C4;</font>" craInConnectionsTXT;
+                
+                string $attributes[] = `optionMenu -q -ils craNodeConnectionsFilterInOM`;
+                
+                if ( size($attributes) )
+                        for ( $attribute in $attributes)
+                                deleteUI $attribute;
+                
+                menuItem -l "all input attributes" -p craNodeConnectionsFilterInOM;
+        }
+        
+        if(!`objExists $nodes[0]`)
+        {
+                clear($nodes);
+                scrollField -e -clear craInConnectionsSF;
+                scrollField -e -clear craOutConnectionsSF;
+                text -e -l "" craNodeConnectionsNodeNameTF;
+                text -e -l "" craNodeConnectionsNodeRealNameTF;
+                text -e -l "" craNodeConnectionsNodeTypeTF;
+                nodeIconButton -e -i "invisibleCursor.png" craNodeConnectionsNodeTypeITB;
+        }
+        
+        if(size($nodes))
+        {
+                int $craNodeConnectionsSCN = checkBox("-q", "-v", ("cra" + $plugs + "ConnectionsSCNCB"));
+                string $filter = $craCurrentAttribute;
+                if(catchQuiet(listAttr ($nodes[0] + "." + $filter)))
+                        $filter = "";
+                else
+                        $filter = ("." + $filter);
+                
+                $craNodeConnections = `listConnections -p 1 -s $source -d $destination -c 1 -scn $craNodeConnectionsSCN ($nodes[0] + $filter)`;
+                        
+                if(size($craNodeConnections))
+                {
+                        string $craNodeConnectionsTextArray[];
+                        string $craNodeConnectionsText;
+                        int $craNodeConnectionsSize = size($craNodeConnections);
+                        string $craOMmenuItems[];
+                        
+                        for( $crai=0; $crai<$craNodeConnectionsSize;$crai+=2 )
+                        {
+                                string $craConnectionAttrType = `getAttr -type $craNodeConnections[$crai]`;
+                                string $craConnectionColor = "Gold";
+                                switch ($craConnectionAttrType)
+
+                                {
+                                        case "message":
+                                                $craConnectionColor = "white";
+                                                break;
+                                                
+                                        case "newParticles":
+                                                $craConnectionColor = "Fuchsia";
+                                                break;
+                                                
+                                        case "Nobject":
+                                                $craConnectionColor = "Fuchsia";
+                                                break;
+                                        
+                                        case "Nid":
+                                                $craConnectionColor = "Fuchsia";
+                                                break;
+                                                
+                                        case "bool":
+                                                $craConnectionColor = "#057cf3";
+                                                break;
+                                                
+                                        case "doubleArray":
+                                                $craConnectionColor = "Fuchsia";
+                                                break;
+                                                
+                                        case "doubleLinear":
+                                                $craConnectionColor = "#057cf3";
+                                                break;
+                                                
+                                        case "nurbsSurface":
+                                                $craConnectionColor = "Fuchsia";
+                                                break;
+                                        
+                                        case "nurbsTrimface":
+                                                $craConnectionColor = "Fuchsia";
+                                                break;
+                                                
+                                        case "nurbsCurve":
+                                                $craConnectionColor = "Fuchsia";
+                                                break;
+                                        
+                                        case "double":
+                                                $craConnectionColor = "#057cf3";
+                                                break;
+                                        
+                                        case "double2":
+                                                $craConnectionColor = "cyan";
+                                                break;
+                                                
+                                        case "double3":
+                                                $craConnectionColor = "LimeGreen";
+                                                break;
+                                                
+                                        case "mesh":
+                                                $craConnectionColor = "Fuchsia";
+                                                break;
+                                                
+                                        case "pointArray":
+                                                $craConnectionColor = "Fuchsia";
+                                                break;
+                                        
+                                        case "Int32Array":
+                                                $craConnectionColor = "Fuchsia";
+                                                break;
+                                                
+                                        case "vectorArray":
+                                                $craConnectionColor = "Fuchsia";
+                                                break;
+                                        
+                                        case "TdataCompound":
+                                                $craConnectionColor = "Fuchsia";
+                                                break;
+                                         
+                                        case "componentList":
+                                                $craConnectionColor = "Fuchsia";
+                                                break;    
+                                                
+                                        case "string":
+                                                $craConnectionColor = "Fuchsia";
+                                                break;
+                                        
+                                        case "stringArray":
+                                                $craConnectionColor = "Fuchsia";
+                                                break;
+                                        
+                                        case "floatArray":
+                                                $craConnectionColor = "Fuchsia";
+                                                break;
+                                                
+                                        case "lattice":
+                                                $craConnectionColor = "Fuchsia";
+                                                break;
+                                                
+                                        case "matrix":
+                                                $craConnectionColor = "#057cf3";
+                                                break;
+                                                
+                                        case "float":
+                                                $craConnectionColor = "#057cf3";
+                                                break;
+                                         
+                                        case "float2":
+                                                $craConnectionColor = "cyan";
+                                                break;
+                                                
+                                        case "float3":
+                                                $craConnectionColor = "LimeGreen";
+                                                break;
+                                        
+                                        case "enum":
+                                                $craConnectionColor = "#057cf3";
+                                                break;
+                                                
+                                        case "long":
+                                                $craConnectionColor = "#057cf3";
+                                                break;
+                                        
+                                        case "long2":
+                                                $craConnectionColor = "cyan";
+                                                break;
+                                                
+                                        case "long3":
+                                                $craConnectionColor = "LimeGreen";
+                                                break;
+                                                
+                                        case "byte":
+                                                $craConnectionColor = "#057cf3";
+                                                break;
+                                                
+                                        case "short":
+                                                $craConnectionColor = "#057cf3";
+                                                break;
+                                        
+                                        case "short2":
+                                                $craConnectionColor = "LimeGreen";
+                                                break;
+                                                
+                                        case "doubleAngle":
+                                                $craConnectionColor = "#057cf3";
+                                                break;
+                                
+                                        case "time":
+                                                $craConnectionColor = "#057cf3";
+                                                break;
+                                }
+                                
+                                if(!`checkBox -q -v ("cra" + $plugs + "ConnectionsAttrTypesCB")`)
+                                        $craConnectionAttrType = "";
+                                else 
+                                        $craConnectionAttrType = " " + $craConnectionAttrType + " ";
+                                
+                                string $craLeftPlugNode = `plugNode $craNodeConnections[$crai]`;
+                                string $craRightPlugNode = `plugNode $craNodeConnections[$crai+1]`;
+                                string $craLeftPlugAttr = `plugAttr $craNodeConnections[$crai]`;
+                                string $craRightPlugAttr = `plugAttr $craNodeConnections[$crai+1]`;
+                                
+                                if($swap)
+                                {
+                                        if($plugs == "Out")
+                                        {
+                                                $craNodeConnectionsTextArray[size($craNodeConnectionsTextArray)] = 
+                                                        "<font color=MediumPurple>" + 
+                                                        $craRightPlugNode + 
+                                                        "</font>.<i><font color=Khaki>" +
+                                                        $craRightPlugAttr + 
+                                                        "</i></font><font color=" +
+                                                        $craConnectionColor +
+                                                        ">&nbsp;&#x25CF;&mdash;&mdash;&#x25C4;" +
+                                                        $craConnectionAttrType +
+                                                        "&mdash;&mdash;&#x25CF;&nbsp;</font><font color=indianred>" + 
+                                                        $craLeftPlugNode +
+                                                        "</font>.<i><font color=darkseagreen>" +
+                                                        $craLeftPlugAttr +
+                                                        "</i></font><br>";
+                                                
+                                                $craOMmenuItems[size($craOMmenuItems)] = $craLeftPlugAttr;
+                                        }
+                                        
+                                        if($plugs == "In")
+                                        {
+                                                $craNodeConnectionsTextArray[size($craNodeConnectionsTextArray)] = 
+                                                        "<font color=MediumPurple>" + 
+                                                        $craRightPlugNode + 
+                                                        "</font>.<i><font color=darkseagreen>" +
+                                                        $craRightPlugAttr + 
+                                                        "</i></font><font color=" + 
+                                                        $craConnectionColor +
+                                                        ">&nbsp;&#x25CF;&mdash;&mdash;" +
+                                                        $craConnectionAttrType +
+                                                        "&#x25BA;&mdash;&mdash;&#x25CF;&nbsp;</font><font color=indianred>" + 
+                                                        $craLeftPlugNode +
+                                                        "</font>.<i><font color=Khaki>" +
+                                                        $craLeftPlugAttr +
+                                                        "</i></font><br>";
+                                                        
+                                                $craOMmenuItems[size($craOMmenuItems)] = $craLeftPlugAttr;
+                                        }
+                                }
+                                else
+                                {
+                                        if($plugs == "Out")               
+                                        {
+                                                $craNodeConnectionsTextArray[size($craNodeConnectionsTextArray)] = 
+                                                        "<font color=indianred>" + 
+                                                        $craLeftPlugNode + 
+                                                        "</font>.<i><font color=darkseagreen>" +
+                                                        $craLeftPlugAttr + 
+                                                        "</i></font><font color=" +
+                                                        $craConnectionColor +
+                                                        ">&nbsp;&#x25CF;&mdash;&mdash;" +
+                                                        $craConnectionAttrType + 
+                                                        "&#x25BA;&mdash;&mdash;&#x25CF;&nbsp;</font><font color=MediumPurple>" + 
+                                                        $craRightPlugNode +
+                                                        "</font>.<i><font color=Khaki>" +
+                                                        $craRightPlugAttr +
+                                                        "</font></i><br>";
+                                                        
+                                                $craOMmenuItems[size($craOMmenuItems)] = $craLeftPlugAttr;
+                                        }
+                                        
+                                        if($plugs == "In")
+                                        {
+                                                $craNodeConnectionsTextArray[size($craNodeConnectionsTextArray)] = 
+                                                        "<font color=indianred>" + 
+                                                        $craLeftPlugNode + 
+                                                        "</font>.<i><font color=Khaki>" +
+                                                        $craLeftPlugAttr + 
+                                                        "</i></font><font color=" +
+                                                        $craConnectionColor + 
+                                                        ">&nbsp;&#x25CF;&mdash;&mdash;&#x25C4;" +
+                                                        $craConnectionAttrType +
+                                                        "&mdash;&mdash;&#x25CF;&nbsp;</font><font color=MediumPurple>" + 
+                                                        $craRightPlugNode +
+                                                        "</font>.<i><font color=darkseagreen>" +
+                                                        $craRightPlugAttr +
+                                                        "</i></font><br>";
+                                                        
+                                                $craOMmenuItems[size($craOMmenuItems)] = $craLeftPlugAttr;
+                                        }
+                                }
+                        }
+                        
+                        $craOMmenuItems = stringArrayRemoveDuplicates($craOMmenuItems);
+                        
+                        $craNodeConnectionsTextArray = sort($craNodeConnectionsTextArray);
+                        $craOMmenuItems = sort($craOMmenuItems);
+                                
+                        $craNodeConnectionsTextArray[size($craNodeConnectionsTextArray)-1] = substituteAllString($craNodeConnectionsTextArray[size($craNodeConnectionsTextArray)-1], "<br>", "");
+                        $craNodeConnectionsText = stringArrayToString($craNodeConnectionsTextArray, "\n");
+                        
+                        scrollField -e -ip 1 -text $craNodeConnectionsText ("cra" + $plugs + "ConnectionsSF");
+                        
+                        for($menuItem in $craOMmenuItems)
+                                menuItem -p ("craNodeConnectionsFilter" + $plugs + "OM") -l $menuItem;
+                        
+                        catchQuiet(eval("optionMenu -e -v \"" + $craCurrentAttribute + "\" (\"craNodeConnectionsFilter" + $plugs + "OM\")"));
+                }
+                else
+                        scrollField -e -clear ("cra" + $plugs + "ConnectionsSF");
+        }
+}
+
+global proc craNodeConnectionsLayout()
+{
+        if(`paneLayout -q -cn craNodeConnectionsPaneLayout` == "horizontal2")
+        {
+                paneLayout -e -cn vertical2 craNodeConnectionsPaneLayout;
+                nodeIconButton -e -i "defaultTwoStackedLayout.png" -ann "Change UI Layout to Stacked" craNodeConnectionsChangeLayoutITBTN;
+        }
+        else
+        {
+                paneLayout -e -cn horizontal2 craNodeConnectionsPaneLayout;
+                nodeIconButton -e -i "defaultTwoSideBySideLayout.png" -ann "Change UI Layout to Side by Side" craNodeConnectionsChangeLayoutITBTN;
+                window -e -w 600 craNodeConnectionsWin;
+        }
+}
+
+global proc craNodeConnectionsPanelSize( int $panel )
+{
+        paneLayout -e -ps $panel 100 100 craNodeConnectionsPaneLayout;
+}
+
+global proc craNodeConnectionsAboutScript()
+{
+	if (`window -exists craNodeConnectionsAboutWin`)
+		deleteUI craNodeConnectionsAboutWin;
+	
+	window -t  " About/Help" -s 1 -tlb 1 craNodeConnectionsAboutWin;
+                frameLayout -mw 5-mh 5 -lv 0;
+                frameLayout -mw 5-mh 5 -lv 0;
+                        columnLayout -adj 1;
+                                text -l "Node Connections 1.1.0";
+                                text -l "";
+                                frameLayout -mw 5 -mh 5 -lv 0 -bs "in";
+                                        text -l "COLOR CODES";
+                                        text -h 16 -bgc .17 .17 .17 -l "Nodes";
+                                        text -l "<font color=IndianRed>Loaded node</font>";
+                                        text -l "<font color=MediumPurple>Other nodes</font>";
+                                        text -h 16 -bgc .17 .17 .17 -l "Attributes";
+                                        text -l "<i><font color=darkseagreen>Output attributes</font></i>";
+                                        text -l "<i><font color=Khaki>Input attributes</font></i>";
+                                        text -h 16 -bgc .17 .17 .17 -l "Connections";
+                                        text -al "left" -l "<font color=Fuchsia>&nbsp;&nbsp;&nbsp;&nbsp;&#x25CF;&ndash;&ndash;&#x25BA;&ndash;&ndash;&#x25CF;&nbsp;</font> Data Attributes";
+                                        text -al "left" -l "<font color=cyan>&nbsp;&nbsp;&nbsp;&nbsp;&#x25CF;&ndash;&ndash;&#x25BA;&ndash;&ndash;&#x25CF;&nbsp;</font> Double Attributes";
+                                        text -al "left" -l "<font color=white>&nbsp;&nbsp;&nbsp;&nbsp;&#x25CF;&ndash;&ndash;&#x25BA;&ndash;&ndash;&#x25CF;&nbsp;</font> Message Attributes";
+                                        text -al "left" -l "<font color=gold>&nbsp;&nbsp;&nbsp;&nbsp;&#x25CF;&ndash;&ndash;&#x25BA;&ndash;&ndash;&#x25CF;&nbsp;</font> Other Attributes";
+                                        text -al "left" -l "<font color=#057cf3>&nbsp;&nbsp;&nbsp;&nbsp;&#x25CF;&ndash;&ndash;&#x25BA;&ndash;&ndash;&#x25CF;&nbsp;</font> Single Attributes";
+                                        text -al "left" -l "<font color=LimeGreen>&nbsp;&nbsp;&nbsp;&nbsp;&#x25CF;&ndash;&ndash;&#x25BA;&ndash;&ndash;&#x25CF;&nbsp;</font> Triple Attributes";
+                                setParent ..;
+                                text -l "";
+                                text -h 20 -bgc .17 .17 .17 -l  "Carlos Rico Adega 2014";
+                                textField -bgc .17 .17 .17 -ed 0 -text "        carlos.rico.3d@gmail.com";
+                                text -l "";
+                                button -w 150 -l "Linked[In] Profile" -c "showHelp -absolute \"http://www.linkedin.com/pub/carlos-rico/6/58/325\"";
+                                separator -h 5 -st "none";
+                                button -w 150 -l "Free Downloads" -ann "Free downloads from CreativeCrash.com" -c "showHelp -absolute \"http://www.creativecrash.com/users/charliewales/contributions?tab=free_downloads\"";    
+                        setParent ..;
+                setParent ..;
+        window -e -s 0 -wh 205 450 craNodeConnectionsAboutWin;
+        showWindow craNodeConnectionsAboutWin;
+}

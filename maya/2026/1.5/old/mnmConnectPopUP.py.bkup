@@ -1,0 +1,196 @@
+# import json
+import maya.cmds as cmds
+from Xlib import display
+
+
+def mnmConnectArray(modo, tipo):
+    array = []
+    if modo == 'in':
+        if tipo == 'transform':
+            array = [
+                'atrix', 'translate', 'rotate', 'scale']
+        else:
+            array = [
+                'input', 'inMesh', 'inGeometry',
+                'PP', 'inArray', 'inputGeometry',
+                'bind', 'Components']
+    elif modo == 'out':
+        if tipo == 'transform':
+            array = [
+                'atrix', 'world', 'translate', 'rotate', 'scale']
+        else:
+            array = [
+                'output', 'Mesh', 'Geometry',
+                'PP', 'outArray', 'worldMesh',
+                'Components']
+    return array
+
+
+def mnmNodeAttr(modo, plug=None, ui=None):
+    array, cond, current, attr = [], (), '', []
+    sel = cmds.ls(sl=True)
+    if sel:
+        if len(sel) == 2:
+            current = ''
+            if modo == 'out':
+                current = sel[0]
+            elif modo == 'in':
+                current = sel[1]
+
+            # Get the list of attributes
+            tipo = cmds.nodeType(current)
+            array = mnmConnectArray(modo, tipo)
+            attr = cmds.listAttr(current, c=True)
+            plugs = []
+            for at in attr:
+                if tipo != 'transform':
+                    if modo == 'in':
+                        cond = [at.startswith(modo, 0, 2)]
+                    elif modo == 'out':
+                        cond = [
+                            at.startswith(modo, 0, 3),
+                            at.startswith('world', 0, 5)]
+                else:
+                    cond = [
+                        'translate' in array,
+                        'rotate' in array,
+                        'scale' in array]
+                if any(cond):
+                    for p in array:
+                        if p in at:
+                            if len(at.split('.')) == 1:
+                                typo = cmds.attributeQuery(
+                                    at, n=current, m=True)
+                                if typo:
+                                    conn = cmds.listConnections(
+                                        current + '.' + at)
+                                    if conn:
+                                        index = 0
+                                        if modo == 'in':
+                                            index = len(conn) + 1
+                                        else:
+                                            index = len(conn)
+                                        for x in range(0, index):
+                                            plugs.append(
+                                                at + '[' + str(x) + ']')
+                                    else:
+                                        plugs.append(at + '[0]')
+                                else:
+                                    plugs.append(at)
+                            else:
+                                index = len(cmds.listConnections(
+                                    current + '.' + at.split('.')[0])) / 2
+                                uno = at.split('.')[0]
+                                due = at.split('.')[-1]
+                                for x in range(0, index):
+                                    plugs.append(
+                                        uno + '[' + str(x) + ']' + '.' + due)
+            if modo == 'in':
+                mnmConnectIn_UI(plug, sorted(list(set(plugs))), ui)
+            elif modo == 'out':
+                mnmConnectOut_UI(sorted(list(set(plugs))))
+        else:
+            cmds.confirmDialog(
+                t='Fuck a Duck', m='Please select two nodes only')
+    else:
+        cmds.confirmDialog(t='Fuck a Duck', m='Please select two nodes only')
+
+
+def mnmConnectOut_UI(plugs):
+    win_size = ''
+    if cmds.window('connectUI_WIN', q=True, ex=True):
+        cmds.deleteUI('connectUI_WIN')
+    win = cmds.window('connectUI_WIN', t='  --->>>  ')
+
+    fr = cmds.formLayout(p=win)
+    tsl = cmds.textScrollList(ams=False, h=20)
+    cmd = 'mnmConnectPopUP.mnmNodeAttr("in", cmds.textScrollList("'
+    cmd += tsl + '", q=True, si=True),'
+    cmd += '["' + fr + '", "' + tsl + '", "' + win + '"])'
+    cmds.formLayout(
+        fr,
+        e=True,
+        af=[
+            (tsl, 'top', 0),
+            (tsl, 'left', 0),
+            (tsl, 'right', 0),
+            (tsl, 'bottom', 0)])
+    for p in plugs:
+        cmds.textScrollList(tsl, e=True, a=p)
+    cmds.textScrollList(tsl, e=True, sc=cmd)
+
+    # Open Window
+    cmds.showWindow(win)
+    if len(plugs) * 20 < 40:
+        win_size = 40
+    else:
+        win_size = len(plugs) * 20
+
+    # Get Mouse Position and open popup
+    mo = mnmGetMousePosition()
+    cmds.window(
+        win,
+        e=True,
+        wh=(120, win_size),
+        tlc=(mo[0] - win_size / 2, mo[1] - 60))
+
+
+def mnmConnectIn_UI(plug, plugs, ui):
+    win_size = ''
+    cmds.textScrollList(ui[1], e=True, m=False)
+    tsl = cmds.textScrollList(ams=False, h=20)
+
+    cmd = 'mnmConnectPopUP.mnmMakeConnect("'
+    cmd += plug[0] + '",cmds.textScrollList("' + tsl + '",q=True, si=True))'
+    cmds.formLayout(
+        ui[0],
+        e=True,
+        af=[
+            (tsl, 'top', 0),
+            (tsl, 'left', 0),
+            (tsl, 'right', 0),
+            (tsl, 'bottom', 0)])
+    for p in plugs:
+        cmds.textScrollList(tsl, e=True, a=p)
+    cmds.textScrollList(tsl, e=True, sc=cmd)
+
+    # Open Window
+    if len(plugs) * 20 < 40:
+        win_size = 40
+    else:
+        win_size = len(plugs) * 20
+
+    # Get Mouse Position and open popup
+    mo = mnmGetMousePosition()
+    cmds.window(
+        ui[2],
+        e=True,
+        wh=(120, win_size),
+        tlc=(mo[0] - win_size / 2, mo[1] - 60))
+
+
+def mnmMakeConnect(plug1, plug2):
+    plug2 = plug2[0]
+    sel = cmds.ls(sl=True)
+
+    try:
+        cmds.connectAttr(sel[0] + '.' + plug1, sel[1] + '.' + plug2, f=True)
+        cmds.deleteUI('connectUI_WIN')
+        print(sel[0] + '.' + plug1 + ' --->>> ' + sel[1] + '.' + plug2)
+    except:
+        info = 'Cannot connect these two guys:\n'
+        info += sel[0] + '.' + plug1 + ' ' + sel[1] + '.' + plug2
+        result = cmds.confirmDialog(
+            t='Error', m=info, b=['Stop', 'Retry'], db='Retry')
+        if result == 'Retry':
+            cmds.deleteUI('connectUI_WIN')
+            mnmNodeAttr('out')
+        else:
+            cmds.deleteUI('connectUI_WIN')
+
+
+def mnmGetMousePosition():
+    mo = display.Display().screen().root.query_pointer()._data
+    out = [mo["root_y"], mo["root_x"]]
+    return out
+
